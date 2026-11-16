@@ -1,0 +1,23 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY SchoolTrack.slnx ./
+COPY src/SchoolTrack.Shared/SchoolTrack.Shared.csproj src/SchoolTrack.Shared/
+COPY src/SchoolTrack.Admin/SchoolTrack.Admin.csproj src/SchoolTrack.Admin/
+
+RUN dotnet restore src/SchoolTrack.Admin/SchoolTrack.Admin.csproj
+
+COPY src/SchoolTrack.Shared/ src/SchoolTrack.Shared/
+COPY src/SchoolTrack.Admin/ src/SchoolTrack.Admin/
+RUN dotnet publish src/SchoolTrack.Admin/SchoolTrack.Admin.csproj -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+EXPOSE 8080
+
+RUN addgroup --system --gid 1001 appgroup && adduser --system --uid 1001 --ingroup appgroup appuser
+COPY --from=build /app/publish .
+USER appuser
+
+ENTRYPOINT ["dotnet", "SchoolTrack.Admin.dll"]
+

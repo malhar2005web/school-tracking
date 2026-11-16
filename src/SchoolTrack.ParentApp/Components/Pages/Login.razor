@@ -1,0 +1,180 @@
+@page "/login"
+@inject NavigationManager Navigation
+@inject ParentAuthState AuthState
+@inject IParentApiClient ApiClient
+
+<div style="min-height:100vh; background:#fbf8ff; padding:1.25rem 1rem 3rem 1rem; display:flex; flex-direction:column; max-width:440px; margin:0 auto; user-select:none;">
+    <!-- Top Safe Ambience Micro-pills -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; padding-top:env(safe-area-inset-top, 8px);">
+        <div style="display:inline-flex; align-items:center; gap:0.375rem; padding:0.375rem 0.75rem; border-radius:9999px; background:#eeecff; box-shadow:0 4px 12px -2px rgba(41,42,66,0.06), inset 1px 1px 2px rgba(255,255,255,0.8);">
+            <span style="width:8px; height:8px; border-radius:50%; background:#0c6b55; display:inline-block; animation:pulse 2s infinite;"></span>
+            <span style="font-size:11px; font-weight:700; color:#0c6b55; letter-spacing:0.03em;">SPRING TERM LIVE</span>
+        </div>
+        <div style="display:inline-flex; align-items:center; gap:0.375rem; padding:0.375rem 0.75rem; border-radius:9999px; background:#e7e6ff; color:#484552; font-size:11px; font-weight:700;">
+            <span class="material-symbols-outlined" style="font-size:16px; color:#644bba;">verified</span>
+            <span>Oakridge Certified</span>
+        </div>
+    </div>
+
+    <!-- Mascot Ollie Stage -->
+    <div style="position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:1rem 0;">
+        <div style="position:absolute; width:11rem; height:11rem; border-radius:50%; background:rgba(155,131,246,0.3); filter:blur(24px); z-index:0;"></div>
+        
+        <div style="position:relative; z-index:1; cursor:pointer;" @onclick="MascotCheer">
+            <div style="width:10rem; height:10rem; border-radius:50%; padding:0.375rem; background:radial-gradient(135deg, #ffffff 0%, #eeecff 100%); box-shadow:0 16px 32px -6px rgba(100,75,186,0.28), 0 6px 14px -2px rgba(24,25,48,0.08), inset 3px 3px 6px rgba(255,255,255,0.95), inset -3px -3px 6px rgba(100,75,186,0.15); display:flex; align-items:center; justify-content:center; transform:@(_cheering ? "scale(1.08)" : "scale(1)"); transition:transform 0.3s ease;">
+                <img alt="Ollie the Owl Mascot" style="width:100%; height:100%; border-radius:50%; object-fit:contain; pointer-events:none;" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpLlyM0Broza9BqnBbgTBAhdP3Au4u0jnjcOLNGAdsbzyys417O6aUyWehYNuaZRB1Mw9wTMP6v4ayUVn7a7HCb5CzC1tZ-FIX8_ogG6eud--sgGqXEm9Czvb6keRmAvRFhCGJX7n6Haf8n8QYIVKOHMVDVeLxhflWT1wURn1ztnBhIQlcS23F9GdrI1EL9ckoZScqDdjZK3zPdY_hFHH0KgsDnxmc0xc7si-9LnQ" />
+            </div>
+
+            <!-- Speech Bubble -->
+            <div style="position:absolute; top:-0.75rem; right:-1.5rem; background:#ffffff; padding:0.375rem 0.75rem; border-radius:1rem; display:flex; align-items:center; gap:0.25rem; box-shadow:0 8px 18px -3px rgba(41,42,66,0.12), inset 1px 2px 2px rgba(255,255,255,0.9);">
+                <span style="font-size:1rem;">👋</span>
+                <span style="font-size:11px; font-weight:700; color:#181930;">@_speechMessage</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Title & Narrative -->
+    <div style="text-align:center; margin-bottom:1.5rem;">
+        <h1 style="font-size:28px; font-weight:800; color:#181930; letter-spacing:-0.02em; margin:0 0 0.25rem 0;">SchoolTrack</h1>
+        <p style="font-size:14px; color:#484552; margin:0;">Safe, fun & stress-free journeys for your little stars.</p>
+    </div>
+
+    <!-- Feature Strips -->
+    <div style="display:flex; flex-direction:column; gap:0.625rem; margin-bottom:1.5rem;">
+        <div class="clay-card" style="padding:0.75rem 1rem; border-radius:1rem; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div style="width:2.5rem; height:2.5rem; border-radius:1rem; background:#a1f3d7; display:flex; align-items:center; justify-content:center; color:#0c6b55;">
+                    <span class="material-symbols-outlined" style="font-size:20px;">directions_bus</span>
+                </div>
+                <div>
+                    <div style="font-size:13px; font-weight:700; color:#181930;">Live GPS Bus Tracking</div>
+                    <div style="font-size:12px; color:#484552;">Turn-by-turn live route maps</div>
+                </div>
+            </div>
+            <span class="clay-badge clay-badge-secondary">Real-Time</span>
+        </div>
+
+        <div class="clay-card" style="padding:0.75rem 1rem; border-radius:1rem; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div style="width:2.5rem; height:2.5rem; border-radius:1rem; background:#ffd66b; display:flex; align-items:center; justify-content:center; color:#765b00;">
+                    <span class="material-symbols-outlined" style="font-size:20px;">contactless</span>
+                </div>
+                <div>
+                    <div style="font-size:13px; font-weight:700; color:#181930;">Instant RFID Tap Alerts</div>
+                    <div style="font-size:12px; color:#484552;">Boarding & drop-off chime</div>
+                </div>
+            </div>
+            <span class="clay-badge clay-badge-tertiary">Smart Tap</span>
+        </div>
+
+        <div class="clay-card" style="padding:0.75rem 1rem; border-radius:1rem; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div style="width:2.5rem; height:2.5rem; border-radius:1rem; background:#ffdad6; display:flex; align-items:center; justify-content:center; color:#ba1a1a;">
+                    <span class="material-symbols-outlined" style="font-size:20px;">support_agent</span>
+                </div>
+                <div>
+                    <div style="font-size:13px; font-weight:700; color:#181930;">Direct Driver & School SOS</div>
+                    <div style="font-size:12px; color:#484552;">Instant 1-tap priority line</div>
+                </div>
+            </div>
+            <span class="clay-badge clay-badge-error">24/7 Guard</span>
+        </div>
+    </div>
+
+    <!-- Parent Sign In Clay Card -->
+    <div class="clay-card" style="padding:1.25rem; border-radius:1.5rem; margin-bottom:1.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+            <div>
+                <h2 style="font-size:18px; font-weight:800; color:#181930; margin:0;">Parent Sign In</h2>
+                <p style="font-size:12px; color:#484552; margin:0;">Access your registered student fleet</p>
+            </div>
+            <div style="width:2rem; height:2rem; border-radius:50%; background:#e7deff; color:#644bba; display:flex; align-items:center; justify-content:center;">
+                <span class="material-symbols-outlined" style="font-size:18px;">lock_open</span>
+            </div>
+        </div>
+
+        <div style="margin-bottom:1rem;">
+            <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.375rem; margin-left:0.25rem;">Mobile Phone Number</label>
+            <div class="clay-inset" style="display:flex; align-items:center; height:3.25rem; padding:0 0.875rem;">
+                <div style="display:flex; align-items:center; gap:0.375rem; padding-right:0.625rem; margin-right:0.625rem; border-right:1px solid #cac4d4;">
+                    <span style="font-size:1.125rem;">🇺🇸</span>
+                    <span style="font-size:13px; font-weight:700; color:#181930;">+1</span>
+                </div>
+                <input style="width:100%; background:transparent; border:none; outline:none; font-size:15px; font-weight:600; color:#181930;" type="tel" @bind="_phoneNumber" placeholder="(555) 019-2834" />
+            </div>
+        </div>
+
+        <!-- One-Tap Demo Sign-In Button -->
+        <button class="clay-btn clay-btn-primary" style="width:100%; height:3.25rem; font-size:15px; margin-bottom:0.75rem;" @onclick="HandleLogin">
+            @if (_isLoading)
+            {
+                <span class="material-symbols-outlined" style="animation:spin 1s infinite linear;">refresh</span>
+                <span>Connecting to Fleet...</span>
+            }
+            else
+            {
+                <span>Get Verification Code</span>
+                <span class="material-symbols-outlined" style="font-size:20px;">arrow_forward</span>
+            }
+        </button>
+    </div>
+
+    <!-- Demo OTP Simulator Card -->
+    <div style="padding:1.25rem; border-radius:1.5rem; background:#eeecff; box-shadow:0 12px 28px -6px rgba(41,42,66,0.08), inset 2px 2px 4px rgba(255,255,255,0.9); margin-bottom:1.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#644bba; display:inline-block; animation:ping 1.5s infinite;"></span>
+                <span style="font-size:13px; font-weight:700; color:#181930;">Demo OTP Simulator</span>
+            </div>
+            <span style="font-size:12px; font-weight:700; color:#644bba;">Auto-sent</span>
+        </div>
+
+        <p style="font-size:12px; color:#484552; margin:0 0 0.75rem 0;">Safety code auto-generated for demo testing:</p>
+
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.75rem; margin-bottom:1rem;">
+            <div class="clay-inset" style="height:3.25rem; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#644bba; background:#ffffff;">8</div>
+            <div class="clay-inset" style="height:3.25rem; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#644bba; background:#ffffff;">4</div>
+            <div class="clay-inset" style="height:3.25rem; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#644bba; background:#ffffff;">2</div>
+            <div class="clay-inset" style="height:3.25rem; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#644bba; background:#ffffff;">1</div>
+        </div>
+
+        <button class="clay-btn clay-btn-secondary" style="width:100%; height:3rem; font-size:14px;" @onclick="HandleLogin">
+            <span class="material-symbols-outlined" style="font-size:18px;">verified_user</span>
+            <span>Verify & Enter Parent Dashboard</span>
+        </button>
+    </div>
+</div>
+
+@code {
+    private string _phoneNumber = "(555) 019-2834";
+    private bool _isLoading = false;
+    private bool _cheering = false;
+    private string _speechMessage = "Hoo's ready to ride?";
+
+    private async Task MascotCheer()
+    {
+        _cheering = true;
+        _speechMessage = "Leo's bus is on track! ✨";
+        StateHasChanged();
+        await Task.Delay(1500);
+        _cheering = false;
+        _speechMessage = "Hoo's ready to ride?";
+        StateHasChanged();
+    }
+
+    private async Task HandleLogin()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var session = await ApiClient.LoginWithPhoneAsync(_phoneNumber, "8421");
+        if (session != null)
+        {
+            AuthState.SetSession(session);
+            Navigation.NavigateTo("/");
+        }
+
+        _isLoading = false;
+    }
+}
+

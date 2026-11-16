@@ -1,0 +1,211 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject ParentAuthState AuthState
+@inject IParentNotificationService NotificationService
+@inject ParentTrackingHubService TrackingHub
+@implements IDisposable
+
+@if (IsLoginPage)
+{
+    @Body
+}
+else
+{
+    <header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl clay-header pt-safe" style="position:fixed; top:0; left:0; right:0; z-index:50; background:rgba(251,248,255,0.88); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 4px 16px -2px rgba(24,25,48,0.05); padding-top:env(safe-area-inset-top, 8px);">
+        <!-- Top Status Bar Mock -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 1rem; height:1.5rem; color:#484552; font-size:11px; font-weight:700; user-select:none;">
+            <span>9:41</span>
+            <div style="display:flex; align-items:center; gap:0.375rem;">
+                <span class="material-symbols-outlined" style="font-size:15px;">signal_cellular_alt</span>
+                <span class="material-symbols-outlined" style="font-size:15px;">wifi</span>
+                <span class="material-symbols-outlined" style="font-size:16px;">battery_full</span>
+            </div>
+        </div>
+
+        <!-- App Header Bar -->
+        <div style="height:4rem; padding:0 1rem; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;" @onclick='() => Navigation.NavigateTo("/")'>
+                <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#9b83f6; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(155,131,246,0.35);">
+                    <span class="material-symbols-outlined" style="font-size:1.25rem; color:#ffffff;">directions_bus</span>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-size:11px; font-weight:800; color:#644bba; text-transform:uppercase; letter-spacing:0.05em; line-height:1;">SchoolTrack</span>
+                    <h1 style="font-size:18px; font-weight:700; color:#181930; margin:0; line-height:1.2;">@PageTitle</h1>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <!-- Notification Bell -->
+                <button aria-label="Notifications" style="width:2.75rem; height:2.75rem; border-radius:50%; background:#ffffff; display:flex; align-items:center; justify-content:center; color:#181930; border:none; box-shadow:0 4px 12px rgba(24,25,48,0.06); position:relative; cursor:pointer;" @onclick="ToggleNotificationDrawer">
+                    <span class="material-symbols-outlined" style="font-size:20px;">notifications</span>
+                    @if (HasUnreadNotifications)
+                    {
+                        <span style="position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:#ba1a1a;"></span>
+                    }
+                </button>
+
+                <!-- Parent Profile Avatar Button -->
+                <button aria-label="Parent Profile" style="width:2.75rem; height:2.75rem; border-radius:50%; padding:2px; background:#ffffff; box-shadow:0 4px 12px rgba(24,25,48,0.08); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer;" @onclick='() => Navigation.NavigateTo("/profile")'>
+                    <img alt="Parent Profile" style="width:2rem; height:2rem; border-radius:50%; object-fit:cover;" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHDGGSb8ANzaCZHCqofS-D-q4PgE7LT1WDcNKEqXolmjZqzx7dVVsLOLj85ClQIyilXqCh1xf1tJkV8gKAjJl1_u4HtkDaiDkJLDGFcZWLsXzPvZwzKer8q8QksP-Qtn77MSo-jbMHx3Rv4Hei7m60y6xO321AHTZVm3-QFuxk0U03SJKd2ZlyuyTxQXYbOWTRwgEwJQBdCNMqwEJ0qxUON7pENAhrXVPYmVOgXRA" />
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Floating Real-Time In-App Toast Container -->
+    @if (NotificationService.ActiveToasts.Count > 0)
+    {
+        <div class="floating-toast-container">
+            @foreach (var toast in NotificationService.ActiveToasts)
+            {
+                <div class="floating-toast-pill">
+                    <div style="display:flex; align-items:center; gap:0.75rem; min-width:0;">
+                        <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <span class="material-symbols-outlined" style="font-size:18px;">contactless</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; min-width:0;">
+                            <span style="font-size:12px; font-weight:700; color:#181930;">@toast.Title</span>
+                            <span style="font-size:11px; color:#484552; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@toast.Message</span>
+                        </div>
+                    </div>
+                    <button style="background:none; border:none; color:#797584; cursor:pointer;" @onclick="() => NotificationService.DismissToast(toast.Id)">
+                        <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+                    </button>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Main Content Area -->
+    <main style="flex:1; width:100%; min-height:100vh; padding-top:5.5rem; padding-bottom:6.5rem; background:#fbf8ff;">
+        @Body
+    </main>
+
+    <!-- Fixed Floating Clay Bottom Navigation Bar -->
+    <div style="position:fixed; bottom:0; left:0; right:0; z-index:50; padding:0 1rem; padding-bottom:env(safe-area-inset-bottom, 12px); pointer-events:none; margin-bottom:0.75rem;">
+        <nav class="clay-nav" style="pointer-events:auto; margin:0 auto; max-width:28rem; background:rgba(255,255,255,0.95); backdrop-filter:blur(16px); border-radius:3rem; padding:0.375rem; display:flex; align-items:center; justify-content:space-around;">
+            <a style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.5rem 1rem; border-radius:2rem; font-size:11px; font-weight:700; text-decoration:none; min-width:64px; transition:all 0.2s; @(IsActive("/") ? "background:#9b83f6; color:#ffffff; box-shadow:inset 0 2px 2px rgba(255,255,255,0.45), inset 0 -2px 0 rgba(75,48,161,0.3);" : "color:#484552;")" href="/">
+                <span class="material-symbols-outlined" style="font-size:24px;">home</span>
+                <span>Home</span>
+            </a>
+            <a style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.5rem 1rem; border-radius:2rem; font-size:11px; font-weight:700; text-decoration:none; min-width:64px; transition:all 0.2s; @(IsActive("/live-map") ? "background:#9b83f6; color:#ffffff; box-shadow:inset 0 2px 2px rgba(255,255,255,0.45), inset 0 -2px 0 rgba(75,48,161,0.3);" : "color:#484552;")" href="/live-map">
+                <span class="material-symbols-outlined" style="font-size:24px;">near_me</span>
+                <span>Tracking</span>
+            </a>
+            <a style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.5rem 1rem; border-radius:2rem; font-size:11px; font-weight:700; text-decoration:none; min-width:64px; transition:all 0.2s; @(IsActive("/history") ? "background:#9b83f6; color:#ffffff; box-shadow:inset 0 2px 2px rgba(255,255,255,0.45), inset 0 -2px 0 rgba(75,48,161,0.3);" : "color:#484552;")" href="/history">
+                <span class="material-symbols-outlined" style="font-size:24px;">receipt_long</span>
+                <span>History</span>
+            </a>
+            <a style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.5rem 1rem; border-radius:2rem; font-size:11px; font-weight:700; text-decoration:none; min-width:64px; transition:all 0.2s; @(IsActive("/profile") ? "background:#9b83f6; color:#ffffff; box-shadow:inset 0 2px 2px rgba(255,255,255,0.45), inset 0 -2px 0 rgba(75,48,161,0.3);" : "color:#484552;")" href="/profile">
+                <span class="material-symbols-outlined" style="font-size:24px;">manage_accounts</span>
+                <span>Profile</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Notification Drawer Slide-Up Modal -->
+    @if (_showNotificationDrawer)
+    {
+        <div class="clay-modal-backdrop" @onclick="ToggleNotificationDrawer">
+            <div class="clay-bottom-sheet" @onclick:stopPropagation="true">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <div style="width:2rem; height:2rem; border-radius:50%; background:#e7deff; color:#644bba; display:flex; align-items:center; justify-content:center;">
+                            <span class="material-symbols-outlined" style="font-size:18px;">notifications</span>
+                        </div>
+                        <h2 style="font-size:18px; font-weight:800; color:#181930; margin:0;">Notifications</h2>
+                    </div>
+                    <button style="background:none; border:none; color:#797584; cursor:pointer;" @onclick="ToggleNotificationDrawer">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                    <div style="padding:0.75rem; border-radius:1rem; background:#f5f2ff; display:flex; gap:0.75rem; align-items:flex-start;">
+                        <span class="material-symbols-outlined" style="color:#0c6b55; font-size:22px;">check_circle</span>
+                        <div>
+                            <div style="font-size:13px; font-weight:700; color:#181930;">Leo Boarded Bus #14</div>
+                            <p style="font-size:12px; color:#484552; margin:2px 0 0 0;">Scanned RFID pass at Oakridge & 5th Ave at 07:42 AM.</p>
+                            <span style="font-size:10px; color:#797584;">20 minutes ago</span>
+                        </div>
+                    </div>
+                    <div style="padding:0.75rem; border-radius:1rem; background:#f5f2ff; display:flex; gap:0.75rem; align-items:flex-start;">
+                        <span class="material-symbols-outlined" style="color:#765b00; font-size:22px;">traffic</span>
+                        <div>
+                            <div style="font-size:13px; font-weight:700; color:#181930;">Smooth Route Flow</div>
+                            <p style="font-size:12px; color:#484552; margin:2px 0 0 0;">Traffic cleared on Pine St corridor. ETA 08:05 AM.</p>
+                            <span style="font-size:10px; color:#797584;">12 minutes ago</span>
+                        </div>
+                    </div>
+                    <div style="padding:0.75rem; border-radius:1rem; background:#f5f2ff; display:flex; gap:0.75rem; align-items:flex-start;">
+                        <span class="material-symbols-outlined" style="color:#644bba; font-size:22px;">military_tech</span>
+                        <div>
+                            <div style="font-size:13px; font-weight:700; color:#181930;">Safe Transit Streak! 🦉</div>
+                            <p style="font-size:12px; color:#484552; margin:2px 0 0 0;">Leo has completed 5 consecutive on-time safety journeys.</p>
+                            <span style="font-size:10px; color:#797584;">1 day ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private bool _showNotificationDrawer = false;
+    private bool HasUnreadNotifications = true;
+
+    private bool IsLoginPage => Navigation.Uri.EndsWith("/login", StringComparison.OrdinalIgnoreCase);
+
+    private string PageTitle
+    {
+        get
+        {
+            var uri = Navigation.Uri.ToLowerInvariant();
+            if (uri.Contains("/live-map")) return "Live Map Tracker";
+            if (uri.Contains("/history")) return "Transit History";
+            if (uri.Contains("/profile")) return "Parent Account";
+            return "Dashboard";
+        }
+    }
+
+    private bool IsActive(string path)
+    {
+        var current = Navigation.ToBaseRelativePath(Navigation.Uri);
+        if (string.IsNullOrEmpty(current) && path == "/") return true;
+        if (current.Equals("dashboard", StringComparison.OrdinalIgnoreCase) && path == "/") return true;
+        return current.Equals(path.TrimStart('/'), StringComparison.OrdinalIgnoreCase);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthState.OnChange += HandleStateChanged;
+        NotificationService.OnNotificationReceived += HandleNotification;
+
+        // Auto-start live SignalR tracking hub
+        await TrackingHub.StartAsync();
+    }
+
+    private void HandleStateChanged() => InvokeAsync(StateHasChanged);
+
+    private void HandleNotification(ParentNotificationModel notif)
+    {
+        HasUnreadNotifications = true;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleNotificationDrawer()
+    {
+        _showNotificationDrawer = !_showNotificationDrawer;
+        if (!_showNotificationDrawer)
+        {
+            HasUnreadNotifications = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnChange -= HandleStateChanged;
+        NotificationService.OnNotificationReceived -= HandleNotification;
+    }
+}

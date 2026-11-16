@@ -1,0 +1,153 @@
+@page "/broadcast"
+@layout MainLayout
+@inject IDriverApiClient DriverApi
+@inject DriverAuthState AuthState
+@inject IDriverNotificationService NotificationService
+@inject NavigationManager Navigation
+
+<div class="driver-broadcast-view" style="max-width:32rem; margin:0 auto; padding:0 1rem; display:flex; flex-direction:column; gap:1.25rem;">
+    <!-- Header Summary Card -->
+    <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 24px rgba(24,25,48,0.06); display:flex; align-items:center; gap:0.875rem;">
+        <div style="width:3rem; height:3rem; border-radius:50%; background:#ffd66b; color:#241a00; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <span class="material-symbols-outlined" style="font-size:26px;">campaign</span>
+        </div>
+        <div style="display:flex; flex-direction:column;">
+            <h1 style="font-size:18px; font-weight:800; color:#181930; margin:0; letter-spacing:-0.02em;">
+                Broadcast Delay Alert
+            </h1>
+            <span style="font-size:12px; color:#484552;">
+                Instantly notify parents on Route 14-AM and update ETAs across the system.
+            </span>
+        </div>
+    </div>
+
+    <!-- Delay Minutes Selector -->
+    <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 24px rgba(24,25,48,0.06); display:flex; flex-direction:column; gap:0.875rem;">
+        <label style="font-size:12px; font-weight:800; color:#484552; text-transform:uppercase; letter-spacing:0.04em;">
+            Estimated Route Delay
+        </label>
+
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.5rem;">
+            @foreach (var min in DelayMinutesOptions)
+            {
+                <button type="button"
+                        class="clay-pill-btn @(SelectedMinutes == min ? "active" : "")"
+                        style="padding:0.75rem 0.25rem; border-radius:1rem; font-size:13px; font-weight:800; border:none; cursor:pointer; text-align:center; transition:all 0.15s; @(SelectedMinutes == min ? "background:#ffd66b; color:#241a00; box-shadow:0 4px 12px rgba(118,91,0,0.3);" : "background:#f5f2ff; color:#181930;")"
+                        @onclick="() => SelectedMinutes = min">
+                    +@min m
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Reason Tag Selector -->
+    <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 24px rgba(24,25,48,0.06); display:flex; flex-direction:column; gap:0.875rem;">
+        <label style="font-size:12px; font-weight:800; color:#484552; text-transform:uppercase; letter-spacing:0.04em;">
+            Primary Reason
+        </label>
+
+        <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+            @foreach (var reason in DelayReasons)
+            {
+                <button type="button"
+                        class="clay-tag-chip @(SelectedReason == reason ? "active" : "")"
+                        style="padding:0.5rem 0.85rem; border-radius:1.5rem; font-size:12px; font-weight:700; border:none; cursor:pointer; transition:all 0.15s; @(SelectedReason == reason ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 10px rgba(12,107,85,0.25);" : "background:#f5f2ff; color:#484552;")"
+                        @onclick="() => SelectedReason = reason">
+                    @reason
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Optional Custom Note -->
+    <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 24px rgba(24,25,48,0.06); display:flex; flex-direction:column; gap:0.625rem;">
+        <label style="font-size:12px; font-weight:800; color:#484552; text-transform:uppercase; letter-spacing:0.04em;">
+            Driver In-Cab Message (Optional)
+        </label>
+        <textarea @bind="CustomNote"
+                  rows="2"
+                  placeholder="e.g. Backed up on Highway 101 due to roadworks. Moving slowly."
+                  style="width:100%; padding:0.75rem 1rem; border-radius:0.875rem; border:1px solid #cac4d4; background:#f5f2ff; font-family:'Plus Jakarta Sans',sans-serif; font-size:0.9rem; color:#181930; resize:none; outline:none;"></textarea>
+    </div>
+
+    <!-- Target Broadcast Channels -->
+    <div class="clay-card" style="background:#ffffff; padding:1rem 1.25rem; border-radius:1.25rem; box-shadow:0 6px 16px rgba(24,25,48,0.05); display:flex; flex-direction:column; gap:0.75rem;">
+        <label style="display:flex; align-items:center; gap:0.625rem; cursor:pointer; font-size:13px; font-weight:700; color:#181930;">
+            <input type="checkbox" @bind="BroadcastToParents" style="width:1.25rem; height:1.25rem; accent-color:#0c6b55;" />
+            <span>Broadcast push notification to Parent Mobile App</span>
+        </label>
+
+        <label style="display:flex; align-items:center; gap:0.625rem; cursor:pointer; font-size:13px; font-weight:700; color:#181930;">
+            <input type="checkbox" @bind="BroadcastToDispatch" style="width:1.25rem; height:1.25rem; accent-color:#0c6b55;" />
+            <span>Alert School District Transportation Operations Dispatch</span>
+        </label>
+    </div>
+
+    <!-- Broadcast Action Button -->
+    <button class="clay-btn-oversized"
+            disabled="@IsBroadcasting"
+            style="min-height:3.75rem; background:#765b00; color:#ffffff; border:none; border-radius:1.25rem; padding:1rem; font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 8px 20px rgba(118,91,0,0.35); display:flex; align-items:center; justify-content:center; gap:0.5rem;"
+            @onclick="HandleBroadcastDelay">
+        @if (IsBroadcasting)
+        {
+            <span class="material-symbols-outlined" style="animation:spin 1s infinite; font-size:24px;">progress_activity</span>
+            <span>Broadcasting Notification...</span>
+        }
+        else
+        {
+            <span class="material-symbols-outlined" style="font-size:24px;">send</span>
+            <span>Broadcast +@SelectedMinutes Min Delay</span>
+        }
+    </button>
+</div>
+
+@code {
+    private readonly int[] DelayMinutesOptions = [5, 10, 15, 20];
+    private readonly string[] DelayReasons =
+    [
+        "Heavy Traffic",
+        "Road Construction",
+        "Weather Conditions",
+        "Accident on Route",
+        "Mechanical Delay"
+    ];
+
+    private int SelectedMinutes { get; set; } = 10;
+    private string SelectedReason { get; set; } = "Heavy Traffic";
+    private string CustomNote { get; set; } = "Congestion on main arterial road. Proceeding with caution.";
+    private bool BroadcastToParents { get; set; } = true;
+    private bool BroadcastToDispatch { get; set; } = true;
+    private bool IsBroadcasting { get; set; }
+
+    private async Task HandleBroadcastDelay()
+    {
+        IsBroadcasting = true;
+
+        try
+        {
+            var tripId = AuthState.ActiveTripId ?? Guid.Parse("33333333-3333-3333-3333-333333333333");
+            var req = new BroadcastDelayRequest(
+                SelectedMinutes,
+                SelectedReason,
+                CustomNote,
+                BroadcastToParents,
+                BroadcastToDispatch
+            );
+
+            await DriverApi.BroadcastDelayAsync(tripId, req);
+
+            NotificationService.ShowToast(
+                "Delay Alert Broadcasted",
+                $"+{SelectedMinutes} min delay broadcast to parents & dispatch.",
+                "Success"
+            );
+
+            Navigation.NavigateTo("/");
+        }
+        finally
+        {
+            IsBroadcasting = false;
+        }
+    }
+}
+

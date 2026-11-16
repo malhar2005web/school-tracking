@@ -1,0 +1,226 @@
+@page "/live-map"
+@inject NavigationManager Navigation
+@inject ParentAuthState AuthState
+@inject IParentApiClient ApiClient
+@inject ParentTrackingHubService TrackingHub
+@inject IParentNotificationService NotificationService
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div style="display:flex; flex-direction:column; width:100%; position:relative; user-select:none; max-width:440px; margin:0 auto;">
+    <!-- Top Floating Clay Route Status Card -->
+    <div style="padding:0.25rem 1rem 0.5rem 1rem;">
+        <div class="clay-card" style="padding:0.875rem 1rem; display:flex; flex-direction:column; gap:0.5rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:0.625rem;">
+                    <div style="width:2.5rem; height:2.5rem; border-radius:50%; background:#ffd66b; color:#241a00; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(233,194,89,0.35), inset 0 2px 2px rgba(255,255,255,0.7);">
+                        <span class="material-symbols-outlined" style="font-size:22px;">directions_bus</span>
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:0.375rem;">
+                            <span style="font-size:18px; font-weight:800; color:#181930;">@(_trip?.BusNumber ?? "Bus #14")</span>
+                            <span class="clay-badge clay-badge-secondary">On Route</span>
+                        </div>
+                        <p style="font-size:11px; color:#484552; margin:0;">@(_trip?.RouteName ?? "Morning Route A • Oakridge Bound")</p>
+                    </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                    <div style="display:flex; align-items:center; gap:0.25rem; color:#644bba; font-size:13px; font-weight:700; background:#e7e6ff; padding:0.25rem 0.625rem; border-radius:9999px;">
+                        <span class="material-symbols-outlined" style="font-size:15px;">speed</span>
+                        <span>@(_currentSpeed.ToString("0")) mph</span>
+                    </div>
+                    <span style="font-size:11px; color:#484552; display:flex; align-items:center; gap:2px; margin-top:2px;">
+                        <span class="material-symbols-outlined" style="font-size:13px; color:#cca741;">wb_sunny</span>
+                        Clear 68°F
+                    </span>
+                </div>
+            </div>
+
+            <!-- Segmented Trip Progress -->
+            <div style="display:flex; flex-direction:column; gap:0.25rem; padding-top:0.25rem;">
+                <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:700; color:#484552;">
+                    <span style="display:flex; align-items:center; gap:0.25rem;">
+                        <span style="width:6px; height:6px; border-radius:50%; background:#0c6b55; animation:pulse 2s infinite;"></span>
+                        Stop @(_trip?.CurrentStopIndex ?? 4) of @(_trip?.TotalStops ?? 6) reached
+                    </span>
+                    <span style="color:#644bba;">@(_trip?.CompletionPercentage ?? 65)% Completed</span>
+                </div>
+
+                <div class="clay-progress-track">
+                    <div class="clay-progress-fill-primary" style="width:@(_trip?.CompletionPercentage ?? 65)%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet Map Canvas Container -->
+    <div style="position:relative; width:100%; height:380px; margin:0.25rem 0;">
+        <div id="parent-map-container" style="width:100%; height:100%; background:#e7e6ff;"></div>
+
+        <!-- Live Street Floating Badge (Bottom Left) -->
+        <div style="position:absolute; bottom:1rem; left:1rem; z-index:1000; background:rgba(255,255,255,0.92); backdrop-filter:blur(8px); padding:0.375rem 0.75rem; border-radius:9999px; box-shadow:0 4px 12px rgba(24,25,48,0.1); display:flex; align-items:center; gap:0.375rem;">
+            <span class="material-symbols-outlined" style="font-size:16px; color:#644bba;">location_on</span>
+            <span style="font-size:11px; font-weight:700; color:#181930;">@(_trip?.CurrentStreetLocation ?? "Maple Crest Corner near Elm St")</span>
+        </div>
+
+        <!-- Quick Map Floating Action Controls (Top Right) -->
+        <div style="position:absolute; top:1rem; right:1rem; z-index:1000; display:flex; flex-direction:column; gap:0.5rem;">
+            <button aria-label="Re-center bus" style="width:2.5rem; height:2.5rem; border-radius:50%; background:#ffffff; border:none; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(24,25,48,0.12); cursor:pointer;" @onclick="RecenterMap">
+                <span class="material-symbols-outlined" style="font-size:20px; color:#644bba;">my_location</span>
+            </button>
+            <button aria-label="Toggle Route Layer" style="width:2.5rem; height:2.5rem; border-radius:50%; background:#ffffff; border:none; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(24,25,48,0.12); cursor:pointer;" @onclick="ToggleLayer">
+                <span class="material-symbols-outlined" style="font-size:20px; color:#484552;">layers</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Reassurance Drawer Sheet -->
+    <div style="padding:0.5rem 1rem 1rem 1rem; display:flex; flex-direction:column; gap:0.75rem;">
+        <div class="clay-card" style="padding:1rem; display:flex; flex-direction:column; gap:0.75rem;">
+            <!-- ETA Banner -->
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-size:11px; font-weight:700; color:#797584; text-transform:uppercase;">Next Pickup Destination</span>
+                    <h3 style="font-size:16px; font-weight:800; color:#181930; margin:2px 0 0 0;">@(_trip?.ApproachingStopName ?? "Sunset Meadow Way")</h3>
+                </div>
+                <div style="text-align:right;">
+                    <span class="clay-badge clay-badge-tertiary">In @(_trip?.MinutesRemaining ?? 8) mins</span>
+                    <div style="font-size:11px; color:#0c6b55; font-weight:700; margin-top:2px;">ETA @(_trip?.EstimatedArrivalTime ?? "08:05 AM")</div>
+                </div>
+            </div>
+
+            <!-- Safety Reassurance Checklist -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                <div class="clay-inset" style="padding:0.5rem 0.75rem; display:flex; align-items:center; gap:0.5rem;">
+                    <span class="material-symbols-outlined" style="font-size:18px; color:#0c6b55;">check_circle</span>
+                    <span style="font-size:11px; font-weight:700; color:#181930;">Seatbelt Verified</span>
+                </div>
+                <div class="clay-inset" style="padding:0.5rem 0.75rem; display:flex; align-items:center; gap:0.5rem;">
+                    <span class="material-symbols-outlined" style="font-size:18px; color:#0c6b55;">verified</span>
+                    <span style="font-size:11px; font-weight:700; color:#181930;">Speed Regulated</span>
+                </div>
+            </div>
+
+            <!-- Driver & Dispatch Action Buttons -->
+            <div style="display:flex; gap:0.5rem; margin-top:0.25rem;">
+                <button class="clay-btn clay-btn-primary" style="flex:1; height:2.75rem; font-size:12px;" @onclick="CallDriver">
+                    <span class="material-symbols-outlined" style="font-size:16px;">call</span>
+                    <span>Call Driver</span>
+                </button>
+                <button class="clay-btn clay-btn-surface" style="flex:1; height:2.75rem; font-size:12px;" @onclick="ShareJourney">
+                    <span class="material-symbols-outlined" style="font-size:16px;">share</span>
+                    <span>Share Trip</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ChildProfileModel? ActiveChild => AuthState.ActiveChild;
+    private ChildActiveTripModel? _trip;
+    private decimal _currentSpeed = 24m;
+    private bool _mapInitialized = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthState.OnChange += HandleAuthStateChanged;
+        TrackingHub.OnBusLocationUpdated += HandleBusLocationUpdated;
+
+        if (ActiveChild != null)
+        {
+            _trip = await ApiClient.GetChildActiveTripAsync(ActiveChild.StudentId);
+            if (_trip != null)
+            {
+                _currentSpeed = _trip.SpeedKmh;
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender || !_mapInitialized)
+        {
+            await Task.Delay(200); // Allow DOM container to mount
+            try
+            {
+                var lat = (double)(_trip?.CurrentLatitude ?? 37.7749m);
+                var lng = (double)(_trip?.CurrentLongitude ?? -122.4194m);
+                var label = _trip?.BusNumber ?? "Bus #14";
+
+                await JS.InvokeVoidAsync("parentMapInterop.initParentMap", "parent-map-container", lat, lng, label);
+
+                if (_trip?.Waypoints != null && _trip.Waypoints.Count > 0)
+                {
+                    await JS.InvokeVoidAsync("parentMapInterop.drawRoute", _trip.Waypoints);
+                }
+
+                _mapInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Parent map initialization error: {ex.Message}");
+            }
+        }
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            if (ActiveChild != null)
+            {
+                _trip = await ApiClient.GetChildActiveTripAsync(ActiveChild.StudentId);
+                StateHasChanged();
+            }
+        });
+    }
+
+    private void HandleBusLocationUpdated(LatestBusLocationDto loc)
+    {
+        InvokeAsync(async () =>
+        {
+            _currentSpeed = loc.SpeedKmh;
+            if (_mapInitialized)
+            {
+                try
+                {
+                    await JS.InvokeVoidAsync("parentMapInterop.updateBusPosition",
+                        (double)loc.Latitude, (double)loc.Longitude, (double)loc.SpeedKmh, (double)loc.Heading);
+                }
+                catch { }
+            }
+            StateHasChanged();
+        });
+    }
+
+    private async Task RecenterMap()
+    {
+        if (_mapInitialized)
+        {
+            await JS.InvokeVoidAsync("parentMapInterop.recenterMap");
+        }
+    }
+
+    private void ToggleLayer()
+    {
+        NotificationService.ShowToast("Map Layer", "OpenStreetMap CartoDB Safety Layer Active", "General");
+    }
+
+    private void CallDriver()
+    {
+        NotificationService.ShowToast("Dialing Driver", $"Calling Robert Jenkins at {_trip?.DriverPhone ?? "+1 555-329-8472"}...", "General");
+    }
+
+    private void ShareJourney()
+    {
+        NotificationService.ShowToast("Link Copied", "Secure live tracking link copied to clipboard for guardians.", "General");
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnChange -= HandleAuthStateChanged;
+        TrackingHub.OnBusLocationUpdated -= HandleBusLocationUpdated;
+    }
+}

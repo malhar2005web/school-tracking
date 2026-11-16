@@ -1,0 +1,26 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY SchoolTrack.slnx ./
+COPY src/SchoolTrack.Shared/SchoolTrack.Shared.csproj src/SchoolTrack.Shared/
+COPY src/SchoolTrack.Domain/SchoolTrack.Domain.csproj src/SchoolTrack.Domain/
+COPY src/SchoolTrack.Application/SchoolTrack.Application.csproj src/SchoolTrack.Application/
+COPY src/SchoolTrack.Infrastructure/SchoolTrack.Infrastructure.csproj src/SchoolTrack.Infrastructure/
+COPY src/SchoolTrack.DeviceGateway/SchoolTrack.DeviceGateway.csproj src/SchoolTrack.DeviceGateway/
+COPY src/SchoolTrack.Api/SchoolTrack.Api.csproj src/SchoolTrack.Api/
+
+RUN dotnet restore src/SchoolTrack.Api/SchoolTrack.Api.csproj
+
+COPY src/ src/
+RUN dotnet publish src/SchoolTrack.Api/SchoolTrack.Api.csproj -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+EXPOSE 8080
+
+RUN addgroup --system --gid 1001 appgroup && adduser --system --uid 1001 --ingroup appgroup appuser
+COPY --from=build /app/publish .
+USER appuser
+
+ENTRYPOINT ["dotnet", "SchoolTrack.Api.dll"]
+

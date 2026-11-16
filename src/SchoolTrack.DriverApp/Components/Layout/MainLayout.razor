@@ -1,0 +1,244 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject DriverAuthState AuthState
+@inject IDriverApiClient DriverApi
+@inject IDriverNotificationService NotificationService
+@inject DriverTrackingHubService TrackingHub
+@implements IDisposable
+
+@if (IsLoginPage)
+{
+    @Body
+}
+else
+{
+    <div class="driver-console-container" style="min-height:100vh; background:var(--color-surface); display:flex; flex-direction:column; position:relative;">
+        <!-- Top In-Cab HUD Bar -->
+        <header class="driver-hud-header" style="position:fixed; top:0; left:0; right:0; z-index:100; background:rgba(251,248,255,0.94); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border-bottom:1px solid rgba(121,117,132,0.15); box-shadow:0 6px 20px rgba(24,25,48,0.06); padding:0.5rem 1rem; padding-top:env(safe-area-inset-top, 8px);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+                <!-- Bus & Route Identifier -->
+                <div style="display:flex; align-items:center; gap:0.625rem; min-width:0;">
+                    <div style="width:2.5rem; height:2.5rem; border-radius:0.75rem; background:#0c6b55; color:#ffffff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(12,107,85,0.35); flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:24px;">directions_bus</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; min-width:0;">
+                        <div style="display:flex; align-items:center; gap:0.375rem;">
+                            <span style="font-weight:800; font-size:15px; color:#181930; letter-spacing:-0.02em;">@(AuthState.CurrentSession?.BusNumber ?? "Bus #14")</span>
+                            <span class="clay-badge-mint" style="font-size:10px; padding:0.125rem 0.375rem; text-transform:uppercase; font-weight:800;">
+                                @(AuthState.CurrentSession?.ShiftStatus ?? "InTransit")
+                            </span>
+                        </div>
+                        <span style="font-size:11px; color:#484552; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            @(AuthState.CurrentSession?.RouteName ?? "Morning Route 14-AM")
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Hardware Status Indicators & SOS -->
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <!-- Hardware telemetry pills -->
+                    <div class="d-none d-md-flex align-items-center gap-2">
+                        <div class="clay-status-pill" style="display:flex; align-items:center; gap:0.25rem; background:#e7deff; color:#310b87; padding:0.25rem 0.5rem; border-radius:1rem; font-size:10px; font-weight:700;">
+                            <span style="width:6px; height:6px; border-radius:50%; background:#0c6b55; display:inline-block;"></span>
+                            <span>GPS Active</span>
+                        </div>
+                        <div class="clay-status-pill" style="display:flex; align-items:center; gap:0.25rem; background:#a1f3d7; color:#18715b; padding:0.25rem 0.5rem; border-radius:1rem; font-size:10px; font-weight:700;">
+                            <span style="width:6px; height:6px; border-radius:50%; background:#0c6b55; display:inline-block;"></span>
+                            <span>RFID #01</span>
+                        </div>
+                    </div>
+
+                    <!-- Big Red In-Cab Emergency SOS Button -->
+                    <button class="clay-btn-sos" style="display:flex; align-items:center; gap:0.375rem; background:#ba1a1a; color:#ffffff; border:none; padding:0.45rem 0.85rem; border-radius:2rem; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 6px 16px rgba(186,26,26,0.4); text-transform:uppercase; letter-spacing:0.04em;" @onclick="OpenSosModal">
+                        <span class="material-symbols-outlined" style="font-size:18px;">sos</span>
+                        <span>Emergency</span>
+                    </button>
+
+                    <!-- Driver Profile Avatar -->
+                    <button style="border:none; background:transparent; padding:0; cursor:pointer;" @onclick='() => Navigation.NavigateTo("/safety")'>
+                        <img src="@(AuthState.CurrentSession?.AvatarUrl ?? "https://lh3.googleusercontent.com/aida-public/AB6AXuAFrPPwe8Q228TD2qqumI7mbdRj2huhzXJ4IIeNLkiVyNwREAD3fXB8WR9UWI-f8oqn-DfnM14NsLr_fA8gCMOJ7DyskjIurGpVIpCCrZMohsoTpDMxaSHZuKEm3D4xBsoHZz1e8tkLGYnm8lCsOnMbHDKIngoN98ofTTAb1SYpTPusgVlhuXGmx9FQ0fUtpb6TsaDZGIjALJusVxxi2cofTOGO4YO2J4TES6BjmVM")"
+                             alt="Driver Profile"
+                             style="width:2.25rem; height:2.25rem; border-radius:50%; object-fit:cover; border:2px solid #ffffff; box-shadow:0 4px 10px rgba(0,0,0,0.1);" />
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Floating In-Cab Real-Time Toast Container -->
+        @if (NotificationService.ActiveToasts.Count > 0)
+        {
+            <div class="floating-toast-container" style="position:fixed; top:4.25rem; left:1rem; right:1rem; z-index:200; display:flex; flex-direction:column; gap:0.5rem; pointer-events:none; max-width:32rem; margin:0 auto;">
+                @foreach (var toast in NotificationService.ActiveToasts)
+                {
+                    <div class="clay-card floating-toast-pill" style="pointer-events:auto; display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-radius:1rem; background:rgba(255,255,255,0.96); backdrop-filter:blur(16px); box-shadow:0 12px 28px rgba(24,25,48,0.12); border-left:4px solid @(toast.Type == "Error" ? "#ba1a1a" : (toast.Type == "Success" ? "#0c6b55" : "#644bba"));">
+                        <div style="display:flex; align-items:center; gap:0.625rem; min-width:0;">
+                            <div style="width:2rem; height:2rem; border-radius:50%; background:@(toast.Type == "Error" ? "#ffdad6" : (toast.Type == "Success" ? "#a1f3d7" : "#e7deff")); color:@(toast.Type == "Error" ? "#ba1a1a" : (toast.Type == "Success" ? "#0c6b55" : "#644bba")); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <span class="material-symbols-outlined" style="font-size:18px;">
+                                    @(toast.Type == "Error" ? "warning" : (toast.Type == "Success" ? "check_circle" : "info"))
+                                </span>
+                            </div>
+                            <div style="display:flex; flex-direction:column; min-width:0;">
+                                <span style="font-size:12px; font-weight:800; color:#181930;">@toast.Title</span>
+                                <span style="font-size:11px; color:#484552; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@toast.Message</span>
+                            </div>
+                        </div>
+                        <button style="background:none; border:none; color:#797584; cursor:pointer;" @onclick="() => NotificationService.DismissToast(toast.Id)">
+                            <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Main Body -->
+        <main style="flex:1; width:100%; min-height:100vh; padding-top:4.5rem; padding-bottom:6.5rem; background:#fbf8ff;">
+            @Body
+        </main>
+
+        <!-- In-Cab Tactile 4-Tab Bottom Navigation Bar -->
+        <nav class="driver-bottom-nav" style="position:fixed; bottom:0; left:0; right:0; z-index:100; padding:0.5rem 1rem; padding-bottom:env(safe-area-inset-bottom, 12px); pointer-events:none;">
+            <div class="clay-nav" style="pointer-events:auto; margin:0 auto; max-width:32rem; background:rgba(255,255,255,0.96); backdrop-filter:blur(18px); border-radius:3rem; padding:0.4rem; display:flex; align-items:center; justify-content:space-around; box-shadow:0 12px 32px rgba(24,25,48,0.12), inset 0 2px 2px rgba(255,255,255,0.9);">
+                <!-- 1. Route Navigation -->
+                <a class="driver-nav-tab @(IsActive("/") || IsActive("/navigation") ? "active" : "")"
+                   href="/"
+                   style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.55rem 1.1rem; border-radius:2rem; font-size:11px; font-weight:800; text-decoration:none; min-width:68px; transition:all 0.2s; @(IsActive("/") || IsActive("/navigation") ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 12px rgba(12,107,85,0.3);" : "color:#484552;")">
+                    <span class="material-symbols-outlined" style="font-size:24px;">navigation</span>
+                    <span>Route</span>
+                </a>
+
+                <!-- 2. Student Roster -->
+                <a class="driver-nav-tab @(IsActive("/roster") ? "active" : "")"
+                   href="/roster"
+                   style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.55rem 1.1rem; border-radius:2rem; font-size:11px; font-weight:800; text-decoration:none; min-width:68px; transition:all 0.2s; @(IsActive("/roster") ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 12px rgba(12,107,85,0.3);" : "color:#484552;")">
+                    <span class="material-symbols-outlined" style="font-size:24px;">badge</span>
+                    <span>Roster</span>
+                </a>
+
+                <!-- 3. Broadcast Delay -->
+                <a class="driver-nav-tab @(IsActive("/broadcast") ? "active" : "")"
+                   href="/broadcast"
+                   style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.55rem 1.1rem; border-radius:2rem; font-size:11px; font-weight:800; text-decoration:none; min-width:68px; transition:all 0.2s; @(IsActive("/broadcast") ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 12px rgba(12,107,85,0.3);" : "color:#484552;")">
+                    <span class="material-symbols-outlined" style="font-size:24px;">campaign</span>
+                    <span>Delay</span>
+                </a>
+
+                <!-- 4. Safety & Shift -->
+                <a class="driver-nav-tab @(IsActive("/safety") ? "active" : "")"
+                   href="/safety"
+                   style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.55rem 1.1rem; border-radius:2rem; font-size:11px; font-weight:800; text-decoration:none; min-width:68px; transition:all 0.2s; @(IsActive("/safety") ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 12px rgba(12,107,85,0.3);" : "color:#484552;")">
+                    <span class="material-symbols-outlined" style="font-size:24px;">health_and_safety</span>
+                    <span>Safety</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Emergency SOS Confirmation Modal -->
+        @if (ShowSosModal)
+        {
+            <div class="sos-modal-overlay" style="position:fixed; inset:0; z-index:3000; background:rgba(24,25,48,0.75); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:1.25rem;">
+                <div class="clay-card" style="background:#ffffff; max-width:28rem; width:100%; border-radius:1.5rem; padding:1.75rem; text-align:center; box-shadow:0 24px 48px rgba(0,0,0,0.3); border:2px solid #ba1a1a;">
+                    <div style="width:4.5rem; height:4.5rem; border-radius:50%; background:#ffdad6; color:#ba1a1a; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem auto;">
+                        <span class="material-symbols-outlined" style="font-size:40px;">warning</span>
+                    </div>
+
+                    <h2 style="font-size:1.375rem; font-weight:800; color:#ba1a1a; margin-bottom:0.5rem; letter-spacing:-0.02em;">
+                        CONFIRM EMERGENCY SOS
+                    </h2>
+                    <p style="font-size:0.925rem; color:#484552; line-height:1.5; margin-bottom:1.5rem;">
+                        This will broadcast an immediate high-priority emergency distress signal from <strong>@(AuthState.CurrentSession?.BusNumber ?? "Bus #14")</strong> with your current GPS coordinates to School District Dispatch, Emergency Responders, and Parent App alerts.
+                    </p>
+
+                    <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                        <button class="clay-button-solid" style="background:#ba1a1a; color:#ffffff; border:none; padding:1rem; border-radius:1rem; font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 6px 16px rgba(186,26,26,0.35); text-transform:uppercase;" @onclick="ConfirmSosDispatch">
+                            CONFIRM SOS DISPATCH
+                        </button>
+                        <button class="clay-button-secondary" style="background:#eeecff; color:#181930; border:none; padding:0.875rem; border-radius:1rem; font-weight:700; font-size:0.925rem; cursor:pointer;" @onclick="CloseSosModal">
+                            Cancel (False Alarm)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private bool ShowSosModal { get; set; }
+
+    private bool IsLoginPage =>
+        Navigation.Uri.Contains("/login", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsActive(string href)
+    {
+        var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
+        if (string.IsNullOrEmpty(relative) && (href == "/" || href == "/navigation")) return true;
+        return string.Equals("/" + relative, href, StringComparison.OrdinalIgnoreCase);
+    }
+
+    protected override void OnInitialized()
+    {
+        AuthState.OnChange += HandleStateChanged;
+        NotificationService.OnToastReceived += HandleToast;
+        TrackingHub.OnStudentBoardedViaRfid += HandleRfidTap;
+    }
+
+    private void HandleStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleToast(DriverToastModel toast)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleRfidTap(BoardingNotificationDto notif)
+    {
+        NotificationService.ShowToast(
+            "RFID Card Verified",
+            $"{notif.StudentName} scanned card at door reader. Status: Boarded.",
+            "Success"
+        );
+    }
+
+    private void OpenSosModal()
+    {
+        ShowSosModal = true;
+    }
+
+    private void CloseSosModal()
+    {
+        ShowSosModal = false;
+    }
+
+    private async Task ConfirmSosDispatch()
+    {
+        ShowSosModal = false;
+        var session = AuthState.CurrentSession;
+        if (session != null)
+        {
+            var req = new DriverSosAlertRequest(
+                session.BusId,
+                session.BusNumber,
+                AuthState.ActiveTripId ?? Guid.Empty,
+                37.7735m,
+                -122.4205m,
+                "In-cab manual emergency distress triggered by driver"
+            );
+
+            await DriverApi.TriggerEmergencySosAsync(req);
+            NotificationService.ShowToast(
+                "🚨 EMERGENCY TRANSMITTED",
+                "Distress signal delivered to Dispatch & Emergency Services.",
+                "Error"
+            );
+        }
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnChange -= HandleStateChanged;
+        NotificationService.OnToastReceived -= HandleToast;
+        TrackingHub.OnStudentBoardedViaRfid -= HandleRfidTap;
+    }
+}

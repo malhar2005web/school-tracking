@@ -1,0 +1,247 @@
+@page "/"
+@page "/navigation"
+@layout MainLayout
+@inject IDriverApiClient DriverApi
+@inject DriverAuthState AuthState
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject IDriverNotificationService NotificationService
+@inject DriverTrackingHubService TrackingHub
+@implements IDisposable
+
+<div class="driver-route-view" style="max-width:32rem; margin:0 auto; padding:0 1rem; display:flex; flex-direction:column; gap:1rem;">
+    <!-- Active Turn-by-Turn Instruction Clay Card -->
+    <div class="clay-card" style="background:#644bba; color:#ffffff; padding:1.25rem; border-radius:1.5rem; display:flex; align-items:center; justify-content:space-between; box-shadow:0 12px 24px rgba(100,75,186,0.35);">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <div style="width:3.5rem; height:3.5rem; border-radius:1rem; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <span class="material-symbols-outlined" style="font-size:36px; color:#ffffff;">turn_left</span>
+            </div>
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-size:11px; font-weight:800; color:#ffd66b; text-transform:uppercase; letter-spacing:0.05em;">
+                    @(ActiveRoute?.DistanceToNextTurn ?? "In 300 Feet")
+                </span>
+                <span style="font-size:18px; font-weight:800; line-height:1.2; letter-spacing:-0.02em;">
+                    @(ActiveRoute?.NextTurnInstruction ?? "Turn Left on Evergreen Blvd")
+                </span>
+                <span style="font-size:11px; color:#e7deff; margin-top:2px;">
+                    Towards: @(ActiveRoute?.NextStopName ?? "Oakridge & 5th Ave")
+                </span>
+            </div>
+        </div>
+
+        <!-- In-Cab Speed HUD -->
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.25); padding:0.5rem 0.75rem; border-radius:1rem; min-width:4.5rem; flex-shrink:0;">
+            <div style="font-size:24px; font-weight:900; line-height:1; color:#ffffff;">
+                @CurrentSpeedKmh
+            </div>
+            <span style="font-size:9px; font-weight:700; color:#e7deff; text-transform:uppercase;">MPH</span>
+            <div style="margin-top:3px; background:#ffd66b; color:#241a00; font-size:9px; font-weight:900; padding:1px 4px; border-radius:4px;">
+                LIMIT 25
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet GPS Navigation Map Container -->
+    <div class="clay-card" style="padding:0.375rem; border-radius:1.5rem; overflow:hidden; position:relative; box-shadow:0 8px 20px rgba(24,25,48,0.08);">
+        <div id="driverMap" style="height:260px; width:100%; border-radius:1.25rem;"></div>
+
+        <!-- Floating Map Controls Overlay -->
+        <div style="position:absolute; top:1rem; right:1rem; z-index:400; display:flex; flex-direction:column; gap:0.5rem;">
+            <button @onclick="RecenterBus"
+                    title="Center on Bus"
+                    style="width:2.5rem; height:2.5rem; border-radius:50%; background:#ffffff; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; color:#0c6b55; cursor:pointer;">
+                <span class="material-symbols-outlined" style="font-size:20px;">my_location</span>
+            </button>
+        </div>
+
+        <div style="position:absolute; bottom:0.875rem; left:0.875rem; z-index:400; background:rgba(255,255,255,0.92); backdrop-filter:blur(8px); padding:0.25rem 0.625rem; border-radius:1rem; font-size:11px; font-weight:700; color:#181930; display:flex; align-items:center; gap:0.375rem;">
+            <span style="width:8px; height:8px; border-radius:50%; background:#0c6b55; display:inline-block;"></span>
+            <span>GPS Locked • Accuracy 0.8m</span>
+        </div>
+    </div>
+
+    <!-- Next Stop Information Card -->
+    <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 20px rgba(24,25,48,0.06); display:flex; flex-direction:column; gap:0.875rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span class="clay-badge-mint" style="padding:0.2rem 0.5rem; font-size:11px; font-weight:800;">
+                    NEXT STOP 4 OF 8
+                </span>
+                <span style="font-size:11px; color:#797584; font-weight:600;">ETA: 07:42 AM</span>
+            </div>
+            <span style="font-size:11px; font-weight:800; color:#0c6b55; display:flex; align-items:center; gap:0.25rem;">
+                <span class="material-symbols-outlined" style="font-size:14px;">verified</span>
+                Curbside Safe Zone
+            </span>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; flex-direction:column;">
+                <h2 style="font-size:18px; font-weight:800; color:#181930; margin:0; letter-spacing:-0.02em;">
+                    @(CurrentStop?.StopName ?? "Oakridge & 5th Ave")
+                </h2>
+                <span style="font-size:12px; color:#484552; margin-top:2px;">
+                    3 Students assigned to this stop (2 Boarded, 1 Pending)
+                </span>
+            </div>
+
+            <!-- Student Initials Avatars Cluster -->
+            <div style="display:flex; align-items:center; margin-left:0.5rem;" @onclick='() => Navigation.NavigateTo("/roster")'>
+                <div style="width:2rem; height:2rem; border-radius:50%; background:#a1f3d7; color:#18715b; font-weight:800; font-size:11px; display:flex; align-items:center; justify-content:center; border:2px solid #ffffff;">
+                    LM
+                </div>
+                <div style="width:2rem; height:2rem; border-radius:50%; background:#a1f3d7; color:#18715b; font-weight:800; font-size:11px; display:flex; align-items:center; justify-content:center; border:2px solid #ffffff; margin-left:-0.5rem;">
+                    SC
+                </div>
+                <div style="width:2rem; height:2rem; border-radius:50%; background:#ffd66b; color:#241a00; font-weight:800; font-size:11px; display:flex; align-items:center; justify-content:center; border:2px solid #ffffff; margin-left:-0.5rem;">
+                    LS
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Passenger Counters Bento Row -->
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.75rem;">
+        <div class="clay-card" style="background:#ffffff; padding:0.875rem 0.5rem; border-radius:1.25rem; text-align:center; box-shadow:0 6px 16px rgba(24,25,48,0.05);">
+            <div style="font-size:1.5rem; font-weight:900; color:#0c6b55; line-height:1;">
+                @(ActiveRoute?.OnboardCount ?? 24)
+            </div>
+            <div style="font-size:10px; font-weight:800; color:#484552; text-transform:uppercase; margin-top:4px;">
+                Onboard Safe
+            </div>
+        </div>
+
+        <div class="clay-card" style="background:#ffffff; padding:0.875rem 0.5rem; border-radius:1.25rem; text-align:center; box-shadow:0 6px 16px rgba(24,25,48,0.05);">
+            <div style="font-size:1.5rem; font-weight:900; color:#765b00; line-height:1;">
+                @(ActiveRoute?.ToPickUpCount ?? 3)
+            </div>
+            <div style="font-size:10px; font-weight:800; color:#484552; text-transform:uppercase; margin-top:4px;">
+                To Pick Up
+            </div>
+        </div>
+
+        <div class="clay-card" style="background:#ffffff; padding:0.875rem 0.5rem; border-radius:1.25rem; text-align:center; box-shadow:0 6px 16px rgba(24,25,48,0.05);">
+            <div style="font-size:1.5rem; font-weight:900; color:#644bba; line-height:1;">
+                @(ActiveRoute?.SchoolTargetCount ?? 27)
+            </div>
+            <div style="font-size:10px; font-weight:800; color:#484552; text-transform:uppercase; margin-top:4px;">
+                Total Target
+            </div>
+        </div>
+    </div>
+
+    <!-- Oversized Tactile In-Cab Action Button -->
+    <button class="clay-btn-oversized"
+            style="min-height:4rem; background:#0c6b55; color:#ffffff; border:none; border-radius:1.25rem; padding:1rem; font-weight:800; font-size:1.125rem; cursor:pointer; box-shadow:0 10px 24px rgba(12,107,85,0.4), inset 0 2px 2px rgba(255,255,255,0.5); display:flex; align-items:center; justify-content:center; gap:0.75rem;"
+            @onclick="HandleArrivedAtStop">
+        <span class="material-symbols-outlined" style="font-size:28px;">check_circle</span>
+        <div style="display:flex; flex-direction:column; text-align:left;">
+            <span>ARRIVED AT STOP 4</span>
+            <span style="font-size:11px; font-weight:600; opacity:0.85;">Chime Door Scanner • Open RFID Verification</span>
+        </div>
+    </button>
+
+    <!-- Split In-Cab Utility Actions -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <button @onclick='() => Navigation.NavigateTo("/broadcast")'
+                style="background:#f5f2ff; border:1px solid #ccbeff; border-radius:1rem; padding:0.875rem; color:#310b87; font-weight:700; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; box-shadow:0 4px 10px rgba(0,0,0,0.04);">
+            <span class="material-symbols-outlined" style="font-size:20px; color:#644bba;">notification_important</span>
+            <span>Broadcast Delay (+5/+10m)</span>
+        </button>
+
+        <button @onclick="SimulateRadioBase"
+                style="background:#f5f2ff; border:1px solid #ccbeff; border-radius:1rem; padding:0.875rem; color:#310b87; font-weight:700; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; box-shadow:0 4px 10px rgba(0,0,0,0.04);">
+            <span class="material-symbols-outlined" style="font-size:20px; color:#0c6b55;">headset_mic</span>
+            <span>Radio Dispatch Base</span>
+        </button>
+    </div>
+</div>
+
+@code {
+    private DriverActiveRouteModel? ActiveRoute { get; set; }
+    private DriverActiveStopModel? CurrentStop =>
+        ActiveRoute?.Stops.FirstOrDefault(s => s.IsActiveCurrent) ?? ActiveRoute?.Stops.ElementAtOrDefault(3);
+    private int CurrentSpeedKmh { get; set; } = 22;
+    private bool _mapInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var busId = AuthState.CurrentSession?.BusId ?? Guid.Parse("22222222-2222-2222-2222-222222222222");
+        ActiveRoute = await DriverApi.GetActiveRouteAsync(busId);
+        CurrentSpeedKmh = (int)(ActiveRoute?.SpeedKmh ?? 22m);
+
+        TrackingHub.OnStudentBoardedViaRfid += HandleRfidEvent;
+        _ = TrackingHub.StartAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_mapInitialized)
+        {
+            _mapInitialized = true;
+            try
+            {
+                var busLat = 37.7735;
+                var busLng = -122.4205;
+                var busName = AuthState.CurrentSession?.BusNumber ?? "Bus #14";
+
+                await JSRuntime.InvokeVoidAsync("driverMapInterop.initDriverMap", "driverMap", busLat, busLng, busName);
+
+                if (ActiveRoute?.Stops != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("driverMapInterop.renderRouteStops", ActiveRoute.Stops);
+                }
+            }
+            catch (Exception)
+            {
+                // In headless tests or unsupported platforms, suppress JS interop
+            }
+        }
+    }
+
+    private async Task RecenterBus()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("driverMapInterop.recenterBus");
+        }
+        catch { }
+    }
+
+    private void HandleArrivedAtStop()
+    {
+        NotificationService.ShowToast(
+            "Arrived at Stop 4",
+            "Door RFID Reader active. Ready for passenger taps.",
+            "Success"
+        );
+        Navigation.NavigateTo("/roster");
+    }
+
+    private void SimulateRadioBase()
+    {
+        NotificationService.ShowToast(
+            "Radio Channel Open",
+            "Transmitting to Central Dispatch. Mic live for 10s.",
+            "Info"
+        );
+    }
+
+    private void HandleRfidEvent(BoardingNotificationDto notif)
+    {
+        if (ActiveRoute != null)
+        {
+            ActiveRoute = ActiveRoute with
+            {
+                OnboardCount = ActiveRoute.OnboardCount + 1,
+                ToPickUpCount = Math.Max(0, ActiveRoute.ToPickUpCount - 1)
+            };
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        TrackingHub.OnStudentBoardedViaRfid -= HandleRfidEvent;
+    }
+}

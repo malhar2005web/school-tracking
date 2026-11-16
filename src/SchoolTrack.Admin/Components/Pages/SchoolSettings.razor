@@ -1,0 +1,111 @@
+@page "/settings"
+@layout Layout.MainLayout
+@inject IApiClient ApiClient
+@inject AdminAuthStateProvider AuthState
+
+<PageTitle>School Settings — SchoolTrack</PageTitle>
+
+<div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 54rem;">
+    <!-- Title Bar -->
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); margin-bottom: 0.25rem;">
+            <span>District Configuration</span>
+            <span class="material-symbols-outlined" style="font-size: 0.875rem;">chevron_right</span>
+            <span style="color: var(--color-primary);">School Profile & Hardware Policies</span>
+        </div>
+        <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-on-surface); margin: 0; letter-spacing: -0.02em;">District & System Settings</h1>
+        <p style="font-size: 0.875rem; color: var(--color-on-surface-variant); margin: 0.25rem 0 0 0;">Configure school jurisdiction metadata, telemetry intervals, and RFID safety alert thresholds</p>
+    </div>
+
+    @if (_isSaved)
+    {
+        <div class="clay-inset" style="padding: 1rem 1.25rem; border-left: 4px solid var(--color-secondary); display: flex; align-items: center; gap: 0.75rem; color: var(--color-secondary); font-weight: 700;">
+            <span class="material-symbols-outlined" style="font-size: 1.5rem;">check_circle</span>
+            <span>School parameters and safety telemetry policies successfully updated!</span>
+        </div>
+    }
+
+    <!-- School Profile Card -->
+    <div class="clay-card" style="padding: 1.75rem; background: #ffffff;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-surface-container-high); padding-bottom: 0.75rem;">
+            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 1.5rem;">apartment</span>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--color-on-surface); margin: 0;">School Jurisdiction Information</h2>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">School District Name</label>
+                <input class="clay-input" @bind="_schoolName" />
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Jurisdiction Code</label>
+                <input class="clay-input" @bind="_schoolCode" />
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Administrative Contact Email</label>
+                <input class="clay-input" @bind="_contactEmail" />
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">District Emergency Phone</label>
+                <input class="clay-input" @bind="_contactPhone" />
+            </div>
+            <div style="grid-column: span 2;">
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Campus Address</label>
+                <input class="clay-input" @bind="_address" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Hardware & Telemetry Policies Card -->
+    <div class="clay-card" style="padding: 1.75rem; background: #ffffff;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-surface-container-high); padding-bottom: 0.75rem;">
+            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 1.5rem;">tune</span>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--color-on-surface); margin: 0;">Telemetry & Boarding Safety Policies</h2>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Default Geofence Radius (Meters)</label>
+                <input class="clay-input" type="number" @bind="_geofenceRadius" />
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Device Offline Threshold (Seconds)</label>
+                <input class="clay-input" type="number" @bind="_deviceOfflineThreshold" />
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Duplicate RFID Debounce Window (Seconds)</label>
+                <input class="clay-input" type="number" @bind="_duplicateWindow" />
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">GPS Historical Retention (Days)</label>
+                <input class="clay-input" type="number" @bind="_retentionDays" />
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+            <button class="clay-btn clay-btn-primary" type="button" @onclick="SaveSettings">
+                <span class="material-symbols-outlined" style="font-size: 1.125rem;">save</span>
+                <span>Save All Settings</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _schoolName = "Oakridge Academy District #4";
+    private string _schoolCode = "OAK-04";
+    private string _contactEmail = "admin@oakridge.edu";
+    private string _contactPhone = "+1 (555) 019-2834";
+    private string _address = "742 Evergreen Terrace, Oakridge, CA";
+    private int _geofenceRadius = 50;
+    private int _deviceOfflineThreshold = 90;
+    private int _duplicateWindow = 60;
+    private int _retentionDays = 90;
+    private bool _isSaved = false;
+
+    private void SaveSettings()
+    {
+        _isSaved = true;
+    }
+}
+

@@ -1,0 +1,243 @@
+@page "/roster"
+@layout MainLayout
+@inject IDriverApiClient DriverApi
+@inject DriverAuthState AuthState
+@inject IDriverNotificationService NotificationService
+@inject DriverTrackingHubService TrackingHub
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<div class="driver-roster-view" style="max-width:32rem; margin:0 auto; padding:0 1rem; display:flex; flex-direction:column; gap:1rem;">
+    <!-- Hardware RFID Reader Status Hero Banner -->
+    <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 24px rgba(24,25,48,0.06); display:flex; flex-direction:column; gap:0.875rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.625rem;">
+                <div style="width:2.5rem; height:2.5rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center;">
+                    <span class="material-symbols-outlined" style="font-size:22px;">contactless</span>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-size:14px; font-weight:800; color:#181930;">Door Reader #01 Online</span>
+                    <span style="font-size:11px; color:#484552;">Ethernet Active • Subscribed to /hubs/tracking</span>
+                </div>
+            </div>
+
+            <div style="text-align:right;">
+                <span style="font-size:18px; font-weight:900; color:#0c6b55;">@BoardedCount / @TotalCount</span>
+                <span style="font-size:10px; font-weight:700; color:#797584; display:block;">BOARDED</span>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div style="width:100%; height:8px; background:#f5f2ff; border-radius:4px; overflow:hidden;">
+            <div style="width:@(TotalCount > 0 ? (BoardedCount * 100 / TotalCount) : 0)%; height:100%; background:#0c6b55; border-radius:4px; transition:width 0.3s ease;"></div>
+        </div>
+    </div>
+
+    <!-- Live Verified Tap Hero Card (Shows Last RFID Scan) -->
+    @if (LastScannedStudent != null)
+    {
+        <div class="clay-card" style="background:#a1f3d7; border:2px solid #85d6bb; padding:1rem 1.25rem; border-radius:1.25rem; display:flex; align-items:center; justify-content:space-between; box-shadow:0 6px 16px rgba(12,107,85,0.15);">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <img src="@LastScannedStudent.AvatarUrl"
+                     alt="@LastScannedStudent.FullName"
+                     style="width:2.75rem; height:2.75rem; border-radius:50%; object-fit:cover; border:2px solid #ffffff;" />
+                <div style="display:flex; flex-direction:column;">
+                    <div style="display:flex; align-items:center; gap:0.375rem;">
+                        <span class="material-symbols-outlined" style="font-size:16px; color:#0c6b55;">verified</span>
+                        <span style="font-size:14px; font-weight:800; color:#18715b;">@LastScannedStudent.FullName</span>
+                    </div>
+                    <span style="font-size:11px; color:#18715b;">
+                        @LastScannedStudent.Grade • @LastScannedStudent.SeatNumber • Scanned Just Now
+                    </span>
+                </div>
+            </div>
+
+            <span class="clay-badge-mint" style="background:#ffffff; color:#0c6b55; font-size:11px; font-weight:800; padding:0.25rem 0.625rem;">
+                VERIFIED
+            </span>
+        </div>
+    }
+
+    <!-- Filter Tabs Pill Row -->
+    <div style="display:flex; align-items:center; gap:0.5rem; overflow-x:auto; padding-bottom:0.25rem;">
+        <button class="clay-filter-tab @(SelectedFilter == "Stop4" ? "active" : "")"
+                style="padding:0.45rem 0.85rem; border-radius:1rem; font-size:11px; font-weight:800; border:none; cursor:pointer; white-space:nowrap; @(SelectedFilter == "Stop4" ? "background:#644bba; color:#ffffff;" : "background:#ffffff; color:#484552;")"
+                @onclick='() => SelectedFilter = "Stop4"'>
+            Current Stop (Stop 4)
+        </button>
+
+        <button class="clay-filter-tab @(SelectedFilter == "All" ? "active" : "")"
+                style="padding:0.45rem 0.85rem; border-radius:1rem; font-size:11px; font-weight:800; border:none; cursor:pointer; white-space:nowrap; @(SelectedFilter == "All" ? "background:#644bba; color:#ffffff;" : "background:#ffffff; color:#484552;")"
+                @onclick='() => SelectedFilter = "All"'>
+            All Students (@Students.Count)
+        </button>
+
+        <button class="clay-filter-tab @(SelectedFilter == "Boarded" ? "active" : "")"
+                style="padding:0.45rem 0.85rem; border-radius:1rem; font-size:11px; font-weight:800; border:none; cursor:pointer; white-space:nowrap; @(SelectedFilter == "Boarded" ? "background:#644bba; color:#ffffff;" : "background:#ffffff; color:#484552;")"
+                @onclick='() => SelectedFilter = "Boarded"'>
+            Boarded (@BoardedCount)
+        </button>
+
+        <button class="clay-filter-tab @(SelectedFilter == "Pending" ? "active" : "")"
+                style="padding:0.45rem 0.85rem; border-radius:1rem; font-size:11px; font-weight:800; border:none; cursor:pointer; white-space:nowrap; @(SelectedFilter == "Pending" ? "background:#644bba; color:#ffffff;" : "background:#ffffff; color:#484552;")"
+                @onclick='() => SelectedFilter = "Pending"'>
+            Pending / Absent
+        </button>
+    </div>
+
+    <!-- Student Cards List -->
+    <div style="display:flex; flex-direction:column; gap:0.75rem;">
+        @foreach (var student in FilteredStudents)
+        {
+            <div class="clay-card" style="background:#ffffff; padding:1rem; border-radius:1.25rem; box-shadow:0 6px 16px rgba(24,25,48,0.05); display:flex; flex-direction:column; gap:0.75rem;">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <img src="@student.AvatarUrl"
+                             alt="@student.FullName"
+                             style="width:2.5rem; height:2.5rem; border-radius:50%; object-fit:cover;" />
+                        <div style="display:flex; flex-direction:column;">
+                            <span style="font-size:14px; font-weight:800; color:#181930;">@student.FullName</span>
+                            <span style="font-size:11px; color:#484552;">
+                                @student.Grade • @student.SeatNumber • @student.StopName
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Status Badges -->
+                    <div>
+                        @if (student.IsBoarded)
+                        {
+                            <span style="background:#a1f3d7; color:#18715b; padding:0.25rem 0.5rem; border-radius:1rem; font-size:10px; font-weight:800; display:flex; align-items:center; gap:2px;">
+                                <span class="material-symbols-outlined" style="font-size:12px;">check</span>
+                                Boarded
+                            </span>
+                        }
+                        else if (student.IsAbsent)
+                        {
+                            <span style="background:#ffdad6; color:#ba1a1a; padding:0.25rem 0.5rem; border-radius:1rem; font-size:10px; font-weight:800;">
+                                Absent (Excused)
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="background:#ffd66b; color:#241a00; padding:0.25rem 0.5rem; border-radius:1rem; font-size:10px; font-weight:800;">
+                                Pending Scan
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                @if (!student.IsBoarded && !student.IsAbsent)
+                {
+                    <!-- In-Cab Manual Override Action Buttons -->
+                    <div style="display:flex; align-items:center; gap:0.5rem; padding-top:0.5rem; border-top:1px solid #f5f2ff;">
+                        <button class="clay-button-solid"
+                                style="flex:1; background:#0c6b55; color:#ffffff; border:none; padding:0.6rem; border-radius:0.75rem; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.25rem;"
+                                @onclick="() => ManualCheckIn(student)">
+                            <span class="material-symbols-outlined" style="font-size:15px;">how_to_reg</span>
+                            <span>Manual Boarding</span>
+                        </button>
+
+                        <button style="flex:1; background:#eeecff; color:#ba1a1a; border:none; padding:0.6rem; border-radius:0.75rem; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.25rem;"
+                                @onclick="() => MarkAbsent(student)">
+                            <span class="material-symbols-outlined" style="font-size:15px;">person_off</span>
+                            <span>Mark Absent</span>
+                        </button>
+                    </div>
+                }
+                else if (student.IsAbsent && !string.IsNullOrEmpty(student.AbsenceReason))
+                {
+                    <div style="font-size:11px; color:#ba1a1a; background:#ffdad6; padding:0.375rem 0.625rem; border-radius:0.5rem; display:flex; align-items:center; gap:0.375rem;">
+                        <span class="material-symbols-outlined" style="font-size:14px;">info</span>
+                        <span>Reason: @student.AbsenceReason</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Complete Stop Action Button -->
+    <button class="clay-btn-oversized"
+            style="min-height:3.5rem; background:#644bba; color:#ffffff; border:none; border-radius:1.25rem; padding:0.875rem; font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 8px 20px rgba(100,75,186,0.35); display:flex; align-items:center; justify-content:center; gap:0.5rem;"
+            @onclick="CompleteCurrentStop">
+        <span class="material-symbols-outlined" style="font-size:24px;">task_alt</span>
+        <span>Complete Stop 4 & Resume Route</span>
+    </button>
+</div>
+
+@code {
+    private List<DriverManifestStudentModel> Students { get; set; } = new();
+    private string SelectedFilter { get; set; } = "Stop4";
+    private DriverManifestStudentModel? LastScannedStudent { get; set; }
+
+    private int BoardedCount => Students.Count(s => s.IsBoarded);
+    private int TotalCount => Students.Count;
+
+    private IEnumerable<DriverManifestStudentModel> FilteredStudents => SelectedFilter switch
+    {
+        "Stop4" => Students.Where(s => s.StopSequence == 4),
+        "Boarded" => Students.Where(s => s.IsBoarded),
+        "Pending" => Students.Where(s => !s.IsBoarded),
+        _ => Students
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tripId = AuthState.ActiveTripId ?? Guid.Parse("33333333-3333-3333-3333-333333333333");
+        Students = await DriverApi.GetStudentManifestAsync(tripId);
+        LastScannedStudent = Students.FirstOrDefault(s => s.IsBoarded);
+
+        TrackingHub.OnStudentBoardedViaRfid += HandleRfidTap;
+    }
+
+    private void HandleRfidTap(BoardingNotificationDto notif)
+    {
+        var match = Students.FirstOrDefault(s => s.StudentId == notif.StudentId);
+        if (match != null)
+        {
+            match.IsBoarded = true;
+            match.BoardedAt = notif.ScannedAt;
+            match.BoardingMethod = "RfidScan";
+            LastScannedStudent = match;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ManualCheckIn(DriverManifestStudentModel student)
+    {
+        student.IsBoarded = true;
+        student.BoardedAt = DateTimeOffset.UtcNow;
+        student.BoardingMethod = "ManualOverride";
+        LastScannedStudent = student;
+
+        var tripId = AuthState.ActiveTripId ?? Guid.Parse("33333333-3333-3333-3333-333333333333");
+        await DriverApi.ManualCheckInStudentAsync(tripId, student.StudentId, "Lost card / In-cab driver verification");
+        NotificationService.ShowToast("Manual Check-In", $"{student.FullName} verified onboard.", "Success");
+    }
+
+    private async Task MarkAbsent(DriverManifestStudentModel student)
+    {
+        student.IsAbsent = true;
+        student.AbsenceReason = "Driver Marked Absent at Stop";
+
+        var tripId = AuthState.ActiveTripId ?? Guid.Parse("33333333-3333-3333-3333-333333333333");
+        await DriverApi.MarkStudentAbsentAsync(tripId, student.StudentId, "Not present at bus stop");
+        NotificationService.ShowToast("Marked Absent", $"{student.FullName} recorded absent.", "Info");
+    }
+
+    private async Task CompleteCurrentStop()
+    {
+        var tripId = AuthState.ActiveTripId ?? Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var stop4Id = Guid.Parse("44444444-4444-4444-4444-444444444441");
+        await DriverApi.CompleteStopAsync(tripId, stop4Id);
+
+        NotificationService.ShowToast("Stop 4 Complete", "Departing for Stop 5: Maple Crest Corner.", "Success");
+        Navigation.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        TrackingHub.OnStudentBoardedViaRfid -= HandleRfidTap;
+    }
+}
+

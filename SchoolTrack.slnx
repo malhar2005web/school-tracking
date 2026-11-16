@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SchoolTrack.Admin/SchoolTrack.Admin.csproj" />
+    <Project Path="src/SchoolTrack.Api/SchoolTrack.Api.csproj" />
+    <Project Path="src/SchoolTrack.Application/SchoolTrack.Application.csproj" />
+    <Project Path="src/SchoolTrack.DeviceGateway/SchoolTrack.DeviceGateway.csproj" />
+    <Project Path="src/SchoolTrack.Domain/SchoolTrack.Domain.csproj" />
+    <Project Path="src/SchoolTrack.DriverApp/SchoolTrack.DriverApp.csproj" />
+    <Project Path="src/SchoolTrack.Infrastructure/SchoolTrack.Infrastructure.csproj" />
+    <Project Path="src/SchoolTrack.ParentApp/SchoolTrack.ParentApp.csproj" />
+    <Project Path="src/SchoolTrack.Shared/SchoolTrack.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SchoolTrack.Api.Tests/SchoolTrack.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/SchoolTrack.HardwareSimulator/SchoolTrack.HardwareSimulator.csproj" />
+  </Folder>
+</Solution>

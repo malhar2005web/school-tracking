@@ -1,0 +1,515 @@
+@page "/"
+@page "/dashboard"
+@inject NavigationManager Navigation
+@inject ParentAuthState AuthState
+@inject IParentApiClient ApiClient
+@inject ParentTrackingHubService TrackingHub
+@inject IParentNotificationService NotificationService
+@implements IDisposable
+
+<div style="display:flex; flex-direction:column; width:100%; padding:0 1rem; gap:1rem; user-select:none; max-width:440px; margin:0 auto;">
+    <!-- Top Greeting & SOS Pill Section -->
+    <div style="display:flex; align-items:center; justify-content:space-between; padding-top:0.25rem;">
+        <div style="display:flex; flex-direction:column;">
+            <div style="font-size:20px; font-weight:800; color:#181930; display:flex; align-items:center; gap:0.375rem;">
+                Good Morning, Sarah! <span style="font-size:18px;">☀️</span>
+            </div>
+            <p style="font-size:12px; color:#484552; margin:0; display:flex; align-items:center; gap:0.25rem;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#0c6b55; display:inline-block; animation:ping 2s infinite;"></span>
+                @(ActiveChild?.FullName ?? "Leo")'s morning route is on schedule.
+            </p>
+        </div>
+
+        <!-- SOS Clay Pill Trigger -->
+        <button class="clay-btn clay-btn-danger" style="padding:0.375rem 0.75rem; font-size:11px;" @onclick="OpenSosModal">
+            <span class="material-symbols-outlined" style="font-size:18px;">emergency_home</span>
+            <span>SOS</span>
+        </button>
+    </div>
+
+    <!-- Child Selector Pills -->
+    @if (AuthState.LinkedChildren.Count > 1)
+    {
+        <div style="display:flex; gap:0.5rem; overflow-x:auto; padding-bottom:0.25rem;">
+            @foreach (var child in AuthState.LinkedChildren)
+            {
+                var isSelected = ActiveChild?.StudentId == child.StudentId;
+                <button style="border:none; cursor:pointer; padding:0.375rem 0.75rem; border-radius:9999px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:0.375rem; transition:all 0.2s; @(isSelected ? "background:#644bba; color:#ffffff; box-shadow:0 4px 10px rgba(100,75,186,0.3);" : "background:#eeecff; color:#484552;")" @onclick="() => SelectChild(child.StudentId)">
+                    <img src="@child.AvatarUrl" style="width:1.25rem; height:1.25rem; border-radius:50%; object-fit:cover;" />
+                    <span>@child.FullName</span>
+                    @if (child.IsOnBus)
+                    {
+                        <span style="width:6px; height:6px; border-radius:50%; background:#0c6b55;"></span>
+                    }
+                </button>
+            }
+        </div>
+    }
+
+    <!-- 1. Live Transit Radar Mini-Map Preview Card -->
+    <div class="clay-card" style="padding:1rem; display:flex; flex-direction:column; gap:0.75rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <div style="width:12px; height:12px; border-radius:50%; background:#a1f3d7; display:flex; align-items:center; justify-content:center;">
+                    <span style="width:6px; height:6px; border-radius:50%; background:#0c6b55; animation:pulse 2s infinite;"></span>
+                </div>
+                <span style="font-size:15px; font-weight:700; color:#181930;">Transit Radar • Live Map</span>
+            </div>
+            <span class="clay-badge clay-badge-secondary">Stop @(_trip?.CurrentStopIndex ?? 4) of @(_trip?.TotalStops ?? 6)</span>
+        </div>
+
+        <!-- SVG Mini Radar Visualization -->
+        <div style="position:relative; width:100%; height:11rem; border-radius:1rem; background:#e7e6ff; overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 2px 6px rgba(24,25,48,0.08);">
+            <svg style="position:absolute; inset:0; width:100%; height:100%;" viewBox="0 0 360 176" preserveAspectRatio="none">
+                <path d="M-10,35 Q30,10 65,45 T130,65 T65,130 Z" fill="#A1F3D7" fill-opacity="0.35"></path>
+                <path d="M250,15 Q310,-10 345,35 T380,140 T275,120 Z" fill="#CCA741" fill-opacity="0.18"></path>
+                <path d="M 24 125 C 90 125, 95 55, 175 55 C 245 55, 260 115, 330 115" stroke="#E1E0FF" stroke-linecap="round" stroke-width="14"></path>
+                <path d="M 24 125 C 90 125, 95 55, 175 55 C 245 55, 260 115, 330 115" stroke="#9B83F6" stroke-dasharray="8 6" stroke-linecap="round" stroke-width="6"></path>
+                <circle cx="24" cy="125" fill="#85D6BB" r="8"></circle>
+                <circle cx="24" cy="125" fill="#FFFFFF" r="4"></circle>
+                <circle cx="110" cy="78" fill="#85D6BB" r="8"></circle>
+                <circle cx="110" cy="78" fill="#FFFFFF" r="4"></circle>
+                <circle cx="210" cy="64" fill="#CCA741" fill-opacity="0.3" r="12" class="pulse-dot"></circle>
+                <circle cx="210" cy="64" fill="#CCA741" r="7"></circle>
+                <circle cx="210" cy="64" fill="#FFFFFF" r="3"></circle>
+                <circle cx="330" cy="115" fill="#644BBA" r="9"></circle>
+                <circle cx="330" cy="115" fill="#FFFFFF" r="4"></circle>
+            </svg>
+
+            <!-- Floating Animated Bus Badge -->
+            <div style="position:absolute; left:44%; top:30px; display:flex; flex-direction:column; align-items:center; animation:bounce 2s infinite;">
+                <div style="padding:0.25rem 0.625rem; border-radius:9999px; background:#ffffff; color:#644bba; font-size:11px; font-weight:700; box-shadow:0 4px 10px rgba(24,25,48,0.12); margin-bottom:0.25rem; display:flex; align-items:center; gap:0.25rem; white-space:nowrap;">
+                    <span style="width:6px; height:6px; border-radius:50%; background:#0c6b55; animation:ping 1.5s infinite;"></span>
+                    @(_trip?.BusNumber ?? "Bus #14") (@(_currentSpeed.ToString("0")) mph)
+                </div>
+                <div style="width:2.5rem; height:2.5rem; border-radius:50%; background:#ffd66b; color:#241a00; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 16px rgba(118,91,0,0.35), inset 0 2px 3px rgba(255,255,255,0.8); transform:rotate(-6deg);">
+                    <span class="material-symbols-outlined" style="font-size:22px;">airport_shuttle</span>
+                </div>
+            </div>
+
+            <!-- School Destination Pill -->
+            <div style="position:absolute; right:0.75rem; bottom:0.5rem; display:flex; align-items:center; gap:0.25rem; background:rgba(255,255,255,0.9); backdrop-filter:blur(4px); padding:0.25rem 0.625rem; border-radius:9999px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+                <span class="material-symbols-outlined" style="font-size:15px; color:#644bba;">school</span>
+                <span style="font-size:11px; font-weight:700; color:#181930;">@(ActiveChild?.SchoolName ?? "Oakridge Elementary")</span>
+            </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; padding-top:0.25rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span class="material-symbols-outlined" style="font-size:18px; color:#765b00;">near_me</span>
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-size:11px; color:#484552;">Approaching Next</span>
+                    <span style="font-size:13px; font-weight:700; color:#181930;">@(_trip?.ApproachingStopName ?? "Maple Crest Corner")</span>
+                </div>
+            </div>
+            <div style="text-align:right; display:flex; flex-direction:column;">
+                <span style="font-size:11px; color:#484552;">Estimated Arrival</span>
+                <span style="font-size:13px; font-weight:700; color:#0c6b55;">@(_trip?.MinutesRemaining ?? 8) mins • @(_trip?.EstimatedArrivalTime ?? "08:05 AM")</span>
+            </div>
+        </div>
+
+        <button class="clay-btn clay-btn-primary" style="width:100%; height:2.75rem; font-size:13px;" @onclick='() => Navigation.NavigateTo("/live-map")'>
+            <span class="material-symbols-outlined" style="font-size:18px;">map</span>
+            <span>View Full Live Map</span>
+            <span class="material-symbols-outlined" style="font-size:16px;">arrow_forward</span>
+        </button>
+    </div>
+
+    <!-- 2. Child Active Transit Hero Card -->
+    <div class="clay-card" style="padding:1rem; position:relative; overflow:hidden;">
+        <!-- Tactile Glow -->
+        <div style="position:absolute; right:-2.5rem; top:-2.5rem; width:11rem; height:11rem; border-radius:50%; background:radial-gradient(circle, rgba(161,243,215,0.4) 0%, rgba(231,222,255,0.2) 70%); filter:blur(24px); pointer-events:none;"></div>
+
+        <!-- Student Header & Status -->
+        <div style="display:flex; align-items:center; justify-content:space-between; position:relative; z-index:1;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div style="position:relative;">
+                    <div style="width:3.5rem; height:3.5rem; border-radius:50%; padding:2px; background:#e7e6ff; box-shadow:inset 0 2px 4px rgba(255,255,255,0.9), 0 4px 8px rgba(24,25,48,0.08); display:flex; align-items:center; justify-content:center;">
+                        <img src="@(ActiveChild?.AvatarUrl)" style="width:3rem; height:3rem; border-radius:50%; object-fit:cover;" />
+                    </div>
+                    <span style="position:absolute; bottom:0; right:0; width:1rem; height:1rem; background:#0c6b55; border-radius:50%; box-shadow:0 0 0 2px #ffffff; display:flex; align-items:center; justify-content:center;">
+                        <span style="width:6px; height:6px; border-radius:50%; background:#ffffff; animation:pulse 1.5s infinite;"></span>
+                    </span>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    <h2 style="font-size:18px; font-weight:800; color:#181930; margin:0; line-height:1.2;">@(ActiveChild?.FullName ?? "Leo Martinez")</h2>
+                    <span style="font-size:12px; color:#484552;">@(ActiveChild?.Grade) • @(ActiveChild?.SchoolName)</span>
+                </div>
+            </div>
+
+            <!-- Status Badge -->
+            <div class="clay-badge clay-badge-secondary" style="padding:0.375rem 0.75rem;">
+                <span class="material-symbols-outlined" style="font-size:16px;">directions_bus</span>
+                <span>@(ActiveChild?.BusNumber ?? "Bus #14")</span>
+            </div>
+        </div>
+
+        <!-- RFID Boarding Timeline Pill -->
+        <div class="clay-inset" style="margin-top:0.875rem; padding:0.625rem; display:flex; align-items:center; gap:0.625rem;">
+            <div style="width:1.75rem; height:1.75rem; border-radius:50%; background:#9b83f6; color:#310b87; display:flex; align-items:center; justify-content:center;">
+                <span class="material-symbols-outlined" style="font-size:16px;">contactless</span>
+            </div>
+            <div style="display:flex; flex-direction:column; flex:1; min-width:0;">
+                <span style="font-size:11px; font-weight:700; color:#644bba; text-transform:uppercase;">RFID Verified Boarding</span>
+                <span style="font-size:12px; color:#181930; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@(_trip?.LastRfidBoardingInfo ?? "Tapped in at 07:42 AM (Oakridge & 5th Ave)")</span>
+            </div>
+            <span class="material-symbols-outlined" style="font-size:20px; color:#0c6b55;">check_circle</span>
+        </div>
+
+        <!-- Live ETA Big Yellow Pill -->
+        <div style="margin-top:0.75rem; padding:0.75rem; border-radius:1rem; background:#ffd66b; color:#241a00; display:flex; align-items:center; justify-content:space-between; box-shadow:0 8px 16px -4px rgba(118,91,0,0.15), inset 0 2px 2px rgba(255,255,255,0.7), inset 0 -3px 0 rgba(118,91,0,0.2);">
+            <div style="display:flex; align-items:center; gap:0.625rem;">
+                <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#ffffff; display:flex; align-items:center; justify-content:center; color:#765b00; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                    <span class="material-symbols-outlined" style="font-size:20px;">timer</span>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-size:11px; font-weight:700; text-transform:uppercase; opacity:0.8;">Estimated Arrival</span>
+                    <span style="font-size:18px; font-weight:800; line-height:1.2;">In @(_trip?.MinutesRemaining ?? 8) mins <span style="font-size:12px; font-weight:500;">(@(_trip?.EstimatedArrivalTime ?? "08:05 AM"))</span></span>
+                </div>
+            </div>
+            <span style="padding:0.25rem 0.625rem; border-radius:9999px; background:rgba(255,255,255,0.8); color:#181930; font-size:11px; font-weight:700;">Safe Route</span>
+        </div>
+
+        <!-- Driver Mini Card -->
+        <div style="margin-top:0.875rem; padding:0.625rem; border-radius:0.75rem; background:rgba(238,236,255,0.6); display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.625rem; min-width:0;">
+                <img src="@(ActiveChild?.DriverAvatarUrl)" style="width:2.25rem; height:2.25rem; border-radius:50%; object-fit:cover;" />
+                <div style="display:flex; flex-direction:column; min-width:0;">
+                    <span style="font-size:13px; font-weight:700; color:#181930;">@(ActiveChild?.PrimaryDriverName ?? "Mr. Robert Jenkins")</span>
+                    <span style="font-size:11px; color:#484552; display:flex; align-items:center; gap:2px;">
+                        <span class="material-symbols-outlined" style="font-size:13px; color:#cca741;">star</span>
+                        @(ActiveChild?.DriverRating ?? 4.9) • 4 yrs safe transit
+                    </span>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <button class="clay-btn clay-btn-surface" style="width:2rem; height:2rem; padding:0; border-radius:50%;" @onclick="CallDriver">
+                    <span class="material-symbols-outlined" style="font-size:16px; color:#644bba;">call</span>
+                </button>
+                <button class="clay-btn clay-btn-primary" style="width:2rem; height:2rem; padding:0; border-radius:50%;" @onclick="OpenChatModal">
+                    <span class="material-symbols-outlined" style="font-size:16px;">chat</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Quick Safety Controls Grid -->
+    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 2px;">
+            <h3 style="font-size:16px; font-weight:700; color:#181930; margin:0;">Quick Safety Controls</h3>
+            <span style="font-size:11px; color:#484552;">Tap to trigger</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <!-- Live Route Button -->
+            <button class="clay-card" style="padding:0.875rem; border:none; text-align:left; cursor:pointer; display:flex; flex-direction:column;" @onclick='() => Navigation.NavigateTo("/live-map")'>
+                <div style="width:2.5rem; height:2.5rem; border-radius:50%; background:#ffd66b; color:#241a00; display:flex; align-items:center; justify-content:center; margin-bottom:0.5rem; box-shadow:inset 0 2px 2px rgba(255,255,255,0.7);">
+                    <span class="material-symbols-outlined" style="font-size:22px;">explore</span>
+                </div>
+                <span style="font-size:15px; font-weight:700; color:#181930;">Live Route</span>
+                <span style="font-size:12px; color:#484552;">Turn-by-turn ETA</span>
+            </button>
+
+            <!-- RFID Tap Logs Button -->
+            <button class="clay-card" style="padding:0.875rem; border:none; text-align:left; cursor:pointer; display:flex; flex-direction:column;" @onclick='() => Navigation.NavigateTo("/history")'>
+                <div style="width:2.5rem; height:2.5rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center; margin-bottom:0.5rem; box-shadow:inset 0 2px 2px rgba(255,255,255,0.7);">
+                    <span class="material-symbols-outlined" style="font-size:22px;">badge</span>
+                </div>
+                <span style="font-size:15px; font-weight:700; color:#181930;">Tap Logs</span>
+                <span style="font-size:12px; color:#484552;">Board & Exit history</span>
+            </button>
+
+            <!-- Skip Ride Button -->
+            <button class="clay-card" style="padding:0.875rem; border:none; text-align:left; cursor:pointer; display:flex; flex-direction:column;" @onclick="OpenSkipRideModal">
+                <div style="width:2.5rem; height:2.5rem; border-radius:50%; background:#e7deff; color:#644bba; display:flex; align-items:center; justify-content:center; margin-bottom:0.5rem; box-shadow:inset 0 2px 2px rgba(255,255,255,0.7);">
+                    <span class="material-symbols-outlined" style="font-size:22px;">event_busy</span>
+                </div>
+                <span style="font-size:15px; font-weight:700; color:#181930;">Skip Ride</span>
+                <span style="font-size:12px; color:#484552;">Notify dispatcher</span>
+            </button>
+
+            <!-- Direct Chat Button -->
+            <button class="clay-card" style="padding:0.875rem; border:none; text-align:left; cursor:pointer; display:flex; flex-direction:column;" @onclick="OpenChatModal">
+                <div style="width:2.5rem; height:2.5rem; border-radius:50%; background:#ffdad6; color:#ba1a1a; display:flex; align-items:center; justify-content:center; margin-bottom:0.5rem; box-shadow:inset 0 2px 2px rgba(255,255,255,0.7);">
+                    <span class="material-symbols-outlined" style="font-size:22px;">forum</span>
+                </div>
+                <span style="font-size:15px; font-weight:700; color:#181930;">Direct Chat</span>
+                <span style="font-size:12px; color:#484552;">Robert • Active now</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. Mascot Ollie Assistant Widget -->
+    <div style="position:relative; width:100%; border-radius:1rem; background:linear-gradient(to right, #eeecff, #f5f2ff); padding:1rem; box-shadow:0 10px 24px -4px rgba(24,25,48,0.07), inset 0 2px 3px rgba(255,255,255,0.95); display:flex; align-items:center; gap:0.875rem; margin-bottom:0.5rem;">
+        <div style="flex-shrink:0; width:4rem; height:4rem; border-radius:50%; background:#ffffff; padding:0.25rem; box-shadow:0 6px 16px rgba(100,75,186,0.2), inset 0 2px 2px rgba(255,255,255,0.9); display:flex; align-items:center; justify-content:center;">
+            <img alt="Ollie the Owl Mascot" class="animate-wiggle" style="width:3.5rem; height:3.5rem; object-fit:contain;" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpLlyM0Broza9BqnBbgTBAhdP3Au4u0jnjcOLNGAdsbzyys417O6aUyWehYNuaZRB1Mw9wTMP6v4ayUVn7a7HCb5CzC1tZ-FIX8_ogG6eud--sgGqXEm9Czvb6keRmAvRFhCGJX7n6Haf8n8QYIVKOHMVDVeLxhflWT1wURn1ztnBhIQlcS23F9GdrI1EL9ckoZScqDdjZK3zPdY_hFHH0KgsDnxmc0xc7si-9LnQ" />
+        </div>
+
+        <div style="position:relative; flex:1; background:#ffffff; padding:0.75rem; border-radius:1rem; box-shadow:0 4px 14px rgba(24,25,48,0.06), inset 0 1px 2px rgba(255,255,255,0.9);">
+            <div style="display:flex; align-items:center; gap:0.25rem; margin-bottom:2px;">
+                <span style="font-size:11px; font-weight:800; color:#644bba; text-transform:uppercase;">Ollie • Safe Transit Buddy</span>
+                <span style="font-size:12px;">✨</span>
+            </div>
+            <p style="font-size:12px; color:#181930; margin:0; line-height:1.3;">
+                “Buzzy Bus #14 is cruising smoothly with zero traffic! Safe ride guaranteed!”
+            </p>
+        </div>
+    </div>
+
+    <!-- Skip Ride / Report Absence Modal -->
+    @if (_showSkipRideModal)
+    {
+        <div class="clay-modal-backdrop" @onclick="CloseModals">
+            <div class="clay-bottom-sheet" @onclick:stopPropagation="true">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <span class="material-symbols-outlined" style="color:#644bba; font-size:24px;">event_busy</span>
+                        <h2 style="font-size:18px; font-weight:800; color:#181930; margin:0;">Skip Ride / Report Absence</h2>
+                    </div>
+                    <button style="background:none; border:none; color:#797584; cursor:pointer;" @onclick="CloseModals">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <p style="font-size:13px; color:#484552; margin:0 0 1rem 0;">Notify Dispatcher and Driver that @(ActiveChild?.FullName) will not take the bus.</p>
+
+                <div style="display:flex; flex-direction:column; gap:0.75rem; margin-bottom:1.25rem;">
+                    <div>
+                        <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.25rem;">Reason for Absence</label>
+                        <select class="clay-input" @bind="_absenceReason">
+                            <option value="Sick">Sick / Medical</option>
+                            <option value="Doctor">Doctor Appointment</option>
+                            <option value="Family">Family Travel / Vacation</option>
+                            <option value="ParentDriving">Parent Driving Today</option>
+                            <option value="Other">Other Reason</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.25rem;">Which trips to skip?</label>
+                        <div style="display:flex; gap:0.5rem;">
+                            <button class="clay-btn @(_skipMorning ? "clay-btn-primary" : "clay-btn-surface")" style="flex:1; padding:0.5rem;" @onclick="() => _skipMorning = !_skipMorning">
+                                Morning Pickup
+                            </button>
+                            <button class="clay-btn @(_skipAfternoon ? "clay-btn-primary" : "clay-btn-surface")" style="flex:1; padding:0.5rem;" @onclick="() => _skipAfternoon = !_skipAfternoon">
+                                Afternoon Drop
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="clay-btn clay-btn-primary" style="width:100%; height:3rem; font-size:14px;" @onclick="SubmitAbsence">
+                    <span>Confirm & Notify Dispatcher</span>
+                </button>
+            </div>
+        </div>
+    }
+
+    <!-- Driver Chat Modal -->
+    @if (_showChatModal)
+    {
+        <div class="clay-modal-backdrop" @onclick="CloseModals">
+            <div class="clay-bottom-sheet" @onclick:stopPropagation="true">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <img src="@(ActiveChild?.DriverAvatarUrl)" style="width:2.25rem; height:2.25rem; border-radius:50%; object-fit:cover;" />
+                        <div>
+                            <h2 style="font-size:16px; font-weight:800; color:#181930; margin:0;">@(ActiveChild?.PrimaryDriverName ?? "Robert Jenkins")</h2>
+                            <span style="font-size:11px; color:#0c6b55; font-weight:700;">Active On Route</span>
+                        </div>
+                    </div>
+                    <button style="background:none; border:none; color:#797584; cursor:pointer;" @onclick="CloseModals">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <div style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem; padding:0.5rem; background:#f5f2ff; border-radius:1rem;">
+                    <div style="align-self:flex-start; background:#ffffff; padding:0.5rem 0.75rem; border-radius:1rem; font-size:12px; color:#181930; max-width:80%; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+                        Good morning Mrs. Martinez! Leo is settled safely in seat 4.
+                        <div style="font-size:10px; color:#797584; margin-top:2px;">07:44 AM</div>
+                    </div>
+                    @foreach (var msg in _chatMessages)
+                    {
+                        <div style="align-self:flex-end; background:#644bba; color:#ffffff; padding:0.5rem 0.75rem; border-radius:1rem; font-size:12px; max-width:80%;">
+                            @msg
+                            <div style="font-size:10px; opacity:0.8; margin-top:2px;">Just now</div>
+                        </div>
+                    }
+                </div>
+
+                <div style="display:flex; gap:0.5rem;">
+                    <input class="clay-input" style="height:2.75rem;" placeholder="Type quick message to driver..." @bind="_newChatMessage" />
+                    <button class="clay-btn clay-btn-primary" style="height:2.75rem; width:2.75rem; border-radius:50%; padding:0;" @onclick="SendChatMessage">
+                        <span class="material-symbols-outlined" style="font-size:18px;">send</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- SOS Emergency Alert Modal -->
+    @if (_showSosModal)
+    {
+        <div class="clay-modal-backdrop" @onclick="CloseModals">
+            <div class="clay-bottom-sheet" @onclick:stopPropagation="true" style="border-top:4px solid #ba1a1a;">
+                <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                    <div style="width:3rem; height:3rem; border-radius:50%; background:#ffdad6; color:#ba1a1a; display:flex; align-items:center; justify-content:center;">
+                        <span class="material-symbols-outlined" style="font-size:28px;">emergency</span>
+                    </div>
+                    <div>
+                        <h2 style="font-size:18px; font-weight:800; color:#ba1a1a; margin:0;">Emergency Priority SOS</h2>
+                        <span style="font-size:12px; color:#484552;">School Emergency Dispatch Center</span>
+                    </div>
+                </div>
+
+                <p style="font-size:13px; color:#181930; line-height:1.4; margin:0 0 1.25rem 0;">
+                    Dispatching this emergency SOS sends immediate high-priority alerts to the Oakridge Transport Control Room and Driver Jenkins with @(ActiveChild?.FullName)'s real-time coordinate package.
+                </p>
+
+                <div style="display:flex; flex-direction:column; gap:0.625rem;">
+                    <button class="clay-btn clay-btn-danger" style="height:3.25rem; font-size:14px;" @onclick="ConfirmSos">
+                        <span class="material-symbols-outlined">campaign</span>
+                        <span>TRIGGER IMMEDIATE SOS DISPATCH</span>
+                    </button>
+                    <button class="clay-btn clay-btn-surface" style="height:2.75rem; font-size:13px;" @onclick="CloseModals">
+                        <span>Cancel</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private ChildProfileModel? ActiveChild => AuthState.ActiveChild;
+    private ChildActiveTripModel? _trip;
+    private decimal _currentSpeed = 28m;
+
+    private bool _showSkipRideModal = false;
+    private bool _showChatModal = false;
+    private bool _showSosModal = false;
+
+    private string _absenceReason = "Sick";
+    private bool _skipMorning = true;
+    private bool _skipAfternoon = false;
+
+    private List<string> _chatMessages = new();
+    private string _newChatMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthState.OnChange += HandleAuthStateChanged;
+        TrackingHub.OnBusLocationUpdated += HandleBusLocation;
+        TrackingHub.OnBoardingNotification += HandleBoarding;
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        if (ActiveChild != null)
+        {
+            _trip = await ApiClient.GetChildActiveTripAsync(ActiveChild.StudentId);
+            if (_trip != null)
+            {
+                _currentSpeed = _trip.SpeedKmh;
+            }
+        }
+    }
+
+    private void SelectChild(Guid studentId)
+    {
+        AuthState.SelectChild(studentId);
+        _ = LoadData();
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            await LoadData();
+            StateHasChanged();
+        });
+    }
+
+    private void HandleBusLocation(LatestBusLocationDto loc)
+    {
+        InvokeAsync(() =>
+        {
+            _currentSpeed = loc.SpeedKmh;
+            StateHasChanged();
+        });
+    }
+
+    private void HandleBoarding(BoardingNotificationDto notif)
+    {
+        NotificationService.ShowToast(
+            $"RFID Boarding: {notif.StudentName}",
+            $"{notif.ScanType} at {notif.StopName ?? "Oakridge & 5th Ave"}",
+            notif.ScanType,
+            notif.StudentName
+        );
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OpenSkipRideModal() => _showSkipRideModal = true;
+    private void OpenChatModal() => _showChatModal = true;
+    private void OpenSosModal() => _showSosModal = true;
+    private void CloseModals()
+    {
+        _showSkipRideModal = false;
+        _showChatModal = false;
+        _showSosModal = false;
+    }
+
+    private void CallDriver()
+    {
+        NotificationService.ShowToast("Dialing Driver", $"Calling {ActiveChild?.PrimaryDriverName} at {ActiveChild?.DriverPhoneNumber}...", "General");
+    }
+
+    private void SendChatMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(_newChatMessage))
+        {
+            _chatMessages.Add(_newChatMessage);
+            _newChatMessage = "";
+        }
+    }
+
+    private async Task SubmitAbsence()
+    {
+        if (ActiveChild != null)
+        {
+            await ApiClient.ReportAbsenceAsync(new AbsenceReportRequest(
+                ActiveChild.StudentId,
+                DateTime.UtcNow,
+                _absenceReason,
+                $"Parent submitted via mobile app for {ActiveChild.FullName}",
+                _skipMorning,
+                _skipAfternoon
+            ));
+
+            NotificationService.ShowToast("Absence Reported", $"Driver & Dispatcher alerted: {ActiveChild.FullName} skipping ride.", "General");
+            CloseModals();
+        }
+    }
+
+    private async Task ConfirmSos()
+    {
+        if (ActiveChild != null)
+        {
+            await ApiClient.TriggerEmergencyAlertAsync(ActiveChild.StudentId, "Parent Emergency SOS triggered from Dashboard");
+            NotificationService.ShowToast("🚨 SOS TRANSMITTED", "Emergency response team and Driver have been notified with GPS telemetry.", "SOS");
+            CloseModals();
+        }
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnChange -= HandleAuthStateChanged;
+        TrackingHub.OnBusLocationUpdated -= HandleBusLocation;
+        TrackingHub.OnBoardingNotification -= HandleBoarding;
+    }
+}
+

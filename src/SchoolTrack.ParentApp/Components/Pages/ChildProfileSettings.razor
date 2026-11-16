@@ -1,0 +1,293 @@
+@page "/profile"
+@inject NavigationManager Navigation
+@inject ParentAuthState AuthState
+@inject IParentApiClient ApiClient
+@inject IParentNotificationService NotificationService
+
+<div style="display:flex; flex-direction:column; width:100%; padding:0 1rem; gap:1rem; user-select:none; max-width:440px; margin:0 auto; padding-bottom:3rem;">
+    <!-- Interactive Quick Switcher Header Pill -->
+    <div class="clay-inset" style="padding:0.625rem 0.875rem; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:0.625rem;">
+            <div style="width:2rem; height:2rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center;">
+                <span class="material-symbols-outlined" style="font-size:18px;">family_restroom</span>
+            </div>
+            <div>
+                <span style="font-size:10px; font-weight:700; color:#484552; text-transform:uppercase; letter-spacing:0.05em; display:block;">Active Profile</span>
+                <span style="font-size:13px; font-weight:700; color:#181930;">@(ActiveChild?.FullName)'s Daily Tracker</span>
+            </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:0.375rem; background:#ffffff; padding:0.25rem 0.625rem; border-radius:9999px; box-shadow:0 2px 6px rgba(24,25,48,0.06);">
+            <span style="width:6px; height:6px; border-radius:50%; background:#0c6b55; animation:pulse 2s infinite;"></span>
+            <span style="font-size:11px; font-weight:700; color:#0c6b55;">Transit Active</span>
+        </div>
+    </div>
+
+    <!-- Student Identity Card -->
+    <div class="clay-card" style="padding:1.25rem; position:relative; overflow:hidden;">
+        <!-- Clay Splash -->
+        <div style="position:absolute; right:-2.5rem; top:-2.5rem; width:8rem; height:8rem; border-radius:50%; background:rgba(231,222,255,0.4); filter:blur(20px); pointer-events:none;"></div>
+
+        <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:1rem;">
+            <div style="display:flex; align-items:center; gap:1rem;">
+                <div style="position:relative;">
+                    <div style="width:4.5rem; height:4.5rem; border-radius:50%; padding:2px; background:#e7e6ff; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(100,75,186,0.18);">
+                        <img src="@(ActiveChild?.AvatarUrl)" style="width:4rem; height:4rem; border-radius:50%; object-fit:cover;" />
+                    </div>
+                    <div style="position:absolute; bottom:-2px; right:-2px; width:1.75rem; height:1.75rem; border-radius:50%; background:#ffd66b; color:#241a00; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(118,91,0,0.25);">
+                        <span class="material-symbols-outlined" style="font-size:16px;">cruelty_free</span>
+                    </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                        <h2 style="font-size:18px; font-weight:800; color:#181930; margin:0;">@(ActiveChild?.FullName ?? "Leo Martinez")</h2>
+                        <button class="clay-btn clay-btn-surface" style="width:1.75rem; height:1.75rem; padding:0; border-radius:50%;" @onclick="EditProfileClick">
+                            <span class="material-symbols-outlined" style="font-size:14px; color:#484552;">edit</span>
+                        </button>
+                    </div>
+
+                    <div style="display:flex; flex-wrap:wrap; gap:0.375rem; margin-top:0.25rem;">
+                        <span class="clay-badge clay-badge-primary" style="font-size:10px;">@(ActiveChild?.Grade) • Div B</span>
+                        <span class="clay-badge clay-badge-neutral" style="font-size:10px;">Roll #18</span>
+                    </div>
+
+                    <div style="display:flex; align-items:center; gap:0.25rem; margin-top:0.375rem; font-size:11px; color:#484552;">
+                        <span class="material-symbols-outlined" style="font-size:14px; color:#644bba;">school</span>
+                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@(ActiveChild?.SchoolName)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Smart RFID Card Token Bar -->
+            <div class="clay-inset" style="padding:0.625rem 0.875rem; display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <div style="width:1.75rem; height:1.75rem; border-radius:50%; background:#85d6bb; color:#0c6b55; display:flex; align-items:center; justify-content:center;">
+                        <span class="material-symbols-outlined" style="font-size:15px;">contactless</span>
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:0.375rem;">
+                            <span style="font-size:12px; font-weight:700; color:#181930;">Smart RFID Tag</span>
+                            <span style="width:6px; height:6px; border-radius:50%; background:#0c6b55;"></span>
+                        </div>
+                        <span style="font-size:11px; color:#484552;">UID: @(ActiveChild?.RfidCardUid ?? "4B-99-F2-10")</span>
+                    </div>
+                </div>
+                <span class="clay-badge clay-badge-secondary" style="font-size:10px;">Synced</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Route & Transport Specs Card -->
+    <div class="clay-card" style="padding:1.25rem; display:flex; flex-direction:column; gap:0.875rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <div style="width:2rem; height:2rem; border-radius:50%; background:#ffd66b; color:#241a00; display:flex; align-items:center; justify-content:center;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">directions_bus</span>
+                </div>
+                <h3 style="font-size:16px; font-weight:800; color:#181930; margin:0;">Route & Schedules</h3>
+            </div>
+            <span class="clay-badge clay-badge-primary">Route #14-N</span>
+        </div>
+
+        <!-- Assigned Driver Mini Banner -->
+        <div class="clay-inset" style="padding:0.75rem; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.625rem;">
+                <img src="@(ActiveChild?.DriverAvatarUrl)" style="width:2.25rem; height:2.25rem; border-radius:50%; object-fit:cover;" />
+                <div>
+                    <span style="font-size:10px; color:#484552; display:block;">Primary Driver</span>
+                    <span style="font-size:13px; font-weight:700; color:#181930;">@(ActiveChild?.PrimaryDriverName ?? "Robert Jenkins")</span>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:0.375rem;">
+                <button class="clay-btn clay-btn-secondary" style="width:2rem; height:2rem; padding:0; border-radius:50%;" @onclick="CallDriver">
+                    <span class="material-symbols-outlined" style="font-size:16px;">call</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Waypoints Row -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.625rem;">
+            <div class="clay-inset" style="padding:0.75rem; display:flex; flex-direction:column;">
+                <div style="display:flex; align-items:center; gap:0.25rem; color:#644bba; font-size:11px; font-weight:700; margin-bottom:0.25rem;">
+                    <span class="material-symbols-outlined" style="font-size:15px;">wb_twilight</span>
+                    <span>Morning Pickup</span>
+                </div>
+                <span style="font-size:16px; font-weight:800; color:#181930;">@(ActiveChild?.MorningPickupTime ?? "07:42 AM")</span>
+                <span style="font-size:11px; color:#484552; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@(ActiveChild?.MorningPickupStopName ?? "Oakridge & 5th Ave")</span>
+            </div>
+
+            <div class="clay-inset" style="padding:0.75rem; display:flex; flex-direction:column;">
+                <div style="display:flex; align-items:center; gap:0.25rem; color:#765b00; font-size:11px; font-weight:700; margin-bottom:0.25rem;">
+                    <span class="material-symbols-outlined" style="font-size:15px;">sunny</span>
+                    <span>Afternoon Drop</span>
+                </div>
+                <span style="font-size:16px; font-weight:800; color:#181930;">@(ActiveChild?.AfternoonDropOffTime ?? "03:45 PM")</span>
+                <span style="font-size:11px; color:#484552; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@(ActiveChild?.AfternoonDropOffStopName ?? "Home Front Porch")</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Safety & Notification Preferences (Clay Switches) -->
+    <div class="clay-card" style="padding:1.25rem; display:flex; flex-direction:column; gap:0.875rem;">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+            <div style="width:2rem; height:2rem; border-radius:50%; background:#ffdad6; color:#ba1a1a; display:flex; align-items:center; justify-content:center;">
+                <span class="material-symbols-outlined" style="font-size:18px;">notifications_active</span>
+            </div>
+            <h3 style="font-size:16px; font-weight:800; color:#181930; margin:0;">Transit Safety Alerts</h3>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            <!-- Switch 1 -->
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <span style="font-size:13px; font-weight:700; color:#181930; display:block;">Push Alerts on Boarding</span>
+                    <span style="font-size:11px; color:#484552;">Instant chime when RFID card scans</span>
+                </div>
+                <div class="clay-switch-track @(_settings.PushAlertsOnBoarding ? "active" : "")" @onclick="() => ToggleSetting(s => s.PushAlertsOnBoarding = !s.PushAlertsOnBoarding)">
+                    <div class="clay-switch-thumb"></div>
+                </div>
+            </div>
+
+            <!-- Switch 2 -->
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <span style="font-size:13px; font-weight:700; color:#181930; display:block;">SMS Fallback Notifications</span>
+                    <span style="font-size:11px; color:#484552;">Send text if data connection is low</span>
+                </div>
+                <div class="clay-switch-track @(_settings.SmsFallbackEnabled ? "active" : "")" @onclick="() => ToggleSetting(s => s.SmsFallbackEnabled = !s.SmsFallbackEnabled)">
+                    <div class="clay-switch-thumb"></div>
+                </div>
+            </div>
+
+            <!-- Switch 3 -->
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <span style="font-size:13px; font-weight:700; color:#181930; display:block;">Sound on Boarding Chime</span>
+                    <span style="font-size:11px; color:#484552;">Play sound effect when child boards</span>
+                </div>
+                <div class="clay-switch-track @(_settings.SoundOnBoardingChime ? "active" : "")" @onclick="() => ToggleSetting(s => s.SoundOnBoardingChime = !s.SoundOnBoardingChime)">
+                    <div class="clay-switch-thumb"></div>
+                </div>
+            </div>
+
+            <!-- Switch 4 -->
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <span style="font-size:13px; font-weight:700; color:#181930; display:block;">Delay & Incident Alerts</span>
+                    <span style="font-size:11px; color:#484552;">Notify if bus is delayed > 5 minutes</span>
+                </div>
+                <div class="clay-switch-track @(_settings.DelayAlertsEnabled ? "active" : "")" @onclick="() => ToggleSetting(s => s.DelayAlertsEnabled = !s.DelayAlertsEnabled)">
+                    <div class="clay-switch-thumb"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authorized Guardians Section -->
+    <div class="clay-card" style="padding:1.25rem; display:flex; flex-direction:column; gap:0.875rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <div style="width:2rem; height:2rem; border-radius:50%; background:#e7deff; color:#644bba; display:flex; align-items:center; justify-content:center;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">shield_person</span>
+                </div>
+                <h3 style="font-size:16px; font-weight:800; color:#181930; margin:0;">Authorized Guardians</h3>
+            </div>
+            <span class="clay-badge clay-badge-neutral">@(_guardians.Count) Approved</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            @foreach (var guardian in _guardians)
+            {
+                <div class="clay-inset" style="padding:0.625rem 0.75rem; display:flex; align-items:center; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:0.625rem;">
+                        <img src="@guardian.AvatarUrl" style="width:2rem; height:2rem; border-radius:50%; object-fit:cover;" />
+                        <div>
+                            <span style="font-size:13px; font-weight:700; color:#181930;">@guardian.FullName</span>
+                            <span style="font-size:11px; color:#484552; display:block;">@guardian.Relationship</span>
+                        </div>
+                    </div>
+                    @if (guardian.IsPrimary)
+                    {
+                        <span class="clay-badge clay-badge-primary" style="font-size:10px;">Primary</span>
+                    }
+                    else
+                    {
+                        <span class="clay-badge clay-badge-secondary" style="font-size:10px;">Pickup OK</span>
+                    }
+                </div>
+            }
+        </div>
+
+        <button class="clay-btn clay-btn-surface" style="width:100%; height:2.5rem; font-size:12px;" @onclick="AddGuardianClick">
+            <span class="material-symbols-outlined" style="font-size:16px; color:#644bba;">person_add</span>
+            <span>+ Add Temporary Pickup Guardian</span>
+        </button>
+    </div>
+
+    <!-- School Transport Helpdesk & Logout -->
+    <div style="display:flex; flex-direction:column; gap:0.625rem;">
+        <button class="clay-btn clay-btn-surface" style="width:100%; height:2.75rem; font-size:13px;" @onclick="ContactHelpdesk">
+            <span class="material-symbols-outlined" style="color:#644bba;">support_agent</span>
+            <span>School Transport 24/7 Helpdesk</span>
+        </button>
+
+        <button class="clay-btn clay-btn-danger" style="width:100%; height:2.75rem; font-size:13px;" @onclick="HandleLogout">
+            <span class="material-symbols-outlined">logout</span>
+            <span>Sign Out of SchoolTrack</span>
+        </button>
+    </div>
+</div>
+
+@code {
+    private ChildProfileModel? ActiveChild => AuthState.ActiveChild;
+    private ParentSafetySettings _settings = new();
+    private List<AuthorizedGuardianModel> _guardians = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ActiveChild != null)
+        {
+            _settings = await ApiClient.GetSafetySettingsAsync(ActiveChild.StudentId);
+            _guardians = await ApiClient.GetAuthorizedGuardiansAsync(ActiveChild.StudentId);
+        }
+    }
+
+    private async Task ToggleSetting(Action<ParentSafetySettings> action)
+    {
+        action(_settings);
+        if (ActiveChild != null)
+        {
+            await ApiClient.SaveSafetySettingsAsync(ActiveChild.StudentId, _settings);
+        }
+        NotificationService.ShowToast("Settings Saved", "Your safety notification preferences have been updated.", "General");
+    }
+
+    private void EditProfileClick()
+    {
+        NotificationService.ShowToast("Profile Update", "To change student roll or school registration, please contact administration.", "General");
+    }
+
+    private void CallDriver()
+    {
+        NotificationService.ShowToast("Dialing Driver", $"Calling Robert Jenkins at {ActiveChild?.DriverPhoneNumber}...", "General");
+    }
+
+    private void AddGuardianClick()
+    {
+        NotificationService.ShowToast("Pickup Permission", "Temporary guardian authorization link sent to school office.", "General");
+    }
+
+    private void ContactHelpdesk()
+    {
+        NotificationService.ShowToast("School Helpdesk", "Connecting to Oakridge Transportation Support (Toll-Free 1-800-555-BUS)...", "General");
+    }
+
+    private void HandleLogout()
+    {
+        AuthState.Logout();
+        Navigation.NavigateTo("/login");
+    }
+}
+

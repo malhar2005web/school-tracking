@@ -1,0 +1,171 @@
+@page "/fleet"
+@layout Layout.MainLayout
+@inject IApiClient ApiClient
+@inject AdminAuthStateProvider AuthState
+
+<PageTitle>Fleet & Hardware Devices — SchoolTrack</PageTitle>
+
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Title Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); margin-bottom: 0.25rem;">
+                <span>Fleet Infrastructure</span>
+                <span class="material-symbols-outlined" style="font-size: 0.875rem;">chevron_right</span>
+                <span style="color: var(--color-primary);">Buses, Drivers & Dedicated Gateways</span>
+            </div>
+            <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-on-surface); margin: 0; letter-spacing: -0.02em;">Fleet & Hardware Directory</h1>
+            <p style="font-size: 0.875rem; color: var(--color-on-surface-variant); margin: 0.25rem 0 0 0;">Dedicated GPS trackers and Ethernet RFID readers mapped to active school buses</p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button class="clay-btn @(_tab == "buses" ? "clay-btn-primary" : "clay-btn-surface")" type="button" @onclick='() => _tab = "buses"'>
+                School Buses (@_buses.Count)
+            </button>
+            <button class="clay-btn @(_tab == "drivers" ? "clay-btn-primary" : "clay-btn-surface")" type="button" @onclick='() => _tab = "drivers"'>
+                Certified Drivers (@_drivers.Count)
+            </button>
+        </div>
+    </div>
+
+    @if (_tab == "buses")
+    {
+        <!-- Buses Tab -->
+        <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
+            <div class="clay-table-container">
+                <table class="clay-table">
+                    <thead>
+                        <tr>
+                            <th>Bus Number & Model</th>
+                            <th>License Plate</th>
+                            <th>Capacity</th>
+                            <th>Current Driver</th>
+                            <th>GPS Device Mapping</th>
+                            <th>RFID Gateway Mapping</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in _buses)
+                        {
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div style="width: 2.5rem; height: 2.5rem; border-radius: 9999px; background: var(--color-primary-container); color: var(--color-on-primary); display: flex; align-items: center; justify-content: center;">
+                                            <span class="material-symbols-outlined" style="font-size: 1.25rem;">directions_bus</span>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column;">
+                                            <span style="font-weight: 700; color: var(--color-on-surface);">@b.BusNumber</span>
+                                            <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">@(b.Model ?? "Standard School Bus")</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style="font-weight: 700;">@b.RegistrationNumber</span>
+                                </td>
+                                <td>
+                                    <span style="font-weight: 600;">@b.Capacity Passengers</span>
+                                </td>
+                                <td>
+                                    <span style="font-weight: 600; color: var(--color-primary);">@(b.CurrentDriverName ?? "Unassigned")</span>
+                                </td>
+                                <td>
+                                    <span class="clay-badge clay-badge-neutral">
+                                        <span class="material-symbols-outlined" style="font-size: 0.875rem;">gps_fixed</span>
+                                        <span>@(b.GpsDeviceCode ?? "Unmapped")</span>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="clay-badge clay-badge-secondary">
+                                        <span class="material-symbols-outlined" style="font-size: 0.875rem;">lan</span>
+                                        <span>@(b.RfidDeviceCode ?? "Unmapped")</span>
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (b.MaintenanceStatus == "Active")
+                                    {
+                                        <span class="clay-badge clay-badge-secondary">Active Service</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="clay-badge clay-badge-error">Maintenance</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Drivers Tab -->
+        <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
+            <div class="clay-table-container">
+                <table class="clay-table">
+                    <thead>
+                        <tr>
+                            <th>Driver Name</th>
+                            <th>CDL License</th>
+                            <th>Contact Phone</th>
+                            <th>Email</th>
+                            <th>Experience</th>
+                            <th>Safety Rating</th>
+                            <th>Availability</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in _drivers)
+                        {
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div style="width: 2.25rem; height: 2.25rem; border-radius: 9999px; background: var(--color-surface-container); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                                            @d.FullName[0]
+                                        </div>
+                                        <span style="font-weight: 700; color: var(--color-on-surface);">@d.FullName</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style="font-weight: 700;">@d.LicenseNumber</span>
+                                </td>
+                                <td>
+                                    <span>@d.Phone</span>
+                                </td>
+                                <td>
+                                    <span style="color: var(--color-on-surface-variant); font-size: 0.8125rem;">@d.Email</span>
+                                </td>
+                                <td>
+                                    <span>@d.YearsExperience yrs</span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.25rem; color: var(--color-tertiary); font-weight: 700;">
+                                        <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--color-tertiary);">star</span>
+                                        <span>@d.Rating.ToString("F1")</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="clay-badge clay-badge-secondary">@d.AvailabilityStatus</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string _tab = "buses";
+    private List<BusDto> _buses = new();
+    private List<DriverDto> _drivers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _buses = await ApiClient.GetBusesAsync(AuthState.CurrentSession.SchoolId);
+        _drivers = await ApiClient.GetDriversAsync(AuthState.CurrentSession.SchoolId);
+    }
+}
+

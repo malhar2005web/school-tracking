@@ -1,0 +1,303 @@
+<!DOCTYPE html><html class="h-full bg-surface" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { colors: { 'on-tertiary-container': '#503d00', 'on-error-container': '#93000a', 'tertiary-container': '#cca741', 'primary': '#644bba', 'surface-dim': '#d8d7f7', 'on-secondary': '#ffffff', 'secondary-fixed-dim': '#85d6bb', 'on-tertiary-fixed-variant': '#594400', 'inverse-on-surface': '#f1efff', 'inverse-primary': '#ccbeff', 'on-secondary-fixed-variant': '#00513f', 'surface-bright': '#fbf8ff', 'on-tertiary': '#ffffff', 'surface-container-high': '#e7e6ff', 'surface-container-highest': '#e1e0ff', 'on-surface': '#181930', 'surface-container-low': '#f5f2ff', 'on-secondary-fixed': '#002118', 'outline': '#797584', 'background': '#fbf8ff', 'surface': '#fbf8ff', 'tertiary-fixed-dim': '#e9c259', 'surface-tint': '#644bba', 'on-tertiary-fixed': '#241a00', 'on-secondary-container': '#18715b', 'surface-container': '#eeecff', 'on-surface-variant': '#484552', 'primary-fixed-dim': '#ccbeff', 'on-primary-fixed-variant': '#4b30a1', 'outline-variant': '#cac4d4', 'surface-variant': '#e1e0ff', 'surface-container-lowest': '#ffffff', 'on-background': '#181930', 'secondary': '#0c6b55', 'tertiary': '#765b00', 'on-primary-container': '#310b87', 'inverse-surface': '#2d2e47', 'tertiary-fixed': '#ffdf93', 'on-error': '#ffffff', 'secondary-container': '#a1f3d7', 'on-primary-fixed': '#1e0060', 'error': '#ba1a1a', 'secondary-fixed': '#a1f3d7', 'on-primary': '#ffffff', 'primary-fixed': '#e7deff', 'error-container': '#ffdad6', 'primary-container': '#9b83f6' }, borderRadius: { 'DEFAULT': '1rem', 'lg': '2rem', 'xl': '3rem', 'full': '9999px' }, spacing: { 'space-xs': '0.25rem', 'space-sm': '0.5rem', 'gutter': '1rem', 'margin-mobile': '1rem', 'space-md': '1rem', 'gutter-mobile': '0.75rem', 'space-xl': '2rem', 'space-lg': '1.5rem', 'margin': '1.25rem' }, fontFamily: { 'label-sm': ['Plus Jakarta Sans'], 'body-lg': ['Plus Jakarta Sans'], 'label-lg': ['Plus Jakarta Sans'], 'headline-xl-mobile': ['Plus Jakarta Sans'], 'label-md': ['Plus Jakarta Sans'], 'headline-sm': ['Plus Jakarta Sans'], 'body-sm': ['Plus Jakarta Sans'], 'headline-xl': ['Plus Jakarta Sans'], 'body-md': ['Plus Jakarta Sans'], 'headline-lg': ['Plus Jakarta Sans'], 'headline-md': ['Plus Jakarta Sans'] }, fontSize: { 'label-sm': ['11px', { lineHeight: '14px', letterSpacing: '0.03em', fontWeight: '700' }], 'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '0em', fontWeight: '500' }], 'label-lg': ['15px', { lineHeight: '20px', letterSpacing: '0.01em', fontWeight: '700' }], 'headline-xl-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.02em', fontWeight: '800' }], 'label-md': ['13px', { lineHeight: '18px', letterSpacing: '0.02em', fontWeight: '700' }], 'headline-sm': ['18px', { lineHeight: '24px', letterSpacing: '0em', fontWeight: '700' }], 'body-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.01em', fontWeight: '500' }], 'headline-xl': ['34px', { lineHeight: '42px', letterSpacing: '-0.02em', fontWeight: '800' }], 'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0em', fontWeight: '500' }], 'headline-lg': ['26px', { lineHeight: '34px', letterSpacing: '-0.015em', fontWeight: '700' }], 'headline-md': ['22px', { lineHeight: '28px', letterSpacing: '-0.01em', fontWeight: '700' }] } } } }</script><style>@layer base { html, body { margin: 0; padding: 0; min-height: 100%; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } } ::-webkit-scrollbar { display: none; } .clay-nav { box-shadow: 0 12px 28px -6px rgba(24, 25, 48, 0.1), inset 0 2px 3px rgba(255, 255, 255, 0.9), inset 0 -3px 4px rgba(24, 25, 48, 0.04); } .clay-header { box-shadow: 0 4px 16px -2px rgba(24, 25, 48, 0.05); }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen antialiased selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl clay-header pt-safe"><div class="flex items-center justify-between px-margin-mobile h-6 text-on-surface-variant font-label-sm text-label-sm select-none"><span>9:41</span><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px] leading-none">signal_cellular_alt</span><span class="material-symbols-outlined text-[15px] leading-none">wifi</span><span class="material-symbols-outlined text-[16px] leading-none">battery_full</span></div></div><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="SchoolTrack Ollie Mascot Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpLlyM0Broza9BqnBbgTBAhdP3Au4u0jnjcOLNGAdsbzyys417O6aUyWehYNuaZRB1Mw9wTMP6v4ayUVn7a7HCb5CzC1tZ-FIX8_ogG6eud--sgGqXEm9Czvb6keRmAvRFhCGJX7n6Haf8n8QYIVKOHMVDVeLxhflWT1wURn1ztnBhIQlcS23F9GdrI1EL9ckoZScqDdjZK3zPdY_hFHH0KgsDnxmc0xc7si-9LnQ"><div class="flex flex-col"><span class="font-label-sm text-label-sm text-primary uppercase tracking-wider">SchoolTrack</span><h1 class="font-headline-sm text-headline-sm text-on-surface leading-tight">Live Map Tracker</h1></div></div><div class="flex items-center gap-space-sm"><button aria-label="Notifications" class="w-11 h-11 rounded-full bg-surface-container-lowest flex items-center justify-center text-on-surface shadow-[0_4px_12px_rgba(24,25,48,0.06)] hover:bg-surface-container transition-colors active:scale-95"><span class="material-symbols-outlined text-[20px]">notifications</span></button><button aria-label="Parent Profile" class="w-11 h-11 rounded-full p-0.5 bg-surface-container-lowest shadow-[0_4px_12px_rgba(24,25,48,0.08)] flex items-center justify-center active:scale-95 transition-transform"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHDGGSb8ANzaCZHCqofS-D-q4PgE7LT1WDcNKEqXolmjZqzx7dVVsLOLj85ClQIyilXqCh1xf1tJkV8gKAjJl1_u4HtkDaiDkJLDGFcZWLsXzPvZwzKer8q8QksP-Qtn77MSo-jbMHx3Rv4Hei7m60y6xO321AHTZVm3-QFuxk0U03SJKd2ZlyuyTxQXYbOWTRwgEwJQBdCNMqwEJ0qxUON7pENAhrXVPYmVOgXRA"></button></div></div></header><main class="flex-1 flex flex-col relative w-full pt-[88px] pb-[108px] bg-surface"><div class="flex flex-col w-full relative select-none">
+<!-- Top Floating Clay Route Status Card -->
+<div class="px-margin-mobile pt-space-xs z-20">
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-[0_12px_24px_-6px_rgba(24,25,48,0.08),inset_0_2px_3px_rgba(255,255,255,0.9),inset_0_-3px_4px_rgba(24,25,48,0.04)] flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed shadow-[0_4px_10px_rgba(233,194,89,0.35),inset_0_2px_2px_rgba(255,255,255,0.7)]">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">directions_bus</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface">Bus #14</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm shadow-[inset_1px_1px_2px_rgba(255,255,255,0.6)]">On Route</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Morning Route A • Oakridge Bound</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-1 text-primary font-label-md text-label-md bg-surface-container-high px-2.5 py-1 rounded-full shadow-[inset_1px_1px_2px_rgba(255,255,255,0.7)]">
+<span class="material-symbols-outlined text-[15px]">speed</span>
+<span>24 mph</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-0.5 mt-0.5">
+<span class="material-symbols-outlined text-[13px] text-tertiary">wb_sunny</span> Clear 68°F
+          </span>
+</div>
+</div>
+<!-- Segmented Trip Progress -->
+<div class="space-y-1.5 pt-1">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+            Stop 4 of 6 reached
+          </span>
+<span class="font-headline-sm text-label-md text-primary font-bold">65% Completed</span>
+</div>
+<div class="w-full h-3 bg-surface-container-highest rounded-full p-0.5 shadow-[inset_0_2px_3px_rgba(24,25,48,0.1),inset_0_-1px_1px_rgba(255,255,255,0.7)] overflow-hidden">
+<div class="h-full bg-gradient-to-r from-secondary-fixed-dim via-primary-container to-primary rounded-full w-[65%] shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] transition-all duration-700"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Interactive Clay Map Canvas -->
+<div class="relative w-full h-[400px] my-space-xs overflow-hidden rounded-xl bg-surface-container-low shadow-[inset_0_3px_6px_rgba(24,25,48,0.06)]">
+<!-- SVG Map Canvas -->
+<svg class="absolute inset-0 w-full h-full" fill="none" viewBox="0 0 380 400" xmlns="http://www.w3.org/2000/svg">
+<!-- Friendly Land Parcels (Clay-like organic blocks) -->
+<rect fill="#ECE9FD" height="90" rx="18" width="110" x="15" y="18"></rect>
+<rect fill="#E4F7F0" height="110" rx="20" width="130" x="235" y="24"></rect>
+<rect fill="#ECE9FD" height="120" rx="22" width="115" x="250" y="150"></rect>
+<rect fill="#FEF6E4" height="150" rx="20" width="95" x="20" y="190"></rect>
+<!-- Park Greenery Area -->
+<path d="M 245 40 C 270 30, 310 35, 340 50 C 355 70, 345 105, 325 115 C 295 125, 255 110, 245 85 Z" fill="#D3F4E8"></path>
+<!-- Park Trees -->
+<circle cx="280" cy="65" fill="#85D6BB" opacity="0.9" r="9"></circle>
+<circle cx="310" cy="80" fill="#0C6B55" opacity="0.75" r="12"></circle>
+<circle cx="265" cy="90" fill="#85D6BB" r="7"></circle>
+<!-- Secondary Road Grid -->
+<path d="M 15 135 H 365" stroke="#FFFFFF" stroke-linecap="round" stroke-width="14"></path>
+<path d="M 140 15 V 385" stroke="#FFFFFF" stroke-linecap="round" stroke-width="14"></path>
+<path d="M 230 135 V 385" stroke="#FFFFFF" stroke-linecap="round" stroke-width="12"></path>
+<!-- Primary Bus Route Ribbon -->
+<!-- Glow Underlay -->
+<path d="M 50 70 C 90 70, 140 70, 140 135 C 140 195, 230 195, 230 270 C 230 325, 305 325, 325 325" stroke="#CCBEFF" stroke-linecap="round" stroke-linejoin="round" stroke-width="10"></path>
+<!-- Completed Route Segment (Mint Clay) -->
+<path d="M 50 70 C 90 70, 140 70, 140 135 C 140 185, 175 195, 195 200" stroke="#0C6B55" stroke-dasharray="1 0" stroke-linecap="round" stroke-width="6"></path>
+<!-- Upcoming Route Segment (Lavender Clay) -->
+<path d="M 195 200 C 215 205, 230 220, 230 270 C 230 325, 305 325, 325 325" stroke="#9B83F6" stroke-dasharray="7 7" stroke-linecap="round" stroke-width="6"></path>
+<!-- Stop 1: Pickup Complete -->
+<g transform="translate(50, 70)">
+<circle cx="0" cy="0" fill="#FFFFFF" filter="drop-shadow(0 3px 4px rgba(24,25,48,0.15))" r="14"></circle>
+<circle cx="0" cy="0" fill="#0C6B55" r="10"></circle>
+<path d="M -4 0 L -1 3 L 4 -3" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path>
+</g>
+<!-- Stop 2: En Route Passed -->
+<g transform="translate(140, 100)">
+<circle cx="0" cy="0" fill="#FFFFFF" filter="drop-shadow(0 2px 4px rgba(24,25,48,0.12))" r="11"></circle>
+<circle cx="0" cy="0" fill="#85D6BB" r="7"></circle>
+<path d="M -3 0 L -1 2 L 3 -2" stroke="#002118" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</g>
+<!-- Destination School Marker -->
+<g transform="translate(325, 325)">
+<circle cx="0" cy="0" fill="#FFFFFF" filter="drop-shadow(0 4px 8px rgba(24,25,48,0.18))" r="18"></circle>
+<circle cx="0" cy="0" fill="#644BBA" r="13"></circle>
+<path d="M -6 -2 L 0 -7 L 6 -2 V 5 H -6 Z" fill="#FFFFFF"></path>
+<rect fill="#644BBA" height="4" rx="1" width="4" x="-2" y="1"></rect>
+</g>
+</svg>
+<!-- Map Floating Overlays -->
+<!-- Pickup Waypoint Card Tag -->
+<div class="absolute top-8 left-14 bg-surface-container-lowest/95 backdrop-blur-md px-2.5 py-1.5 rounded-lg shadow-[0_4px_12px_rgba(24,25,48,0.1)] flex items-center gap-1.5 border-none">
+<div class="w-5 h-5 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold text-[10px]">
+        ✓
+      </div>
+<div>
+<p class="font-label-sm text-[10px] leading-tight text-on-surface">742 Evergreen Terr.</p>
+<p class="font-body-sm text-[9px] leading-none text-secondary font-semibold">Boarded 07:42 AM</p>
+</div>
+</div>
+<!-- Active 3D Bus Marker (Buzzy #14) with Pulsing Waves -->
+<div class="absolute top-[182px] left-[178px] -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
+<!-- Pulsing Range Radar Rings -->
+<div class="absolute -inset-4 rounded-full bg-primary-container/30 animate-ping pointer-events-none"></div>
+<div class="absolute -inset-2 rounded-full bg-primary/20 animate-pulse pointer-events-none"></div>
+<!-- Tactile Bus Marker Puck -->
+<div class="relative w-14 h-14 rounded-full bg-tertiary-fixed flex items-center justify-center shadow-[0_12px_20px_-3px_rgba(118,91,0,0.4),inset_0_3px_3px_rgba(255,255,255,0.9),inset_0_-4px_0_rgba(204,167,65,0.7)] cursor-pointer active:scale-95 transition-transform" id="bus-marker-btn">
+<span class="material-symbols-outlined text-[28px] text-on-tertiary-fixed leading-none" style="font-variation-settings: 'FILL' 1;">directions_bus</span>
+<!-- Small Heading Indicator Direction Arrow -->
+<div class="absolute -bottom-1 w-4 h-4 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined text-[12px] transform rotate-45">navigation</span>
+</div>
+</div>
+<!-- Bus Floating Bubble Label -->
+<div class="mt-1 px-2.5 py-0.5 bg-on-surface text-surface-bright font-label-sm text-[11px] rounded-full shadow-lg whitespace-nowrap flex items-center gap-1">
+<span>Buzzy #14</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed animate-pulse"></span>
+</div>
+</div>
+<!-- Live Street Location Badge (Floating Center Left) -->
+<div class="absolute bottom-4 left-4 bg-surface-container-lowest/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-[0_4px_12px_rgba(24,25,48,0.1),inset_0_1px_2px_rgba(255,255,255,0.8)] flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">location_on</span>
+<span class="font-label-sm text-label-sm text-on-surface">Parkview Blvd near Elm St</span>
+</div>
+<!-- Map Quick Action Controls (Right Edge) -->
+<div class="absolute right-4 top-4 flex flex-col gap-2">
+<button aria-label="Re-center bus" class="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-on-surface shadow-[0_6px_16px_rgba(24,25,48,0.12),inset_0_2px_2px_rgba(255,255,255,0.9)] active:translate-y-0.5 transition-all">
+<span class="material-symbols-outlined text-[20px] text-primary">my_location</span>
+</button>
+<button aria-label="Toggle Route Layer" class="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-on-surface shadow-[0_6px_16px_rgba(24,25,48,0.12),inset_0_2px_2px_rgba(255,255,255,0.9)] active:translate-y-0.5 transition-all">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">layers</span>
+</button>
+</div>
+<!-- Destination Pin Label (Bottom Right) -->
+<div class="absolute bottom-4 right-4 bg-primary text-on-primary px-3 py-1.5 rounded-xl shadow-[0_8px_16px_rgba(100,75,186,0.35),inset_0_2px_2px_rgba(255,255,255,0.3)] flex items-center gap-1.5 text-right">
+<div>
+<p class="font-label-sm text-[11px] leading-tight text-primary-fixed">Oakridge Elem.</p>
+<p class="font-headline-sm text-[12px] leading-none text-surface-bright">ETA 08:05 AM</p>
+</div>
+<span class="material-symbols-outlined text-[18px]">school</span>
+</div>
+</div>
+<!-- Bottom Floating Tactile Sheet (Parent Reassurance Console) -->
+<div class="px-margin-mobile pb-space-lg flex flex-col gap-space-md z-20">
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-[0_12px_28px_-6px_rgba(24,25,48,0.12),inset_0_2px_3px_rgba(255,255,255,0.95),inset_0_-3px_4px_rgba(24,25,48,0.03)] flex flex-col gap-space-md">
+<!-- Primary ETA Hero Highlight -->
+<div class="bg-gradient-to-r from-tertiary-fixed via-tertiary-fixed to-tertiary-fixed-dim rounded-lg p-space-md shadow-[0_8px_18px_-4px_rgba(118,91,0,0.22),inset_0_2px_3px_rgba(255,255,255,0.7),inset_0_-3px_0_rgba(180,140,40,0.3)] flex items-center justify-between text-on-tertiary-fixed">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest/80 backdrop-blur-sm flex items-center justify-center text-tertiary shadow-[inset_0_2px_3px_rgba(255,255,255,0.9)]">
+<span class="material-symbols-outlined text-[28px] animate-spin" style="animation-duration: 10s;">timelapse</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-tertiary-fixed-variant opacity-85">Oakridge South Gate</span>
+<div class="flex items-baseline gap-1.5">
+<h2 class="font-headline-xl-mobile text-headline-xl-mobile leading-none font-extrabold text-on-tertiary-fixed">8 mins</h2>
+<span class="font-label-md text-label-md opacity-90">away</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm font-bold block text-on-tertiary-fixed">1.8 mi</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container-lowest/70 text-on-tertiary-container inline-block">On Schedule</span>
+</div>
+</div>
+<!-- Student & Bus Vital Cards (2-Column Bento) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+<!-- Student Telemetry Card -->
+<div class="bg-surface-container-low rounded-lg p-space-sm flex items-center gap-3 shadow-[inset_0_2px_3px_rgba(255,255,255,0.8),inset_0_-2px_3px_rgba(24,25,48,0.03)]">
+<div class="relative">
+<img class="w-12 h-12 rounded-full object-cover shadow-[0_4px_8px_rgba(24,25,48,0.1)]" data-alt="Warm 3D clay-rendered portrait avatar of a cheerful young elementary student wearing an orange jacket, soft rounded features and friendly smile on clean pastel background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVG3FHKA9NeVw_bRU5TYnukXPXrvIM_oLCfmf5fS1G5Rk2-HgElR4aP-fKurhnMjRd5FrK9umNugyrr0ACVMUUil9zeeyaKLsEy0hkpF_KDGmYg8CFawpzaEQxkBQMaEPGQWJAJDJZqcjCK1R9INVWiTFDtj7N6c9tX9A977Pu7DZeOLlsO1sNACQqj8bwASFLadUy9BqK3UjAratEsbtMiERSpJ7jlcMO5sUcDGs">
+<div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-secondary flex items-center justify-center text-white text-[10px] shadow">✓</div>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface truncate">Leo Martinez</h3>
+<span class="font-label-sm text-label-sm text-primary px-1.5 py-0.2 rounded bg-primary-fixed">Seat 4A</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary font-bold flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-[14px]">badge</span> RFID Card Verified</p>
+</div>
+</div>
+<!-- Safe Driving & Zone Speed Card -->
+<div class="bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between shadow-[inset_0_2px_3px_rgba(255,255,255,0.8),inset_0_-2px_3px_rgba(24,25,48,0.03)]">
+<div class="flex items-center gap-2.5">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-[inset_0_2px_2px_rgba(255,255,255,0.6)]">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+</div>
+<div>
+<p class="font-headline-sm text-headline-sm text-on-surface">Safe Driving</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">24 in 30 mph zone</p>
+</div>
+</div>
+<div class="px-2 py-1 rounded-full bg-surface-container-lowest text-secondary font-label-sm text-label-sm shadow-sm flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> Calm
+          </div>
+</div>
+</div>
+<!-- Driver Information and Contact Action Row -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-3">
+<img class="w-11 h-11 rounded-full object-cover shadow-[0_4px_8px_rgba(24,25,48,0.08)]" data-alt="Claymorphic 3D friendly school bus driver avatar wearing navy uniform cap and spectacles with kind, trustworthy expression on purple pastel circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsuK36PifdB5TpMJyJf_IU_rmDcW3bLHszBbI8ACewNvlUZIsAzqy-lWIgo1YFboyk6BFQeqZ3HfxSzWjryT-FdQfVebxp0YDuKEHK_lLomZnWAqMgThO18B39CQOTbB5DespxU49-ipx21F4QhNT_swl4bD4zm7g-yBLRtL4KVRJ9pj1vTE2Akc0Uo5wyO8CTxD_yMbh7s4SYMdeBHVhPduifFntQPeZprdCbgo4">
+<div>
+<p class="font-headline-sm text-headline-sm text-on-surface">Mr. Arthur Davis</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Certified Driver • 8 yrs exp.</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<!-- Mint Clay Call Driver Button -->
+<button class="px-4 py-2.5 rounded-full bg-secondary-container text-on-secondary-fixed-variant font-label-md text-label-md flex items-center gap-1.5 shadow-[0_8px_16px_-3px_rgba(12,107,85,0.25),inset_0_2px_2px_rgba(255,255,255,0.7),inset_0_-3px_0_rgba(133,214,187,0.8)] active:translate-y-0.5 active:shadow-[0_2px_6px_rgba(12,107,85,0.2),inset_0_-1px_0_rgba(133,214,187,0.8)] transition-all" id="call-driver-btn">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">phone_in_talk</span>
+<span>Call Driver</span>
+</button>
+</div>
+</div>
+<!-- Action Utility Buttons Bar -->
+<div class="grid grid-cols-2 gap-space-sm pt-1">
+<!-- Emergency School Dispatch SOS / Support Button -->
+<button class="w-full py-3 px-3 rounded-lg bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-[0_4px_10px_rgba(24,25,48,0.06),inset_0_2px_2px_rgba(255,255,255,0.8),inset_0_-2px_0_rgba(202,196,212,0.6)] active:translate-y-0.5 transition-all" id="dispatch-modal-trigger">
+<span class="material-symbols-outlined text-error text-[18px]">support_agent</span>
+<span>School Dispatch</span>
+</button>
+<!-- Share Live Journey Button -->
+<button class="w-full py-3 px-3 rounded-lg bg-primary-container text-on-primary-container font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-[0_8px_16px_-4px_rgba(100,75,186,0.3),inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-3px_0_rgba(75,48,161,0.4)] active:translate-y-0.5 transition-all" id="share-link-btn">
+<span class="material-symbols-outlined text-[18px]">share_location</span>
+<span id="share-text">Share Live Journey</span>
+</button>
+</div>
+<!-- Mascot Cheerful Reassurance Footer Note -->
+<div class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-surface-container-high/60">
+<span class="material-symbols-outlined text-primary text-[20px]">cruelty_free</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+<strong class="text-on-surface">Ollie's Safety Shield:</strong> Real-time GPS sync is active with high accuracy (±2 meters).
+        </p>
+</div>
+</div>
+</div>
+<!-- Interactive Call Driver Confirmation Popover (Clay Modal) -->
+<div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-margin-mobile pb-safe bg-on-surface/35 backdrop-blur-[6px] hidden transition-opacity duration-300" id="call-modal">
+<div class="bg-surface-container-lowest w-full max-w-sm rounded-lg p-space-lg shadow-[0_24px_48px_-12px_rgba(24,25,48,0.25),inset_0_2px_3px_rgba(255,255,255,0.95)] flex flex-col items-center text-center gap-space-md mb-20 sm:mb-0">
+<div class="w-16 h-16 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-[inset_0_3px_3px_rgba(255,255,255,0.8),inset_0_-3px_0_rgba(133,214,187,0.7)]">
+<span class="material-symbols-outlined text-[32px]">phone_enabled</span>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Call Mr. Davis?</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Bus #14 will receive a hands-free dash console call to avoid driver distraction.</p>
+</div>
+<div class="flex items-center gap-space-sm w-full">
+<button class="flex-1 py-3 rounded-full bg-surface-container text-on-surface font-label-lg text-label-lg active:scale-95 transition-transform" id="cancel-call-btn">
+          Cancel
+        </button>
+<a class="flex-1 py-3 rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg shadow-[0_8px_16px_rgba(12,107,85,0.3),inset_0_2px_2px_rgba(255,255,255,0.5),inset_0_-3px_0_rgba(0,33,24,0.3)] active:translate-y-0.5 transition-all text-center" href="tel:5550192834">
+          Place Call
+        </a>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple Clay Interactivity for Bus Tracking View
+  (function() {
+    const callBtn = document.getElementById('call-driver-btn');
+    const modal = document.getElementById('call-modal');
+    const cancelBtn = document.getElementById('cancel-call-btn');
+    const shareBtn = document.getElementById('share-link-btn');
+    const shareText = document.getElementById('share-text');
+    const busMarker = document.getElementById('bus-marker-btn');
+
+    if (callBtn && modal && cancelBtn) {
+      callBtn.addEventListener('click', () => {
+        modal.classList.remove('hidden');
+      });
+      cancelBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.add('hidden');
+      });
+    }
+
+    if (shareBtn && shareText) {
+      shareBtn.addEventListener('click', () => {
+        const original = shareText.textContent;
+        shareText.textContent = 'Link Copied! ✨';
+        setTimeout(() => {
+          shareText.textContent = original;
+        }, 2200);
+      });
+    }
+
+    if (busMarker) {
+      busMarker.addEventListener('click', () => {
+        busMarker.classList.add('scale-110');
+        setTimeout(() => busMarker.classList.remove('scale-110'), 250);
+      });
+    }
+  })();
+</script></main><div class="fixed bottom-0 inset-x-0 z-50 px-margin-mobile pb-safe pointer-events-none mb-3"><nav class="pointer-events-auto mx-auto max-w-md bg-surface-container-lowest/95 backdrop-blur-xl rounded-xl clay-nav p-space-xs flex items-center justify-around" data-active-classes="bg-primary-container text-on-primary-container shadow-[inset_0_2px_2px_rgba(255,255,255,0.45),inset_0_-2px_0_rgba(75,48,161,0.3)]"><a class="flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-lg text-on-surface-variant font-label-sm text-label-sm transition-all duration-200 active:scale-95 min-w-[64px]" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[24px]">home</span><span>Home</span></a><a aria-current="page" class="flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-lg font-label-sm transition-all duration-200 active:scale-95 min-w-[64px] bg-primary-container text-on-primary-container shadow-[inset_0_2px_2px_rgba(255,255,255,0.45),inset_0_-2px_0_rgba(75,48,161,0.3)]" data-path="live-map-tracker" href="#"><span class="material-symbols-outlined text-[24px]">near_me</span><span>Tracking</span></a><a class="flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-lg text-on-surface-variant font-label-sm text-label-sm transition-all duration-200 active:scale-95 min-w-[64px]" data-path="transit-history" href="#"><span class="material-symbols-outlined text-[24px]">receipt_long</span><span>History</span></a><a class="flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-lg text-on-surface-variant font-label-sm text-label-sm transition-all duration-200 active:scale-95 min-w-[64px]" data-path="parent-account" href="#"><span class="material-symbols-outlined text-[24px]">manage_accounts</span><span>Profile</span></a></nav></div>
+
+</body></html>

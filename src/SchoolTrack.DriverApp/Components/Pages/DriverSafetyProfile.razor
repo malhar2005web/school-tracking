@@ -1,0 +1,189 @@
+@page "/safety"
+@layout MainLayout
+@inject IDriverApiClient DriverApi
+@inject DriverAuthState AuthState
+@inject IDriverNotificationService NotificationService
+@inject NavigationManager Navigation
+
+<div class="driver-safety-view" style="max-width:32rem; margin:0 auto; padding:0 1rem; display:flex; flex-direction:column; gap:1.25rem;">
+    <!-- Driver Profile Hero Card -->
+    <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 24px rgba(24,25,48,0.06); display:flex; align-items:center; gap:1rem;">
+        <img src="@(AuthState.CurrentSession?.AvatarUrl ?? "https://lh3.googleusercontent.com/aida-public/AB6AXuAFrPPwe8Q228TD2qqumI7mbdRj2huhzXJ4IIeNLkiVyNwREAD3fXB8WR9UWI-f8oqn-DfnM14NsLr_fA8gCMOJ7DyskjIurGpVIpCCrZMohsoTpDMxaSHZuKEm3D4xBsoHZz1e8tkLGYnm8lCsOnMbHDKIngoN98ofTTAb1SYpTPusgVlhuXGmx9FQ0fUtpb6TsaDZGIjALJusVxxi2cofTOGO4YO2J4TES6BjmVM")"
+             alt="Driver Avatar"
+             style="width:4.25rem; height:4.25rem; border-radius:50%; object-fit:cover; border:3px solid #0c6b55; box-shadow:0 4px 12px rgba(12,107,85,0.25);" />
+
+        <div style="display:flex; flex-direction:column; min-width:0;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <h1 style="font-size:18px; font-weight:800; color:#181930; margin:0; letter-spacing:-0.02em;">
+                    @(AuthState.CurrentSession?.FullName ?? "Robert Jenkins")
+                </h1>
+                <span class="clay-badge-mint" style="font-size:10px; font-weight:800; padding:0.15rem 0.4rem;">
+                    CERTIFIED
+                </span>
+            </div>
+            <span style="font-size:12px; color:#484552; margin-top:2px;">
+                @(AuthState.CurrentSession?.LicenseNumber ?? "CDL-90824-A") • Class B Commercial
+            </span>
+            <span style="font-size:11px; color:#797584; margin-top:2px;">
+                Assigned: @(AuthState.CurrentSession?.BusNumber ?? "Bus #14") • @(AuthState.CurrentSession?.RouteName ?? "Route 14-AM")
+            </span>
+        </div>
+    </div>
+
+    <!-- Vehicle Health & Telemetry Card -->
+    <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 24px rgba(24,25,48,0.06); display:flex; flex-direction:column; gap:0.875rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:12px; font-weight:800; color:#484552; text-transform:uppercase; letter-spacing:0.04em;">
+                Vehicle & Hardware Telemetry
+            </span>
+            <span style="font-size:11px; font-weight:700; color:#0c6b55; display:flex; align-items:center; gap:0.25rem;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#0c6b55; display:inline-block;"></span>
+                All Systems Normal
+            </span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.75rem;">
+            <div style="background:#f5f2ff; padding:0.75rem 0.5rem; border-radius:1rem; text-align:center;">
+                <span class="material-symbols-outlined" style="font-size:20px; color:#0c6b55;">local_gas_station</span>
+                <div style="font-size:14px; font-weight:800; color:#181930; margin-top:2px;">82%</div>
+                <div style="font-size:10px; color:#797584; font-weight:600;">Diesel Fuel</div>
+            </div>
+
+            <div style="background:#f5f2ff; padding:0.75rem 0.5rem; border-radius:1rem; text-align:center;">
+                <span class="material-symbols-outlined" style="font-size:20px; color:#644bba;">tire_repair</span>
+                <div style="font-size:14px; font-weight:800; color:#181930; margin-top:2px;">102 PSI</div>
+                <div style="font-size:10px; color:#797584; font-weight:600;">Tire Pressure</div>
+            </div>
+
+            <div style="background:#f5f2ff; padding:0.75rem 0.5rem; border-radius:1rem; text-align:center;">
+                <span class="material-symbols-outlined" style="font-size:20px; color:#765b00;">speed</span>
+                <div style="font-size:14px; font-weight:800; color:#181930; margin-top:2px;">42,180</div>
+                <div style="font-size:10px; color:#797584; font-weight:600;">Odometer Mi</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pre-Trip / In-Service Safety Checklist -->
+    <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 24px rgba(24,25,48,0.06); display:flex; flex-direction:column; gap:1rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:12px; font-weight:800; color:#484552; text-transform:uppercase; letter-spacing:0.04em;">
+                Daily In-Cab Safety Inspection
+            </span>
+            <span style="font-size:11px; color:#797584;">Mandatory CDL Sweep</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            <label style="display:flex; align-items:center; gap:0.75rem; font-size:13px; font-weight:700; color:#181930; cursor:pointer;">
+                <input type="checkbox" @bind="Checklist.BrakesAndTiresPassed" style="width:1.25rem; height:1.25rem; accent-color:#0c6b55;" />
+                <span>Service Brakes & Tire Tread Depth verified</span>
+            </label>
+
+            <label style="display:flex; align-items:center; gap:0.75rem; font-size:13px; font-weight:700; color:#181930; cursor:pointer;">
+                <input type="checkbox" @bind="Checklist.EmergencyExitsVerified" style="width:1.25rem; height:1.25rem; accent-color:#0c6b55;" />
+                <span>Emergency Exits & Roof Hatches unlatched & operable</span>
+            </label>
+
+            <label style="display:flex; align-items:center; gap:0.75rem; font-size:13px; font-weight:700; color:#181930; cursor:pointer;">
+                <input type="checkbox" @bind="Checklist.FirstAidKitStocked" style="width:1.25rem; height:1.25rem; accent-color:#0c6b55;" />
+                <span>First Aid Kit & Fire Extinguisher fully stocked</span>
+            </label>
+
+            <label style="display:flex; align-items:center; gap:0.75rem; font-size:13px; font-weight:700; color:#181930; cursor:pointer;">
+                <input type="checkbox" @bind="Checklist.RfidReaderTested" style="width:1.25rem; height:1.25rem; accent-color:#0c6b55;" />
+                <span>Passenger Door RFID Card Scanner tested</span>
+            </label>
+
+            <label style="display:flex; align-items:center; gap:0.75rem; font-size:13px; font-weight:700; color:#181930; cursor:pointer;">
+                <input type="checkbox" @bind="Checklist.GpsTrackerTested" style="width:1.25rem; height:1.25rem; accent-color:#0c6b55;" />
+                <span>GPS Telemetry Gateway satellite lock verified</span>
+            </label>
+
+            <label style="display:flex; align-items:center; gap:0.75rem; font-size:13px; font-weight:700; color:#181930; cursor:pointer;">
+                <input type="checkbox" @bind="Checklist.InteriorCleanSweepCompleted" style="width:1.25rem; height:1.25rem; accent-color:#0c6b55;" />
+                <span>Post-Trip Child Safety Sweep (Zero sleeping children)</span>
+            </label>
+        </div>
+
+        <button class="clay-button-solid"
+                style="background:#0c6b55; color:#ffffff; border:none; padding:0.875rem; border-radius:1rem; font-weight:800; font-size:0.925rem; cursor:pointer; box-shadow:0 6px 16px rgba(12,107,85,0.3); display:flex; align-items:center; justify-content:center; gap:0.5rem;"
+                @onclick="SaveChecklist">
+            <span class="material-symbols-outlined" style="font-size:20px;">fact_check</span>
+            <span>Submit Safety Inspection Log</span>
+        </button>
+    </div>
+
+    <!-- Shift & Trip Controls -->
+    <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 24px rgba(24,25,48,0.06); display:flex; flex-direction:column; gap:0.75rem;">
+        <span style="font-size:12px; font-weight:800; color:#484552; text-transform:uppercase; letter-spacing:0.04em;">
+            Shift & Terminal Controls
+        </span>
+
+        @if (AuthState.IsInTransit)
+        {
+            <button class="clay-button-solid"
+                    style="background:#644bba; color:#ffffff; border:none; padding:0.875rem; border-radius:1rem; font-weight:800; font-size:0.925rem; cursor:pointer; box-shadow:0 6px 16px rgba(100,75,186,0.3); display:flex; align-items:center; justify-content:center; gap:0.5rem;"
+                    @onclick="CompleteShift">
+                <span class="material-symbols-outlined" style="font-size:20px;">flag</span>
+                <span>Complete Route & End Shift</span>
+            </button>
+        }
+        else
+        {
+            <button class="clay-button-solid"
+                    style="background:#0c6b55; color:#ffffff; border:none; padding:0.875rem; border-radius:1rem; font-weight:800; font-size:0.925rem; cursor:pointer; box-shadow:0 6px 16px rgba(12,107,85,0.3); display:flex; align-items:center; justify-content:center; gap:0.5rem;"
+                    @onclick="StartShift">
+                <span class="material-symbols-outlined" style="font-size:20px;">play_arrow</span>
+                <span>Start In-Transit Route</span>
+            </button>
+        }
+
+        <button style="background:#f5f2ff; color:#ba1a1a; border:1px solid #ffdad6; padding:0.875rem; border-radius:1rem; font-weight:800; font-size:0.925rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem;"
+                @onclick="SignOut">
+            <span class="material-symbols-outlined" style="font-size:20px;">logout</span>
+            <span>Sign Out of Driver Terminal</span>
+        </button>
+    </div>
+</div>
+
+@code {
+    private DriverPreTripChecklist Checklist { get; set; } = new();
+
+    private async Task SaveChecklist()
+    {
+        var busId = AuthState.CurrentSession?.BusId ?? Guid.Parse("22222222-2222-2222-2222-222222222222");
+        await DriverApi.SubmitPreTripChecklistAsync(busId, Checklist);
+        NotificationService.ShowToast(
+            "Inspection Recorded",
+            "Pre-trip safety log synchronized to School Transportation Records.",
+            "Success"
+        );
+    }
+
+    private void CompleteShift()
+    {
+        AuthState.CompleteTrip();
+        NotificationService.ShowToast(
+            "Shift Completed",
+            "Route 14-AM finished. Post-trip vehicle sweep recorded.",
+            "Info"
+        );
+    }
+
+    private void StartShift()
+    {
+        AuthState.StartTrip();
+        NotificationService.ShowToast(
+            "Shift Started",
+            "Route 14-AM in transit. Door RFID scanner activated.",
+            "Success"
+        );
+    }
+
+    private void SignOut()
+    {
+        AuthState.Logout();
+        NotificationService.ShowToast("Terminal Logged Out", "Safe driving. See you next shift.", "Info");
+        Navigation.NavigateTo("/login");
+    }
+}
+

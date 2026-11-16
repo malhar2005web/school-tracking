@@ -1,0 +1,111 @@
+@inherits LayoutComponentBase
+@inject AdminAuthStateProvider AuthState
+@inject NavigationManager Navigation
+
+<div style="min-height: 100vh; background-color: var(--color-surface);">
+    <!-- Sidebar -->
+    <NavMenu />
+
+    <!-- Main Viewport offset by 18rem sidebar -->
+    <div style="padding-left: 18rem;">
+        <!-- Fixed Clay Header -->
+        <header style="position: fixed; top: 0; left: 18rem; right: 0; height: 5rem; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px); box-shadow: 0 4px 16px -4px rgba(41,42,66,0.06); z-index: 40; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between;">
+            <!-- District Info & Live Gateway Indicators -->
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div class="clay-inset" style="padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 1.25rem;">apartment</span>
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 0.625rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); line-height: 1;">District Jurisdiction</span>
+                        <span style="font-size: 0.875rem; font-weight: 700; color: var(--color-on-surface); line-height: 1.2;">@AuthState.CurrentSession.SchoolName</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span class="clay-badge clay-badge-secondary">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">wifi_tethering</span>
+                        <span>Gateways: 24/24 Online</span>
+                    </span>
+                    <span class="clay-badge clay-badge-tertiary">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">directions_bus</span>
+                        <span>Active Buses: 18</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Action Cluster & Profile -->
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <!-- Emergency SOS Action -->
+                <button class="clay-btn clay-btn-danger" type="button" @onclick="TriggerEmergencyModal">
+                    <span class="material-symbols-outlined" style="font-size: 1.125rem;">emergency_share</span>
+                    <span>Emergency SOS</span>
+                </button>
+
+                <!-- Notifications -->
+                <button type="button" style="width: 2.75rem; height: 2.75rem; border-radius: 9999px; background: var(--color-surface-container-low); border: none; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; box-shadow: inset 2px 2px 4px rgba(41,42,66,0.04), inset -2px -2px 4px rgba(255,255,255,0.9), 0 4px 10px -2px rgba(41,42,66,0.06);">
+                    <span class="material-symbols-outlined" style="color: var(--color-on-surface-variant); font-size: 1.25rem;">notifications</span>
+                    <span style="position: absolute; top: 0.625rem; right: 0.625rem; width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--color-error); border: 2px solid #ffffff;"></span>
+                </button>
+
+                <!-- User Profile -->
+                <div style="display: flex; align-items: center; gap: 0.75rem; padding-left: 0.5rem;">
+                    <div style="display: flex; flex-direction: column; text-align: right;">
+                        <span style="font-size: 0.8125rem; font-weight: 700; color: var(--color-on-surface); line-height: 1.2;">@AuthState.CurrentSession.FullName</span>
+                        <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant); line-height: 1;">@AuthState.CurrentSession.Role</span>
+                    </div>
+                    <div style="width: 2.25rem; height: 2.25rem; border-radius: 9999px; background: var(--color-primary); color: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(100,75,186,0.3);">
+                        <span class="material-symbols-outlined" style="font-size: 1.25rem;">person</span>
+                    </div>
+                    <button class="clay-btn clay-btn-surface clay-btn-sm" type="button" @onclick="Logout">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">logout</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body Content -->
+        <main style="padding-top: 5rem; min-height: 100vh; background-color: var(--color-surface); padding-left: 2rem; padding-right: 2rem; padding-bottom: 3rem;">
+            @Body
+        </main>
+    </div>
+</div>
+
+@if (_showEmergencyDialog)
+{
+    <!-- Emergency SOS Confirmation Dialog Modal -->
+    <div style="position: fixed; inset: 0; background: rgba(24, 25, 48, 0.45); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center;">
+        <div class="clay-card" style="width: 100%; max-width: 32rem; padding: 2rem; background: #ffffff;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; color: var(--color-error); margin-bottom: 1rem;">
+                <span class="material-symbols-outlined" style="font-size: 2rem;">warning</span>
+                <h3 style="font-size: 1.375rem; font-weight: 800; margin: 0;">District Emergency Broadcast</h3>
+            </div>
+            <p style="color: var(--color-on-surface-variant); font-size: 0.875rem; line-height: 1.5; margin-bottom: 1.5rem;">
+                Initiating an Emergency SOS will immediately dispatch safety alerts to all on-route drivers, trigger police/EMS transit dispatch channels, and flag affected routes.
+            </p>
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button class="clay-btn clay-btn-surface" type="button" @onclick="() => _showEmergencyDialog = false">Dismiss</button>
+                <button class="clay-btn clay-btn-danger" type="button" @onclick="ConfirmEmergency">Confirm & Dispatch SOS</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _showEmergencyDialog = false;
+
+    private void TriggerEmergencyModal()
+    {
+        _showEmergencyDialog = true;
+    }
+
+    private void ConfirmEmergency()
+    {
+        _showEmergencyDialog = false;
+        // Broadcast emergency event
+    }
+
+    private void Logout()
+    {
+        AuthState.Logout();
+        Navigation.NavigateTo("/login");
+    }
+}

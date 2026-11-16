@@ -1,0 +1,313 @@
+@page "/students"
+@layout Layout.MainLayout
+@inject IApiClient ApiClient
+@inject AdminAuthStateProvider AuthState
+
+<PageTitle>Student RFID Roster — SchoolTrack</PageTitle>
+
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Top Action & Breadcrumb Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); margin-bottom: 0.25rem;">
+                <span>Fleet Safety Ops</span>
+                <span class="material-symbols-outlined" style="font-size: 0.875rem;">chevron_right</span>
+                <span style="color: var(--color-primary);">RFID Telemetry & Gateways</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-on-surface); margin: 0; letter-spacing: -0.02em;">Student RFID Transit Roster</h1>
+                <span class="clay-badge clay-badge-secondary">
+                    <span style="width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--color-secondary); display: inline-block;" class="pulse-dot"></span>
+                    Live Gate Polling: 1.2s
+                </span>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="clay-btn clay-btn-surface" type="button" @onclick="ExportRoster">
+                <span class="material-symbols-outlined" style="font-size: 1.125rem; color: var(--color-primary);">download</span>
+                <span>Export CSV / PDF</span>
+            </button>
+            <button class="clay-btn clay-btn-surface" type="button" @onclick="SyncBadges">
+                <span class="material-symbols-outlined" style="font-size: 1.125rem; color: var(--color-secondary);">sync</span>
+                <span>Bulk Sync RFID Badges</span>
+            </button>
+            <button class="clay-btn clay-btn-primary" type="button" @onclick="() => _showIssuePassModal = true">
+                <span class="material-symbols-outlined" style="font-size: 1.125rem;">badge</span>
+                <span>+ Issue Temp RFID Pass</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 5 Live Metrics Bento Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+        <!-- Total Enrolled -->
+        <div class="clay-card" style="padding: 1.25rem; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant);">Total Enrolled</span>
+                <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-surface-container); color: var(--color-primary); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="font-size: 1.125rem;">groups</span>
+                </div>
+            </div>
+            <div style="margin-top: 0.5rem;">
+                <span style="font-size: 1.75rem; font-weight: 800; color: var(--color-on-surface); line-height: 1;">438</span>
+                <div style="display: flex; align-items: center; gap: 0.25rem; color: var(--color-secondary); font-size: 0.75rem; font-weight: 700; margin-top: 0.25rem;">
+                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">check_circle</span>
+                    <span>100% Badges Provisioned</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boarded / In-Transit -->
+        <div class="clay-card" style="padding: 1.25rem; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant);">Boarded / In-Transit</span>
+                <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-secondary-container); color: var(--color-on-secondary-container); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="font-size: 1.125rem;">directions_bus</span>
+                </div>
+            </div>
+            <div style="margin-top: 0.5rem;">
+                <span style="font-size: 1.75rem; font-weight: 800; color: var(--color-secondary); line-height: 1;">388</span>
+                <span style="font-size: 0.75rem; color: var(--color-on-surface-variant); display: block; margin-top: 0.25rem;">88.5% on morning commute</span>
+            </div>
+        </div>
+
+        <!-- Gate Arrival Confirmed -->
+        <div class="clay-card" style="padding: 1.25rem; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant);">Gate Arrival</span>
+                <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-primary-fixed); color: var(--color-on-primary-container); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="font-size: 1.125rem;">domain_verification</span>
+                </div>
+            </div>
+            <div style="margin-top: 0.5rem;">
+                <span style="font-size: 1.75rem; font-weight: 800; color: var(--color-primary); line-height: 1;">24</span>
+                <div style="display: flex; align-items: center; gap: 0.25rem; color: var(--color-primary); font-size: 0.75rem; font-weight: 700; margin-top: 0.25rem;">
+                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">shield</span>
+                    <span>Turnstiles Verified</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Pickup -->
+        <div class="clay-card" style="padding: 1.25rem; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant);">Pending Pickup</span>
+                <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-tertiary-fixed); color: var(--color-on-tertiary-fixed); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="font-size: 1.125rem;">access_time</span>
+                </div>
+            </div>
+            <div style="margin-top: 0.5rem;">
+                <span style="font-size: 1.75rem; font-weight: 800; color: var(--color-tertiary); line-height: 1;">18</span>
+                <span style="font-size: 0.75rem; color: var(--color-on-surface-variant); display: block; margin-top: 0.25rem;">Stops remaining: 4</span>
+            </div>
+        </div>
+
+        <!-- Unexcused Absent -->
+        <div class="clay-card" style="padding: 1.25rem; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-error);">Unexcused Absent</span>
+                <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-error-container); color: var(--color-on-error-container); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="font-size: 1.125rem;">sms_failed</span>
+                </div>
+            </div>
+            <div style="margin-top: 0.5rem;">
+                <span style="font-size: 1.75rem; font-weight: 800; color: var(--color-error); line-height: 1;">8</span>
+                <div style="display: flex; align-items: center; gap: 0.25rem; color: var(--color-error); font-size: 0.75rem; font-weight: 700; margin-top: 0.25rem;">
+                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">warning</span>
+                    <span>SMS Alert Pushed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="clay-card" style="padding: 1rem 1.5rem; background: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="position: relative; flex: 1; min-width: 280px;">
+            <span class="material-symbols-outlined" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-on-surface-variant); font-size: 1.25rem;">search</span>
+            <input class="clay-input" style="padding-left: 3rem;" placeholder="Search student by name, ID, RFID badge serial, bus #..." @bind="_searchTerm" @bind:event="oninput" @bind:after="ApplyFilter" />
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <select class="clay-input clay-select" style="width: 140px; height: 3rem;" @bind="_selectedGrade" @bind:after="ApplyFilter">
+                <option value="all">All Grades</option>
+                <option value="Grade 1">Grade 1</option>
+                <option value="Grade 2">Grade 2</option>
+                <option value="Grade 3">Grade 3</option>
+                <option value="Grade 4">Grade 4</option>
+                <option value="Grade 5">Grade 5</option>
+            </select>
+
+            <select class="clay-input clay-select" style="width: 170px; height: 3rem;" @bind="_selectedBusFilter" @bind:after="ApplyFilter">
+                <option value="all">All Buses</option>
+                <option value="Bus #14">Bus #14 (Jenkins)</option>
+                <option value="Bus #08">Bus #08 (Vance)</option>
+                <option value="Bus #22">Bus #22 (Rostova)</option>
+                <option value="Bus #05">Bus #05 (Kim)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Student Roster Table -->
+    <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
+        <div class="clay-table-container">
+            <table class="clay-table">
+                <thead>
+                    <tr>
+                        <th>Student Name & ID</th>
+                        <th>Class / Division</th>
+                        <th>Assigned Bus & Seat</th>
+                        <th>RFID Badge Serial</th>
+                        <th>Morning Status</th>
+                        <th>Emergency Contact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in _filteredStudents)
+                    {
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div style="width: 2.25rem; height: 2.25rem; border-radius: 9999px; background: var(--color-surface-container); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8125rem;">
+                                        @s.FirstName[0]@s.LastName[0]
+                                    </div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span style="font-weight: 700; color: var(--color-on-surface);">@s.FirstName @s.LastName</span>
+                                        <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">@s.AdmissionNumber</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span style="font-weight: 600;">@s.ClassName</span>
+                            </td>
+                            <td>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-weight: 700; color: var(--color-primary);">Bus #14</span>
+                                    <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">Seat: @(s.SeatNumber ?? "Unassigned")</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="clay-badge clay-badge-neutral">
+                                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">badge</span>
+                                    <span>@(s.AssignedCardUid ?? "Not Assigned")</span>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="clay-badge clay-badge-secondary">
+                                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">done</span>
+                                    <span>Boarded (07:54 AM)</span>
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-weight: 600; font-size: 0.8125rem;">@(s.EmergencyContactPhone ?? "Parent Contact")</span>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="clay-btn clay-btn-surface clay-btn-sm" type="button" @onclick="() => OpenIssueModalFor(s)">
+                                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">credit_card</span>
+                                    <span>Reissue</span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (_showIssuePassModal)
+{
+    <!-- Issue Temp RFID Pass Modal -->
+    <div style="position: fixed; inset: 0; background: rgba(24, 25, 48, 0.45); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center;">
+        <div class="clay-card" style="width: 100%; max-width: 32rem; padding: 2rem; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 1.5rem;">badge</span>
+                    <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Issue Temp RFID Transit Pass</h3>
+                </div>
+                <button type="button" style="background: none; border: none; cursor: pointer;" @onclick="() => _showIssuePassModal = false">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Student Name</label>
+                    <input class="clay-input" value="@(_selectedStudentForPass?.FirstName + " " + _selectedStudentForPass?.LastName)" readonly />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">New RFID Card UID / Badge Barcode</label>
+                    <input class="clay-input" placeholder="e.g. ST-TEMP-90412" @bind="_tempPassSerial" />
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+                    <button class="clay-btn clay-btn-surface" type="button" @onclick="() => _showIssuePassModal = false">Cancel</button>
+                    <button class="clay-btn clay-btn-primary" type="button" @onclick="ConfirmIssuePass">Issue & Bind Pass</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<StudentDto> _allStudents = new();
+    private List<StudentDto> _filteredStudents = new();
+    private string _searchTerm = string.Empty;
+    private string _selectedGrade = "all";
+    private string _selectedBusFilter = "all";
+    private bool _showIssuePassModal = false;
+    private StudentDto? _selectedStudentForPass;
+    private string _tempPassSerial = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _allStudents = await ApiClient.GetStudentsAsync(AuthState.CurrentSession.SchoolId);
+        _filteredStudents = _allStudents;
+        _selectedStudentForPass = _allStudents.FirstOrDefault();
+    }
+
+    private void ApplyFilter()
+    {
+        var result = _allStudents.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(_selectedGrade) && _selectedGrade != "all")
+        {
+            result = result.Where(s => s.ClassName.Contains(_selectedGrade, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            var q = _searchTerm.ToLowerInvariant();
+            result = result.Where(s => s.FirstName.ToLowerInvariant().Contains(q) ||
+                                       s.LastName.ToLowerInvariant().Contains(q) ||
+                                       (s.AssignedCardUid != null && s.AssignedCardUid.ToLowerInvariant().Contains(q)) ||
+                                       s.AdmissionNumber.ToLowerInvariant().Contains(q));
+        }
+
+        _filteredStudents = result.ToList();
+    }
+
+    private void OpenIssueModalFor(StudentDto student)
+    {
+        _selectedStudentForPass = student;
+        _tempPassSerial = $"TEMP-{DateTime.Now:fff}-{Random.Shared.Next(100, 999)}";
+        _showIssuePassModal = true;
+    }
+
+    private async Task ConfirmIssuePass()
+    {
+        if (_selectedStudentForPass != null && !string.IsNullOrWhiteSpace(_tempPassSerial))
+        {
+            await ApiClient.IssueTempRfidCardAsync(AuthState.CurrentSession.SchoolId, _selectedStudentForPass.Id, _tempPassSerial);
+            _showIssuePassModal = false;
+            _allStudents = await ApiClient.GetStudentsAsync(AuthState.CurrentSession.SchoolId);
+            ApplyFilter();
+        }
+    }
+
+    private void ExportRoster() { }
+    private void SyncBadges() { }
+}
+

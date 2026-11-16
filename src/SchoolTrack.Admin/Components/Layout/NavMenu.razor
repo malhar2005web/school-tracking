@@ -1,0 +1,113 @@
+@inject NavigationManager Navigation
+
+<aside class="sidebar-clay fixed left-0 top-0 h-full w-72 bg-white flex flex-col justify-between p-4 z-50" style="position: fixed; left: 0; top: 0; height: 100vh; width: 18rem; background: #ffffff; z-index: 50; display: flex; flex-direction: column; justify-content: space-between; padding: 1.25rem; box-shadow: 0 8px 20px -4px rgba(41,42,66,0.08), 0 4px 8px -2px rgba(41,42,66,0.04);">
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Logo & Title -->
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.25rem;">
+            <div style="width: 2.75rem; height: 2.75rem; border-radius: 9999px; background: var(--color-primary); display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: inset 0 3px 2px rgba(255,255,255,0.45), 0 8px 16px -4px rgba(100,75,186,0.4);">
+                <span class="material-symbols-outlined" style="font-size: 1.625rem;">directions_bus</span>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 1.25rem; font-weight: 800; color: var(--color-on-surface); letter-spacing: -0.02em; line-height: 1.1;">SchoolTrack</span>
+                <span style="font-size: 0.6875rem; font-weight: 700; color: var(--color-on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.2rem;">Fleet Safety Admin</span>
+            </div>
+        </div>
+
+        <!-- Ollie the Owl Transit Guardian Badge -->
+        <div class="clay-inset" style="padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 2.25rem; height: 2.25rem; border-radius: 9999px; background: var(--color-tertiary-fixed); display: flex; align-items: center; justify-content: center; color: var(--color-on-tertiary-fixed); box-shadow: inset 1px 1px 2px rgba(255,255,255,0.6);">
+                <span class="material-symbols-outlined" style="font-size: 1.25rem;">verified_user</span>
+            </div>
+            <div style="display: flex; flex-direction: column; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 0.375rem;">
+                    <span style="font-size: 0.8125rem; font-weight: 700; color: var(--color-on-surface);">Ollie the Owl</span>
+                    <span style="width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--color-secondary); display: inline-block;" class="pulse-dot"></span>
+                </div>
+                <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">Transit Guardian AI</span>
+            </div>
+        </div>
+
+        <!-- Nav Links -->
+        <nav style="display: flex; flex-direction: column; gap: 0.375rem;">
+            <NavLink class="clay-nav-item" href="" Match="NavLinkMatch.All">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span>Fleet Live Radar</span>
+            </NavLink>
+
+            <NavLink class="clay-nav-item" href="fleet-radar">
+                <span class="material-symbols-outlined">radar</span>
+                <span>Live Radar Stream</span>
+            </NavLink>
+
+            <NavLink class="clay-nav-item" href="students">
+                <span class="material-symbols-outlined">badge</span>
+                <span>Student RFID Roster</span>
+            </NavLink>
+
+            <NavLink class="clay-nav-item" href="routes">
+                <span class="material-symbols-outlined">alt_route</span>
+                <span>Route Management</span>
+            </NavLink>
+
+            <NavLink class="clay-nav-item" href="trips">
+                <span class="material-symbols-outlined">departure_board</span>
+                <span>Trip Dispatch Center</span>
+            </NavLink>
+
+            <NavLink class="clay-nav-item" href="fleet">
+                <span class="material-symbols-outlined">directions_bus</span>
+                <span>Fleet & Hardware</span>
+            </NavLink>
+
+            <NavLink class="clay-nav-item" href="reports">
+                <span class="material-symbols-outlined">fact_check</span>
+                <span>Reports & Audits</span>
+            </NavLink>
+
+            <NavLink class="clay-nav-item" href="settings">
+                <span class="material-symbols-outlined">settings</span>
+                <span>School Settings</span>
+            </NavLink>
+        </nav>
+    </div>
+
+    <!-- Telemetry Sync Status Footer -->
+    <div class="clay-inset" style="padding: 0.625rem 0.875rem; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="material-symbols-outlined" style="color: var(--color-secondary); font-size: 1.125rem;">lock_reset</span>
+            <span style="font-size: 0.6875rem; font-weight: 600; color: var(--color-on-surface-variant);">v2.4 Telemetry Sync</span>
+        </div>
+        <span style="width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--color-secondary); display: inline-block;"></span>
+    </div>
+</aside>
+
+<style>
+    .clay-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.625rem 1rem;
+        border-radius: 1rem;
+        color: var(--color-on-surface-variant);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .clay-nav-item:hover {
+        background: var(--color-surface-container);
+        color: var(--color-on-surface);
+    }
+
+    .clay-nav-item.active {
+        background: var(--color-primary-container) !important;
+        color: var(--color-on-primary) !important;
+        font-weight: 700;
+        box-shadow: 0 8px 16px -4px rgba(155, 131, 246, 0.4), inset 0 2px 2px rgba(255, 255, 255, 0.5);
+    }
+
+    .clay-nav-item .material-symbols-outlined {
+        font-size: 1.25rem;
+    }
+</style>

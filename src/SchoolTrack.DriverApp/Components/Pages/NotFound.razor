@@ -1,0 +1,20 @@
+@page "/not-found"
+@layout MainLayout
+@inject NavigationManager Navigation
+
+<div style="min-height:60vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:2rem 1rem;">
+    <div style="width:4.5rem; height:4.5rem; border-radius:50%; background:#f5f2ff; color:#644bba; display:flex; align-items:center; justify-content:center; margin-bottom:1rem;">
+        <span class="material-symbols-outlined" style="font-size:36px;">wrong_location</span>
+    </div>
+    <h2 style="font-size:1.5rem; font-weight:800; color:#181930; margin-bottom:0.5rem; letter-spacing:-0.02em;">
+        Navigation Route Not Found
+    </h2>
+    <p style="font-size:0.925rem; color:#484552; max-width:20rem; margin-bottom:1.5rem;">
+        The requested screen or waypoint is not recognized by the in-cab system.
+    </p>
+    <button class="clay-button-solid"
+            style="background:#0c6b55; color:#ffffff; border:none; padding:0.75rem 1.5rem; border-radius:1rem; font-weight:800; font-size:0.925rem; cursor:pointer;"
+            @onclick='() => Navigation.NavigateTo("/")'>
+        Return to Active Route
+    </button>
+</div>

@@ -1,0 +1,198 @@
+@page "/history"
+@inject NavigationManager Navigation
+@inject ParentAuthState AuthState
+@inject IParentApiClient ApiClient
+@inject IParentNotificationService NotificationService
+
+<div style="display:flex; flex-direction:column; width:100%; padding:0 1rem; gap:1.25rem; user-select:none; max-width:440px; margin:0 auto;">
+    <!-- Top Student Smart Card Pass -->
+    <section class="clay-card" style="padding:1rem; position:relative; overflow:hidden;">
+        <div style="position:absolute; right:-2rem; top:-2rem; width:9rem; height:9rem; border-radius:50%; background:rgba(231,222,255,0.4); filter:blur(24px); pointer-events:none;"></div>
+        <div style="position:absolute; right:1rem; bottom:0.5rem; opacity:0.06; pointer-events:none;">
+            <span class="material-symbols-outlined" style="font-size:100px; color:#644bba;">contactless</span>
+        </div>
+
+        <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:0.75rem;">
+            <!-- Card Header -->
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <div style="width:1.75rem; height:1.75rem; border-radius:50%; background:rgba(155,131,246,0.3); display:flex; align-items:center; justify-content:center; color:#644bba;">
+                        <span class="material-symbols-outlined" style="font-size:16px;">school</span>
+                    </div>
+                    <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#484552;">@(ActiveChild?.SchoolName ?? "Oakridge Elementary")</span>
+                </div>
+                <div class="clay-badge clay-badge-secondary">
+                    <span style="width:6px; height:6px; border-radius:50%; background:#0c6b55; animation:pulse 2s infinite;"></span>
+                    <span>RFID Card Synced</span>
+                </div>
+            </div>
+
+            <!-- Card Body -->
+            <div style="display:flex; align-items:center; gap:1rem;">
+                <div style="position:relative;">
+                    <div style="width:4rem; height:4rem; border-radius:50%; padding:2px; background:#eeecff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(24,25,48,0.1);">
+                        <img src="@(ActiveChild?.AvatarUrl)" style="width:3.5rem; height:3.5rem; border-radius:50%; object-fit:cover;" />
+                    </div>
+                    <div style="position:absolute; bottom:-2px; right:-2px; width:1.5rem; height:1.5rem; border-radius:50%; background:#0c6b55; color:#ffffff; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(12,107,85,0.4);">
+                        <span class="material-symbols-outlined" style="font-size:14px;">verified</span>
+                    </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; min-width:0;">
+                    <h2 style="font-size:18px; font-weight:800; color:#181930; margin:0;">@(ActiveChild?.FullName ?? "Leo Martinez")</h2>
+                    <span style="font-size:13px; font-weight:700; color:#644bba;">@(ActiveChild?.Grade) • @(ActiveChild?.ClassSection)</span>
+                    <span style="font-size:11px; color:#797584; margin-top:2px;">ID: #@(ActiveChild?.AdmissionNumber ?? "ST-88219")</span>
+                </div>
+            </div>
+
+            <!-- RFID Hardware Status Banner -->
+            <div class="clay-inset" style="padding:0.5rem 0.75rem; display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <div style="width:1.5rem; height:1.5rem; border-radius:50%; background:#9b83f6; color:#ffffff; display:flex; align-items:center; justify-content:center;">
+                        <span class="material-symbols-outlined" style="font-size:14px;">badge</span>
+                    </div>
+                    <span style="font-size:12px; font-weight:700; color:#181930;">UID: @(ActiveChild?.RfidCardUid ?? "4B-99-F2-10")</span>
+                </div>
+                <span class="clay-badge clay-badge-secondary" style="font-size:10px;">Active Pass</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filter Tab Pills -->
+    <section style="display:flex; flex-direction:column; gap:0.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:15px; font-weight:700; color:#181930;">Trip Filter</span>
+            <span style="font-size:11px; color:#484552;">Live updates: 30s ago</span>
+        </div>
+
+        <div style="display:flex; gap:0.5rem; overflow-x:auto; padding-bottom:2px;">
+            <button class="clay-btn @(_selectedFilter == "today" ? "clay-btn-primary" : "clay-btn-surface")" style="padding:0.375rem 0.875rem; font-size:12px; white-space:nowrap;" @onclick='() => SetFilter("today")'>
+                <span class="material-symbols-outlined" style="font-size:15px;">calendar_today</span>
+                <span>Today (Wed)</span>
+            </button>
+            <button class="clay-btn @(_selectedFilter == "yesterday" ? "clay-btn-primary" : "clay-btn-surface")" style="padding:0.375rem 0.875rem; font-size:12px; white-space:nowrap;" @onclick='() => SetFilter("yesterday")'>
+                <span>Yesterday</span>
+            </button>
+            <button class="clay-btn @(_selectedFilter == "week" ? "clay-btn-primary" : "clay-btn-surface")" style="padding:0.375rem 0.875rem; font-size:12px; white-space:nowrap;" @onclick='() => SetFilter("week")'>
+                <span>Past 7 Days</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Live Milestones Vertical Timeline -->
+    <section style="display:flex; flex-direction:column; gap:0.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <div style="width:10px; height:10px; border-radius:50%; background:#a1f3d7; display:flex; align-items:center; justify-content:center;">
+                    <span style="width:5px; height:5px; border-radius:50%; background:#0c6b55; animation:pulse 2s infinite;"></span>
+                </div>
+                <h3 style="font-size:16px; font-weight:700; color:#181930; margin:0;">Live Transit Milestones</h3>
+            </div>
+            <span class="clay-badge clay-badge-secondary">En Route</span>
+        </div>
+
+        <!-- Timeline Container -->
+        <div class="clay-card" style="padding:1rem; position:relative; display:flex; flex-direction:column; gap:1rem;">
+            <!-- Vertical Line -->
+            <div style="position:absolute; left:2.125rem; top:1.5rem; bottom:1.5rem; width:4px; background:#e7e6ff; border-radius:9999px; pointer-events:none;"></div>
+
+            @foreach (var log in _logs)
+            {
+                <div style="position:relative; z-index:1; display:flex; align-items:flex-start; gap:0.875rem;">
+                    <!-- Timeline Node Puck -->
+                    <div style="width:2rem; height:2rem; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; @(log.ScanType == "Boarding" ? "background:#0c6b55; color:#ffffff;" : log.ScanType == "SchoolGate" ? "background:#ffd66b; color:#765b00;" : "background:#9b83f6; color:#ffffff;") box-shadow:0 4px 8px rgba(0,0,0,0.12);">
+                        @if (log.ScanType == "Boarding")
+                        {
+                            <span class="material-symbols-outlined" style="font-size:16px;">qr_code_scanner</span>
+                        }
+                        else if (log.ScanType == "SchoolGate")
+                        {
+                            <span class="material-symbols-outlined" style="font-size:16px;">meeting_room</span>
+                        }
+                        else
+                        {
+                            <span class="material-symbols-outlined" style="font-size:16px;">sensors</span>
+                        }
+                    </div>
+
+                    <!-- Milestone Card -->
+                    <div class="clay-inset" style="flex:1; padding:0.625rem 0.75rem; display:flex; flex-direction:column; gap:0.25rem;">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <span style="font-size:13px; font-weight:700; color:#181930;">@log.MilestoneTitle</span>
+                            <span style="font-size:11px; font-weight:700; color:#0c6b55;">@log.FormattedTime</span>
+                        </div>
+                        <p style="font-size:11px; color:#484552; margin:0;">@log.LocationName</p>
+
+                        <div style="display:flex; align-items:center; gap:0.375rem; margin-top:2px;">
+                            <span class="clay-badge clay-badge-secondary" style="font-size:10px; padding:0.125rem 0.5rem;">
+                                <span class="material-symbols-outlined" style="font-size:11px;">check_circle</span>
+                                RFID Verified
+                            </span>
+                            <span style="font-size:11px; color:#797584;">@log.DriverName</span>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(log.MapSnapshotUrl))
+                        {
+                            <div style="margin-top:0.375rem; width:100%; height:5rem; border-radius:0.75rem; overflow:hidden; position:relative; background-image:url('@log.MapSnapshotUrl'); background-size:cover; background-position:center; box-shadow:inset 0 1px 2px rgba(24,25,48,0.1);">
+                                <div style="position:absolute; bottom:0.375rem; left:0.375rem; background:rgba(251,248,255,0.9); backdrop-filter:blur(4px); padding:0.125rem 0.375rem; border-radius:0.375rem; font-size:10px; font-weight:700; display:flex; align-items:center; gap:2px;">
+                                    <span class="material-symbols-outlined" style="font-size:12px; color:#644bba;">pin_drop</span>
+                                    Oakridge & 5th Geotag
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Ollie Achievement Badge Card -->
+    <section class="clay-card" style="padding:1rem; display:flex; align-items:center; gap:0.875rem;">
+        <div style="width:4.5rem; height:4.5rem; border-radius:50%; padding:2px; background:#e7e6ff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <img alt="Ollie" style="width:4rem; height:4rem; object-fit:contain;" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpLlyM0Broza9BqnBbgTBAhdP3Au4u0jnjcOLNGAdsbzyys417O6aUyWehYNuaZRB1Mw9wTMP6v4ayUVn7a7HCb5CzC1tZ-FIX8_ogG6eud--sgGqXEm9Czvb6keRmAvRFhCGJX7n6Haf8n8QYIVKOHMVDVeLxhflWT1wURn1ztnBhIQlcS23F9GdrI1EL9ckoZScqDdjZK3zPdY_hFHH0KgsDnxmc0xc7si-9LnQ" />
+        </div>
+
+        <div style="display:flex; flex-direction:column;">
+            <div style="font-size:14px; font-weight:800; color:#181930;">5-Day Safe Transit Streak! 🦉</div>
+            <p style="font-size:12px; color:#484552; margin:2px 0 0.375rem 0;">Leo has achieved 100% on-time boarding and gate scans this week!</p>
+            <span class="clay-badge clay-badge-primary" style="align-self:flex-start; font-size:10px;">Safe Transit Badge Awarded</span>
+        </div>
+    </section>
+
+    <!-- PDF Attendance Download CTA -->
+    <button class="clay-btn clay-btn-surface" style="width:100%; height:2.75rem; font-size:13px; margin-bottom:1rem;" @onclick="DownloadAttendancePdf">
+        <span class="material-symbols-outlined" style="font-size:18px; color:#644bba;">picture_as_pdf</span>
+        <span>Download Monthly Transit Log (PDF)</span>
+    </button>
+</div>
+
+@code {
+    private ChildProfileModel? ActiveChild => AuthState.ActiveChild;
+    private List<RfidTransitLogModel> _logs = new();
+    private string _selectedFilter = "today";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLogs();
+    }
+
+    private async Task LoadLogs()
+    {
+        if (ActiveChild != null)
+        {
+            _logs = await ApiClient.GetChildRfidLogsAsync(ActiveChild.StudentId, DateTime.UtcNow);
+        }
+    }
+
+    private async Task SetFilter(string filter)
+    {
+        _selectedFilter = filter;
+        await LoadLogs();
+    }
+
+    private void DownloadAttendancePdf()
+    {
+        NotificationService.ShowToast("PDF Generated", $"Monthly attendance report for {ActiveChild?.FullName} downloaded.", "General");
+    }
+}
+
