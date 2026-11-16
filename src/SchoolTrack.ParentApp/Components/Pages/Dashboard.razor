@@ -12,11 +12,12 @@
     <div style="display:flex; align-items:center; justify-content:space-between; padding-top:0.25rem;">
         <div style="display:flex; flex-direction:column;">
             <div style="font-size:20px; font-weight:800; color:#181930; display:flex; align-items:center; gap:0.375rem;">
-                Good Morning, Sarah! <span style="font-size:18px;">☀️</span>
+                @(AuthState.CurrentShift == "Morning" ? "Good Morning" : "Good Afternoon"), Sarah! 
+                <span style="font-size:18px;">@(AuthState.CurrentShift == "Morning" ? "☀️" : "🌙")</span>
             </div>
             <p style="font-size:12px; color:#484552; margin:0; display:flex; align-items:center; gap:0.25rem;">
                 <span style="width:8px; height:8px; border-radius:50%; background:#0c6b55; display:inline-block; animation:ping 2s infinite;"></span>
-                @(ActiveChild?.FullName ?? "Leo")'s morning route is on schedule.
+                @(ActiveChild?.FullName ?? "Leo")'s @(AuthState.CurrentShift.ToLowerInvariant()) route is active.
             </p>
         </div>
 
@@ -25,6 +26,31 @@
             <span class="material-symbols-outlined" style="font-size:18px;">emergency_home</span>
             <span>SOS</span>
         </button>
+    </div>
+
+    <!-- Morning vs Evening Shift Selector (Jatana & Yetana) -->
+    <div style="display:flex; background:#eeecff; padding:4px; border-radius:12px; gap:4px; box-shadow:inset 0 1px 3px rgba(24,25,48,0.06);">
+        <button type="button"
+                style="flex:1; border:none; padding:8px 12px; border-radius:9px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s; @(AuthState.CurrentShift == "Morning" ? "background:#644bba; color:#ffffff; box-shadow:0 3px 8px rgba(100,75,186,0.3);" : "background:transparent; color:#484552;")"
+                @onclick='() => SwitchShift("Morning")'>
+            <span class="material-symbols-outlined" style="font-size:16px;">wb_sunny</span>
+            <span>Morning (To School)</span>
+        </button>
+        <button type="button"
+                style="flex:1; border:none; padding:8px 12px; border-radius:9px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s; @(AuthState.CurrentShift == "Evening" ? "background:#644bba; color:#ffffff; box-shadow:0 3px 8px rgba(100,75,186,0.3);" : "background:transparent; color:#484552;")"
+                @onclick='() => SwitchShift("Evening")'>
+            <span class="material-symbols-outlined" style="font-size:16px;">wb_twilight</span>
+            <span>Evening (To Home)</span>
+        </button>
+    </div>
+
+    <!-- Private Parent Console Security Notice (Only for his own child) -->
+    <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(12,107,85,0.08); border:1px solid rgba(12,107,85,0.2); border-radius:10px; padding:6px 10px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+            <span class="material-symbols-outlined" style="font-size:16px; color:#0c6b55;">verified_user</span>
+            <span style="font-size:11px; font-weight:600; color:#0c6b55;">Private Parent Console • Strictly for @(ActiveChild?.FullName)</span>
+        </div>
+        <span class="clay-badge clay-badge-tertiary" style="font-size:10px; padding:2px 6px;">@(_trip?.ChildInOutStatus ?? "IN (On-Bus)")</span>
     </div>
 
     <!-- Child Selector Pills -->
@@ -43,6 +69,43 @@
                     }
                 </button>
             }
+        </div>
+    }
+
+    <!-- TRIP CLOSED & COMPLETED CELEBRATORY CARD -->
+    @if (_trip?.IsTripClosed == true)
+    {
+        <div class="clay-card" style="padding:1.25rem; border:2px solid #0c6b55; background:linear-gradient(135deg, #f0fdf9 0%, #e7e6ff 100%); display:flex; flex-direction:column; gap:0.75rem;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div style="width:3rem; height:3rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(12,107,85,0.2);">
+                    <span class="material-symbols-outlined" style="font-size:28px;">verified</span>
+                </div>
+                <div>
+                    <h3 style="font-size:17px; font-weight:800; color:#0c6b55; margin:0;">🎉 Trip Closed & Safe Arrival Confirmed</h3>
+                    <span style="font-size:12px; color:#484552;">Verified by RFID Tap • @(AuthState.CurrentShift) Route Closed</span>
+                </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.85); padding:0.75rem 1rem; border-radius:10px; border:1px solid rgba(12,107,85,0.15);">
+                <p style="font-size:13px; color:#181930; line-height:1.4; margin:0 0 0.5rem 0; font-weight:600;">
+                    @(_trip.SafeArrivalSummary ?? $"{ActiveChild?.FullName} safely reached the destination. Trip is closed.")
+                </p>
+                <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; color:#484552;">
+                    <span>Closed At: @(_trip.ClosedAt?.ToString("hh:mm tt") ?? DateTimeOffset.UtcNow.ToString("hh:mm tt"))</span>
+                    <span style="color:#0c6b55; font-weight:700;">Safe Handover Verified</span>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:0.5rem; margin-top:0.25rem;">
+                <button class="clay-btn clay-btn-primary" style="flex:1; height:2.5rem; font-size:12px;" @onclick='() => SwitchShift(AuthState.CurrentShift == "Morning" ? "Evening" : "Morning")'>
+                    <span class="material-symbols-outlined" style="font-size:16px;">swap_horiz</span>
+                    <span>Switch to @(AuthState.CurrentShift == "Morning" ? "Evening" : "Morning")</span>
+                </button>
+                <button class="clay-btn clay-btn-surface" style="flex:1; height:2.5rem; font-size:12px;" @onclick="ReopenTrip">
+                    <span class="material-symbols-outlined" style="font-size:16px;">refresh</span>
+                    <span>Re-open Active View</span>
+                </button>
+            </div>
         </div>
     }
 
@@ -87,10 +150,10 @@
                 </div>
             </div>
 
-            <!-- School Destination Pill -->
+            <!-- Destination Pill -->
             <div style="position:absolute; right:0.75rem; bottom:0.5rem; display:flex; align-items:center; gap:0.25rem; background:rgba(255,255,255,0.9); backdrop-filter:blur(4px); padding:0.25rem 0.625rem; border-radius:9999px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
-                <span class="material-symbols-outlined" style="font-size:15px; color:#644bba;">school</span>
-                <span style="font-size:11px; font-weight:700; color:#181930;">@(ActiveChild?.SchoolName ?? "Oakridge Elementary")</span>
+                <span class="material-symbols-outlined" style="font-size:15px; color:#644bba;">@(AuthState.CurrentShift == "Morning" ? "school" : "home")</span>
+                <span style="font-size:11px; font-weight:700; color:#181930;">@(_trip?.DestinationName ?? (AuthState.CurrentShift == "Morning" ? "Oakridge Elementary" : "Home"))</span>
             </div>
         </div>
 
@@ -115,19 +178,19 @@
         </button>
     </div>
 
-    <!-- 2. Child Active Transit Hero Card -->
+    <!-- 2. Child Active Transit Hero Card (Student In/Out Status & Dual-Phase ETA) -->
     <div class="clay-card" style="padding:1rem; position:relative; overflow:hidden;">
         <!-- Tactile Glow -->
         <div style="position:absolute; right:-2.5rem; top:-2.5rem; width:11rem; height:11rem; border-radius:50%; background:radial-gradient(circle, rgba(161,243,215,0.4) 0%, rgba(231,222,255,0.2) 70%); filter:blur(24px); pointer-events:none;"></div>
 
-        <!-- Student Header & Status -->
+        <!-- Student Header & In/Out Status -->
         <div style="display:flex; align-items:center; justify-content:space-between; position:relative; z-index:1;">
             <div style="display:flex; align-items:center; gap:0.75rem;">
                 <div style="position:relative;">
                     <div style="width:3.5rem; height:3.5rem; border-radius:50%; padding:2px; background:#e7e6ff; box-shadow:inset 0 2px 4px rgba(255,255,255,0.9), 0 4px 8px rgba(24,25,48,0.08); display:flex; align-items:center; justify-content:center;">
                         <img src="@(ActiveChild?.AvatarUrl)" style="width:3rem; height:3rem; border-radius:50%; object-fit:cover;" />
                     </div>
-                    <span style="position:absolute; bottom:0; right:0; width:1rem; height:1rem; background:#0c6b55; border-radius:50%; box-shadow:0 0 0 2px #ffffff; display:flex; align-items:center; justify-content:center;">
+                    <span style="position:absolute; bottom:0; right:0; width:1rem; height:1rem; background:@(_trip?.IsOnBus == true ? "#0c6b55" : "#cca741"); border-radius:50%; box-shadow:0 0 0 2px #ffffff; display:flex; align-items:center; justify-content:center;">
                         <span style="width:6px; height:6px; border-radius:50%; background:#ffffff; animation:pulse 1.5s infinite;"></span>
                     </span>
                 </div>
@@ -137,10 +200,13 @@
                 </div>
             </div>
 
-            <!-- Status Badge -->
-            <div class="clay-badge clay-badge-secondary" style="padding:0.375rem 0.75rem;">
-                <span class="material-symbols-outlined" style="font-size:16px;">directions_bus</span>
-                <span>@(ActiveChild?.BusNumber ?? "Bus #14")</span>
+            <!-- In/Out Status Badge (Only for his own child) -->
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+                <span class="clay-badge @(_trip?.IsOnBus == true ? "clay-badge-tertiary" : (_trip?.IsTripClosed == true ? "clay-badge-primary" : "clay-badge-secondary"))" style="padding:0.375rem 0.625rem; font-size:11px;">
+                    <span class="material-symbols-outlined" style="font-size:15px;">@(_trip?.IsOnBus == true ? "directions_bus" : (_trip?.IsTripClosed == true ? "check_circle" : "schedule"))</span>
+                    <span>@(_trip?.ChildInOutStatus ?? "IN (On-Bus)")</span>
+                </span>
+                <span style="font-size:10px; color:#797584;">@(ActiveChild?.BusNumber ?? "Bus #14")</span>
             </div>
         </div>
 
@@ -150,24 +216,67 @@
                 <span class="material-symbols-outlined" style="font-size:16px;">contactless</span>
             </div>
             <div style="display:flex; flex-direction:column; flex:1; min-width:0;">
-                <span style="font-size:11px; font-weight:700; color:#644bba; text-transform:uppercase;">RFID Verified Boarding</span>
+                <span style="font-size:11px; font-weight:700; color:#644bba; text-transform:uppercase;">RFID Status Event</span>
                 <span style="font-size:12px; color:#181930; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@(_trip?.LastRfidBoardingInfo ?? "Tapped in at 07:42 AM (Oakridge & 5th Ave)")</span>
             </div>
             <span class="material-symbols-outlined" style="font-size:20px; color:#0c6b55;">check_circle</span>
         </div>
 
-        <!-- Live ETA Big Yellow Pill -->
-        <div style="margin-top:0.75rem; padding:0.75rem; border-radius:1rem; background:#ffd66b; color:#241a00; display:flex; align-items:center; justify-content:space-between; box-shadow:0 8px 16px -4px rgba(118,91,0,0.15), inset 0 2px 2px rgba(255,255,255,0.7), inset 0 -3px 0 rgba(118,91,0,0.2);">
-            <div style="display:flex; align-items:center; gap:0.625rem;">
-                <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#ffffff; display:flex; align-items:center; justify-content:center; color:#765b00; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
-                    <span class="material-symbols-outlined" style="font-size:20px;">timer</span>
+        <!-- DUAL-PHASE DYNAMIC ETA DISPLAY -->
+        <!-- Requirement: Bus jar pickup point la nahi pohocli tar approx reaching time, pickup point varun nighali tar approx reaching time -->
+        <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.875rem;">
+            <span style="font-size:11px; font-weight:800; color:#484552; text-transform:uppercase; letter-spacing:0.5px;">Dual-Phase Transit ETA</span>
+
+            <!-- Phase 1: Bus To Pickup Point ETA -->
+            <div style="padding:0.625rem 0.75rem; border-radius:10px; background:@(_trip?.ChildBoardingPhase == "BeforePickup" ? "#ffd66b" : "#f5f2ff"); color:#181930; border:1px solid @(_trip?.ChildBoardingPhase == "BeforePickup" ? "#cca741" : "#e1e0ff"); display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#ffffff; color:#765b00; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+                        <span class="material-symbols-outlined" style="font-size:18px;">pin_drop</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="font-size:10px; font-weight:700; text-transform:uppercase; opacity:0.8;">1. Bus Reaching Pickup Point</span>
+                        <span style="font-size:12px; font-weight:700;">@(AuthState.CurrentShift == "Morning" ? ActiveChild?.MorningPickupStopName : "Campus Gate")</span>
+                    </div>
                 </div>
-                <div style="display:flex; flex-direction:column;">
-                    <span style="font-size:11px; font-weight:700; text-transform:uppercase; opacity:0.8;">Estimated Arrival</span>
-                    <span style="font-size:18px; font-weight:800; line-height:1.2;">In @(_trip?.MinutesRemaining ?? 8) mins <span style="font-size:12px; font-weight:500;">(@(_trip?.EstimatedArrivalTime ?? "08:05 AM"))</span></span>
+                <div style="text-align:right;">
+                    <span style="font-size:13px; font-weight:800; color:@(_trip?.ChildBoardingPhase == "BeforePickup" ? "#241a00" : "#0c6b55");">
+                        @(_trip?.PickupStopEtaText ?? "7 mins (07:42 AM)")
+                    </span>
+                    <div style="font-size:10px; color:#484552;">@(_trip?.ChildBoardingPhase == "BeforePickup" ? "Approaching Stop" : "Completed")</div>
                 </div>
             </div>
-            <span style="padding:0.25rem 0.625rem; border-radius:9999px; background:rgba(255,255,255,0.8); color:#181930; font-size:11px; font-weight:700;">Safe Route</span>
+
+            <!-- Phase 2: Pickup Point Varun Nighali Tar Destination ETA -->
+            <div style="padding:0.625rem 0.75rem; border-radius:10px; background:@(_trip?.ChildBoardingPhase == "OnboardTransit" ? "#ffd66b" : "#f5f2ff"); color:#181930; border:1px solid @(_trip?.ChildBoardingPhase == "OnboardTransit" ? "#cca741" : "#e1e0ff"); display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#ffffff; color:#644bba; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+                        <span class="material-symbols-outlined" style="font-size:18px;">@(AuthState.CurrentShift == "Morning" ? "school" : "home")</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="font-size:10px; font-weight:700; text-transform:uppercase; opacity:0.8;">2. Bus Reaching Destination</span>
+                        <span style="font-size:12px; font-weight:700;">@(_trip?.DestinationName ?? "Oakridge Elementary Campus")</span>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <span style="font-size:13px; font-weight:800; color:@(_trip?.ChildBoardingPhase == "OnboardTransit" ? "#241a00" : "#0c6b55");">
+                        @(_trip?.DestinationEtaText ?? "18 mins (08:15 AM)")
+                    </span>
+                    <div style="font-size:10px; color:#484552;">@(_trip?.ChildBoardingPhase == "OnboardTransit" ? "En Route Transit" : (_trip?.IsTripClosed == true ? "Arrived" : "Next Leg"))</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulation Phase Quick Switcher (For user testing / verification) -->
+        <div style="margin-top:0.75rem; display:flex; gap:0.375rem; background:#f5f2ff; padding:4px; border-radius:8px;">
+            <button type="button" class="clay-btn @(_trip?.ChildBoardingPhase == "BeforePickup" ? "clay-btn-primary" : "clay-btn-surface")" style="flex:1; padding:4px 6px; font-size:10px;" @onclick='() => ToggleChildPhase("BeforePickup")'>
+                1. Before Pickup
+            </button>
+            <button type="button" class="clay-btn @(_trip?.ChildBoardingPhase == "OnboardTransit" ? "clay-btn-primary" : "clay-btn-surface")" style="flex:1; padding:4px 6px; font-size:10px;" @onclick='() => ToggleChildPhase("OnboardTransit")'>
+                2. On-Board (IN)
+            </button>
+            <button type="button" class="clay-btn @(_trip?.ChildBoardingPhase == "SafelyDelivered" ? "clay-btn-primary" : "clay-btn-surface")" style="flex:1; padding:4px 6px; font-size:10px;" @onclick='() => ToggleChildPhase("SafelyDelivered")'>
+                3. Delivered (OUT)
+            </button>
         </div>
 
         <!-- Driver Mini Card -->
@@ -192,6 +301,17 @@
                 </button>
             </div>
         </div>
+
+        <!-- Parent Close Trip Button (Doni case madhe trip close karichi Aahe) -->
+        <div style="margin-top:0.875rem;">
+            @if (_trip?.IsTripClosed != true)
+            {
+                <button class="clay-btn clay-btn-surface" style="width:100%; height:2.75rem; font-size:12px; border:1px solid #0c6b55; color:#0c6b55; font-weight:700; gap:6px;" @onclick="OpenCloseTripModal">
+                    <span class="material-symbols-outlined" style="font-size:18px;">task_alt</span>
+                    <span>Confirm Safe Arrival & Close Trip</span>
+                </button>
+            }
+        </div>
     </div>
 
     <!-- 3. Quick Safety Controls Grid -->
@@ -208,7 +328,7 @@
                     <span class="material-symbols-outlined" style="font-size:22px;">explore</span>
                 </div>
                 <span style="font-size:15px; font-weight:700; color:#181930;">Live Route</span>
-                <span style="font-size:12px; color:#484552;">Turn-by-turn ETA</span>
+                <span style="font-size:12px; color:#484552;">Dual ETA & Map</span>
             </button>
 
             <!-- RFID Tap Logs Button -->
@@ -252,10 +372,44 @@
                 <span style="font-size:12px;">✨</span>
             </div>
             <p style="font-size:12px; color:#181930; margin:0; line-height:1.3;">
-                “Buzzy Bus #14 is cruising smoothly with zero traffic! Safe ride guaranteed!”
+                @(_trip?.IsTripClosed == true 
+                    ? $"“Yay! {ActiveChild?.FullName} arrived safely! Have a wonderful day!”" 
+                    : $"“Buzzy Bus #14 is cruising smoothly for {ActiveChild?.FullName}. Safe ride guaranteed!”")
             </p>
         </div>
     </div>
+
+    <!-- Close Trip Modal (Parents confirmation) -->
+    @if (_showCloseTripModal)
+    {
+        <div class="clay-modal-backdrop" @onclick="CloseModals">
+            <div class="clay-bottom-sheet" @onclick:stopPropagation="true" style="border-top:4px solid #0c6b55;">
+                <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                    <div style="width:3rem; height:3rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center;">
+                        <span class="material-symbols-outlined" style="font-size:28px;">check_circle</span>
+                    </div>
+                    <div>
+                        <h2 style="font-size:18px; font-weight:800; color:#0c6b55; margin:0;">Close & Confirm Trip</h2>
+                        <span style="font-size:12px; color:#484552;">Safe arrival verification</span>
+                    </div>
+                </div>
+
+                <p style="font-size:13px; color:#181930; line-height:1.4; margin:0 0 1.25rem 0;">
+                    Are you sure you want to close this @(AuthState.CurrentShift) trip for <strong>@(ActiveChild?.FullName)</strong>? This marks the trip as safely completed and stores the safe arrival log.
+                </p>
+
+                <div style="display:flex; flex-direction:column; gap:0.625rem;">
+                    <button class="clay-btn clay-btn-primary" style="height:3rem; font-size:13px; background:#0c6b55; color:#ffffff;" @onclick="ConfirmCloseTrip">
+                        <span class="material-symbols-outlined">task_alt</span>
+                        <span>YES, CONFIRM SAFE ARRIVAL & CLOSE</span>
+                    </button>
+                    <button class="clay-btn clay-btn-surface" style="height:2.75rem; font-size:13px;" @onclick="CloseModals">
+                        <span>Cancel</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 
     <!-- Skip Ride / Report Absence Modal -->
     @if (_showSkipRideModal)
@@ -389,6 +543,7 @@
     private bool _showSkipRideModal = false;
     private bool _showChatModal = false;
     private bool _showSosModal = false;
+    private bool _showCloseTripModal = false;
 
     private string _absenceReason = "Sick";
     private bool _skipMorning = true;
@@ -410,11 +565,27 @@
     {
         if (ActiveChild != null)
         {
-            _trip = await ApiClient.GetChildActiveTripAsync(ActiveChild.StudentId);
+            _trip = await ApiClient.GetChildActiveTripAsync(ActiveChild.StudentId, AuthState.CurrentShift);
             if (_trip != null)
             {
                 _currentSpeed = _trip.SpeedKmh;
             }
+        }
+    }
+
+    private void SwitchShift(string shift)
+    {
+        AuthState.SwitchShift(shift);
+        _ = LoadData();
+    }
+
+    private async Task ToggleChildPhase(string phase)
+    {
+        if (ActiveChild != null)
+        {
+            await ApiClient.ToggleSimulationChildBoardingStateAsync(ActiveChild.StudentId, phase);
+            await LoadData();
+            NotificationService.ShowToast("Boarding State Updated", $"Child phase set to {phase}", "General", ActiveChild.FullName);
         }
     }
 
@@ -456,11 +627,32 @@
     private void OpenSkipRideModal() => _showSkipRideModal = true;
     private void OpenChatModal() => _showChatModal = true;
     private void OpenSosModal() => _showSosModal = true;
+    private void OpenCloseTripModal() => _showCloseTripModal = true;
+
     private void CloseModals()
     {
         _showSkipRideModal = false;
         _showChatModal = false;
         _showSosModal = false;
+        _showCloseTripModal = false;
+    }
+
+    private async Task ConfirmCloseTrip()
+    {
+        if (ActiveChild != null)
+        {
+            await ApiClient.CloseParentTripAsync(ActiveChild.StudentId);
+            CloseModals();
+            await LoadData();
+            NotificationService.ShowToast("Trip Closed", $"{ActiveChild.FullName}'s safe arrival has been confirmed and logged.", "SafeArrival", ActiveChild.FullName);
+        }
+    }
+
+    private async Task ReopenTrip()
+    {
+        AuthState.ReopenTrip();
+        await LoadData();
+        NotificationService.ShowToast("Trip Reopened", "Active route tracking resumed.", "General");
     }
 
     private void CallDriver()
@@ -512,4 +704,3 @@
         TrackingHub.OnBoardingNotification -= HandleBoarding;
     }
 }
-

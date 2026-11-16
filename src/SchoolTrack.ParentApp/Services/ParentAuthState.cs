@@ -6,6 +6,9 @@ public class ParentAuthState
 {
     private ParentSession? _session;
     private ChildProfileModel? _activeChild;
+    private string _currentShift = "Morning";
+    private bool _isTripClosed = false;
+    private DateTimeOffset? _closedAt;
 
     public event Action? OnChange;
 
@@ -16,6 +19,12 @@ public class ParentAuthState
     public ChildProfileModel? ActiveChild => _activeChild;
 
     public IReadOnlyList<ChildProfileModel> LinkedChildren => _session?.LinkedChildren ?? Array.Empty<ChildProfileModel>();
+
+    public string CurrentShift => _currentShift;
+
+    public bool IsTripClosed => _isTripClosed;
+
+    public DateTimeOffset? ClosedAt => _closedAt;
 
     public ParentAuthState()
     {
@@ -107,6 +116,72 @@ public class ParentAuthState
                 _activeChild = match;
                 NotifyStateChanged();
             }
+        }
+    }
+
+    public void SwitchShift(string shift)
+    {
+        _currentShift = shift;
+        _isTripClosed = false;
+        _closedAt = null;
+
+        if (_activeChild != null)
+        {
+            var isMorning = shift.Equals("Morning", StringComparison.OrdinalIgnoreCase);
+            var inOut = isMorning ? "IN (On-Bus)" : "IN (On-Bus)";
+            _activeChild = _activeChild with
+            {
+                CurrentShift = shift,
+                InOutStatus = inOut,
+                IsOnBus = true
+            };
+        }
+
+        NotifyStateChanged();
+    }
+
+    public void CompleteTrip()
+    {
+        _isTripClosed = true;
+        _closedAt = DateTimeOffset.UtcNow;
+        if (_activeChild != null)
+        {
+            _activeChild = _activeChild with
+            {
+                InOutStatus = "OUT (Safe Arrival)",
+                IsOnBus = false,
+                LastStatusChangeAt = _closedAt
+            };
+        }
+        NotifyStateChanged();
+    }
+
+    public void ReopenTrip()
+    {
+        _isTripClosed = false;
+        _closedAt = null;
+        if (_activeChild != null)
+        {
+            _activeChild = _activeChild with
+            {
+                InOutStatus = "IN (On-Bus)",
+                IsOnBus = true
+            };
+        }
+        NotifyStateChanged();
+    }
+
+    public void UpdateActiveChildStatus(string inOutStatus, bool isOnBus)
+    {
+        if (_activeChild != null)
+        {
+            _activeChild = _activeChild with
+            {
+                InOutStatus = inOutStatus,
+                IsOnBus = isOnBus,
+                LastStatusChangeAt = DateTimeOffset.UtcNow
+            };
+            NotifyStateChanged();
         }
     }
 

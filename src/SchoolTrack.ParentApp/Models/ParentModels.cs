@@ -21,7 +21,10 @@ public sealed record ChildProfileModel(
     string MorningPickupTime,
     string AfternoonDropOffStopName,
     string AfternoonDropOffTime,
-    bool IsOnBus);
+    bool IsOnBus,
+    string InOutStatus = "IN (On-Bus)",
+    DateTimeOffset? LastStatusChangeAt = null,
+    string CurrentShift = "Morning");
 
 public sealed record TripWaypointModel(
     int SequenceOrder,
@@ -58,7 +61,21 @@ public sealed record ChildActiveTripModel(
     string WeatherStatus,
     string LastRfidBoardingInfo,
     DateTimeOffset LastUpdated,
-    IReadOnlyList<TripWaypointModel> Waypoints);
+    IReadOnlyList<TripWaypointModel> Waypoints,
+    string Shift = "Morning",
+    string ChildBoardingPhase = "OnboardTransit",
+    string ChildInOutStatus = "IN (On-Bus)",
+    string PickupStopEtaText = "8 mins (07:42 AM)",
+    string DestinationEtaText = "18 mins (08:15 AM)",
+    string DestinationName = "Oakridge Elementary Campus",
+    bool IsTripClosed = false,
+    DateTimeOffset? ClosedAt = null,
+    string? SafeArrivalSummary = null)
+{
+    public bool IsBeforePickup => ChildBoardingPhase == "BeforePickup";
+    public bool IsOnBus => ChildInOutStatus.StartsWith("IN", StringComparison.OrdinalIgnoreCase);
+    public bool IsDelivered => ChildBoardingPhase == "SafelyDelivered" || IsTripClosed;
+}
 
 public sealed record RfidTransitLogModel(
     Guid LogId,

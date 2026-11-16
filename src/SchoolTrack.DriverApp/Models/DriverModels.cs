@@ -28,11 +28,25 @@ public sealed class DriverManifestStudentModel
     public bool IsBoarded { get; set; }
     public DateTimeOffset? BoardedAt { get; set; }
     public string? BoardingMethod { get; set; } // "RfidScan", "ManualOverride"
+    public bool IsDeboarded { get; set; }
+    public DateTimeOffset? DeboardedAt { get; set; }
+    public string? DeboardingMethod { get; set; }
     public bool IsAbsent { get; set; }
     public string? AbsenceReason { get; set; } // "ParentExcused", "Doctor Appt", "DriverMarked"
     public string AvatarUrl { get; set; } = "";
     public string ParentName { get; set; } = "";
     public string ParentPhone { get; set; } = "";
+
+    public string InOutStatus
+    {
+        get
+        {
+            if (IsAbsent) return "ABSENT";
+            if (IsDeboarded) return "OUT (Deboarded)";
+            if (IsBoarded) return "IN (On-Bus)";
+            return "PENDING";
+        }
+    }
 }
 
 public sealed record DriverActiveStopModel(
@@ -66,7 +80,11 @@ public sealed record DriverActiveRouteModel(
     int SchoolTargetCount,
     int CurrentStopIndex,
     int TotalStops,
-    IReadOnlyList<DriverActiveStopModel> Stops);
+    IReadOnlyList<DriverActiveStopModel> Stops,
+    string Shift = "Morning", // "Morning" (Pickup) or "Evening" (Drop)
+    bool IsTripClosed = false,
+    DateTimeOffset? ClosedAt = null,
+    int DeliveredCount = 0);
 
 public sealed class DriverPreTripChecklist
 {

@@ -113,17 +113,25 @@ The solution is organized in `SchoolTrack.slnx` across 11 projects:
 - **Audit Logs & Security**: Review unknown/rogue card taps, driver safety checklists, and emergency SOS incident alerts.
 
 ### 2. School Bus Drivers (`SchoolTrack.DriverApp`)
-- **In-Cab Verification**: Commercial Driver's License (CDL) login and terminal PIN verification.
+- **Route Assigned & Shift Direction**: Displays assigned morning (Home to School) and evening (School to Home) routes with full stop sequences.
+- **Student Roster & Headcount**: Live count of total assigned students, currently onboard safe (`IN`), to pick up, and deboarded (`OUT`).
+- **Student Pickup & Drop Points**: Explicit student-to-stop mapping so drivers know exactly who boards or exits at each stop.
+- **Live Student IN/OUT Status**: Automatic RFID bus door tap detection plus tactile manual check-in (`IN`) and deboard (`OUT`) buttons for full manifest verification.
+- **End & Close Trip Workflow**: Tactile confirmation modal to close and complete trips with safe arrival statistics (100% on-time, safe handover summary).
 - **Pre-Trip Safety Inspection**: Mandatory 6-point tactile vehicle safety checklist (brakes, flashers, tires, emergency exits, fire extinguisher, seat belts).
-- **Turn-by-Turn In-Cab HUD**: Dynamic directional navigation with speed limit indicators and stop approach alerts.
-- **Door RFID Reader Roster**: Live synchronization with the bus door reader; automatic boarding notifications with seat assignment alerts.
+- **In-Cab HUD & Turn Navigation**: Dynamic directional navigation with speed limit indicators and stop approach alerts.
 - **Delay Broadcast & SOS Trigger**: Instant notification to transport dispatch and waiting parents of traffic delays or road hazards.
 
 ### 3. Parents & Guardians (`SchoolTrack.ParentApp`)
-- **Real-Time GPS Bus Radar**: Live location of the assigned bus along the morning and afternoon routes.
-- **Dynamic ETA Countdown**: Sub-minute arrival countdowns calculated dynamically from speed, traffic, and remaining stops.
-- **RFID Boarding & Deboarding Push Alerts**: Instant notification when a child taps their badge entering or exiting the bus.
-- **Child Geofence & Safe-Zone Notifications**: Automated boundary arrival alerts for peace of mind.
+- **Real-Time GPS Bus Radar**: Live location, speed, and street-level heading of the assigned bus.
+- **Student IN/OUT Status (Strictly for Child)**: Private and confidential child-only tracking displaying live status (`WAITING`, `IN (On-Bus)`, or `OUT (Safe Arrival)`).
+- **Dual-Phase Dynamic ETA**:
+  - *Phase 1 (Before Pickup)*: Approx reaching time of the bus to the child's assigned pickup point.
+  - *Phase 2 (After Pickup)*: Approx reaching time of the bus to the final destination (School campus in morning, Home in evening).
+- **Morning & Evening Trip Support**: Seamless shift toggle for going to school (Morning pickup) and returning from school (Evening drop).
+- **Trip Close & Safe Arrival Confirmation**: Automatic and parent-confirmed trip closure displaying safe arrival timestamps and verified RFID school turnstile/home handovers.
+- **RFID Boarding & Deboarding Push Alerts**: Instant notification when the child taps their badge entering or exiting the bus.
+- **Direct Driver Contact & Absence Reporting**: Direct calling, quick in-app messaging, and 1-tap ride skip reporting to dispatch.
 
 ---
 

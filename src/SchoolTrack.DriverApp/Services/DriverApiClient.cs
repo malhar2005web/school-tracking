@@ -58,7 +58,7 @@ public class DriverApiClient : IDriverApiClient
         );
     }
 
-    public async Task<DriverActiveRouteModel?> GetActiveRouteAsync(Guid busId)
+    public async Task<DriverActiveRouteModel?> GetActiveRouteAsync(Guid busId, string shift = "Morning")
     {
         try
         {
@@ -67,7 +67,7 @@ public class DriverApiClient : IDriverApiClient
             if (res?.Data != null)
             {
                 var loc = res.Data;
-                return BuildDriverRoute(loc.SpeedKmh);
+                return BuildDriverRoute(loc.SpeedKmh, shift);
             }
         }
         catch (Exception ex)
@@ -75,11 +75,50 @@ public class DriverApiClient : IDriverApiClient
             _logger.LogWarning(ex, "API GetActiveRoute failed; using simulated driver route.");
         }
 
-        return BuildDriverRoute(22m);
+        return BuildDriverRoute(22m, shift);
     }
 
-    private DriverActiveRouteModel BuildDriverRoute(decimal speed)
+    private DriverActiveRouteModel BuildDriverRoute(decimal speed, string shift = "Morning")
     {
+        if (shift.Equals("Evening", StringComparison.OrdinalIgnoreCase) || shift.Equals("Afternoon", StringComparison.OrdinalIgnoreCase))
+        {
+            var eveningStops = new List<DriverActiveStopModel>
+            {
+                new(Guid.NewGuid(), "Oakridge Elementary Campus (Departure)", 1, "03:15 PM", "03:15 PM", 27, 27, false, true, 37.7795m, -122.4140m),
+                new(Guid.NewGuid(), "West River Gate", 2, "03:22 PM", "03:22 PM", 2, 2, false, true, 37.7780m, -122.4160m),
+                new(Guid.NewGuid(), "Cedar Springs Way", 3, "03:28 PM", "03:28 PM", 2, 2, false, true, 37.7765m, -122.4178m),
+                new(Guid.Parse("44444444-4444-4444-4444-444444444442"), "Maple Crest Corner", 4, "03:34 PM", "03:34 PM", 3, 3, true, false, 37.7749m, -122.4194m),
+                new(Guid.Parse("44444444-4444-4444-4444-444444444441"), "Oakridge & 5th Ave", 5, "03:42 PM", "03:42 PM", 3, 0, false, false, 37.7735m, -122.4205m),
+                new(Guid.NewGuid(), "Sunset Ridge Blvd", 6, "03:49 PM", "03:49 PM", 7, 0, false, false, 37.7715m, -122.4225m),
+                new(Guid.NewGuid(), "Pine Valley Crossing", 7, "03:55 PM", "03:55 PM", 6, 0, false, false, 37.7700m, -122.4240m),
+                new(Guid.NewGuid(), "Willow Creek Estates", 8, "04:05 PM", "04:05 PM", 4, 0, false, false, 37.7680m, -122.4260m)
+            };
+
+            return new DriverActiveRouteModel(
+                TripId: Guid.Parse("33333333-3333-3333-3333-333333333334"),
+                RouteId: Guid.Parse("88888888-8888-8888-8888-888888888889"),
+                RouteName: "Evening Route 14-PM • Oakridge to Neighborhoods",
+                BusId: Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                BusNumber: "Bus #14",
+                SpeedKmh: speed,
+                SpeedLimitKmh: 25,
+                NextTurnInstruction: "Proceed South onto Maple Crest Way",
+                DistanceToNextTurn: "450 Feet",
+                NextStopName: "Stop 4: Maple Crest Corner (Drop-off)",
+                GpsAccuracyMeters: 0.8m,
+                RfidHardwareOnline: true,
+                OnboardCount: 20,
+                ToPickUpCount: 0,
+                SchoolTargetCount: 27,
+                CurrentStopIndex: 4,
+                TotalStops: 8,
+                Stops: eveningStops,
+                Shift: "Evening",
+                IsTripClosed: false,
+                DeliveredCount: 7
+            );
+        }
+
         var stops = new List<DriverActiveStopModel>
         {
             new(Guid.NewGuid(), "Willow Creek Estates", 1, "07:15 AM", "07:14 AM", 4, 4, false, true, 37.7680m, -122.4260m),
@@ -95,14 +134,14 @@ public class DriverApiClient : IDriverApiClient
         return new DriverActiveRouteModel(
             TripId: Guid.Parse("33333333-3333-3333-3333-333333333333"),
             RouteId: Guid.Parse("88888888-8888-8888-8888-888888888888"),
-            RouteName: "Morning Route 14-AM • Oakridge East",
+            RouteName: "Morning Route 14-AM • Neighborhoods to Oakridge",
             BusId: Guid.Parse("22222222-2222-2222-2222-222222222222"),
             BusNumber: "Bus #14",
             SpeedKmh: speed,
             SpeedLimitKmh: 25,
             NextTurnInstruction: "Turn Left on Evergreen Blvd",
             DistanceToNextTurn: "300 Feet",
-            NextStopName: "Stop 4: Oakridge & 5th Ave",
+            NextStopName: "Stop 4: Oakridge & 5th Ave (Pickup)",
             GpsAccuracyMeters: 0.8m,
             RfidHardwareOnline: true,
             OnboardCount: 24,
@@ -110,16 +149,20 @@ public class DriverApiClient : IDriverApiClient
             SchoolTargetCount: 27,
             CurrentStopIndex: 4,
             TotalStops: 8,
-            Stops: stops
+            Stops: stops,
+            Shift: "Morning",
+            IsTripClosed: false,
+            DeliveredCount: 0
         );
     }
 
-    public async Task<List<DriverManifestStudentModel>> GetStudentManifestAsync(Guid tripId)
+    public async Task<List<DriverManifestStudentModel>> GetStudentManifestAsync(Guid tripId, string shift = "Morning")
     {
         await Task.Delay(50);
 
         var stop4Id = Guid.Parse("44444444-4444-4444-4444-444444444441");
         var stop5Id = Guid.Parse("44444444-4444-4444-4444-444444444442");
+        bool isEvening = shift.Equals("Evening", StringComparison.OrdinalIgnoreCase) || shift.Equals("Afternoon", StringComparison.OrdinalIgnoreCase);
 
         return new List<DriverManifestStudentModel>
         {
@@ -133,10 +176,13 @@ public class DriverApiClient : IDriverApiClient
                 RfidCardUid = "4B-99-F2-10",
                 StopId = stop4Id,
                 StopName = "Oakridge & 5th Ave",
-                StopSequence = 4,
+                StopSequence = isEvening ? 5 : 4,
                 IsBoarded = true,
-                BoardedAt = DateTimeOffset.UtcNow.AddMinutes(-12),
+                BoardedAt = DateTimeOffset.UtcNow.AddMinutes(isEvening ? -25 : -12),
                 BoardingMethod = "RfidScan",
+                IsDeboarded = isEvening,
+                DeboardedAt = isEvening ? DateTimeOffset.UtcNow.AddMinutes(-2) : null,
+                DeboardingMethod = isEvening ? "RfidScan" : null,
                 IsAbsent = false,
                 AvatarUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAkyDMm2dzl3XDcpOaJbEVvnNS8NekmSKt7Uca-SvlUjA68XCvIjCXg5E3FyIf2FNezik2kmA_Z5Tgz5uxykk9KZITK_iA4orXjS3Pqmq1un4uFkR-c5JbKgZeQr_-hWQ14FlP-hLhODLJx9Uemf3uF3N5CY1iyLkaqqzLAy68T5-J9vVWIMoOikG27VyfClmqBQNfTRhioPRv3toeamXc-uW4nnW3DWRZFEegSgUE",
                 ParentName = "Sarah Martinez",
@@ -152,10 +198,11 @@ public class DriverApiClient : IDriverApiClient
                 RfidCardUid = "1A-88-C3-44",
                 StopId = stop4Id,
                 StopName = "Oakridge & 5th Ave",
-                StopSequence = 4,
+                StopSequence = isEvening ? 5 : 4,
                 IsBoarded = true,
-                BoardedAt = DateTimeOffset.UtcNow.AddMinutes(-11),
+                BoardedAt = DateTimeOffset.UtcNow.AddMinutes(isEvening ? -25 : -11),
                 BoardingMethod = "RfidScan",
+                IsDeboarded = false,
                 IsAbsent = false,
                 AvatarUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBeqX_RWMEPDfhoHH4zW5QGoHrr96sV4con3TuxcEQ6WaSGCWSsb-I6BQMPuLZYbxcJDxJJAte3hLCqJpsP4kN9YA5mXb_zHllNROgMPyU8mTN_hK_2vdVkPA7eQwRl5pE-3kqdB7Zl4AtQNGPhe-c9_JyqHrsc5Btyj14gG1-JG09Ex5c5SA4BtWR9z_i_1P1ulY1hoCW-qGRWtF599BVMWqe0GUSMZbR3BBY_bMs",
                 ParentName = "David Chen",
@@ -171,10 +218,11 @@ public class DriverApiClient : IDriverApiClient
                 RfidCardUid = "9D-33-F1-02",
                 StopId = stop4Id,
                 StopName = "Oakridge & 5th Ave",
-                StopSequence = 4,
-                IsBoarded = false,
-                BoardedAt = null,
-                BoardingMethod = null,
+                StopSequence = isEvening ? 5 : 4,
+                IsBoarded = isEvening,
+                BoardedAt = isEvening ? DateTimeOffset.UtcNow.AddMinutes(-25) : null,
+                BoardingMethod = isEvening ? "RfidScan" : null,
+                IsDeboarded = false,
                 IsAbsent = false,
                 AvatarUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAznCRC7NdmL7vPhQkJx_yUGb5MXFMQtxwA67ohd9_fvHOdFwaeiMPBD7kFg-j-Tv2lRld9s51C3c1lZjCEZiTRmti1ioJcWKFtm_0tCd0jO38dVpA0GETFgdsVtN7uo3R2IRW3F2Kec1vmp28_Z_3lV1nEjHKCQTAHuSrlcpEGgzBxCABZ1XGebeyLv15zIMFOjehxESYYoAGBjQC_JdrGtk2iuK1nUZIA4aOYzmY",
                 ParentName = "Maria Silva",
@@ -190,10 +238,11 @@ public class DriverApiClient : IDriverApiClient
                 RfidCardUid = "6B-44-E8-19",
                 StopId = stop5Id,
                 StopName = "Maple Crest Corner",
-                StopSequence = 5,
-                IsBoarded = false,
-                BoardedAt = null,
-                BoardingMethod = null,
+                StopSequence = isEvening ? 4 : 5,
+                IsBoarded = isEvening,
+                BoardedAt = isEvening ? DateTimeOffset.UtcNow.AddMinutes(-25) : null,
+                BoardingMethod = isEvening ? "RfidScan" : null,
+                IsDeboarded = false,
                 IsAbsent = false,
                 AvatarUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAwNDZ2mzANmkMfLL99_mXlReborLNeG6ElS2EEM_88An_0p-HaoHTX-HQRNBW4no8vVrwRsdHjrOgjwIlCV8t5TWZFZAUF6wld69TTawiiZzQFD7jqVAwfNU5_qW3jMHEF2TFnhC4SjSoaVRlt8tT-XfYmdPlrq75-BrfEbTDwGL4UtivOHWGPE3PLd9Iox3JXVzByeWiXBqzxXkXte0I8xZw18ZprZEpf9KY-E2s",
                 ParentName = "James Brown",
@@ -209,10 +258,11 @@ public class DriverApiClient : IDriverApiClient
                 RfidCardUid = "3C-11-AA-72",
                 StopId = stop5Id,
                 StopName = "Maple Crest Corner",
-                StopSequence = 5,
+                StopSequence = isEvening ? 4 : 5,
                 IsBoarded = false,
                 BoardedAt = null,
                 BoardingMethod = null,
+                IsDeboarded = false,
                 IsAbsent = true,
                 AbsenceReason = "Doctor Appt (Parent App)",
                 AvatarUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAdpAgSXO9EM5xskcS1kGYJH-Sczxn1Pou8PajONH4xrCUDVfT8dKLUpflQ0RYN5fT5BE594cicCUX_PLsYSyuiPhCR0SgHvUYmli6HZ4xR_H9bUNsYV_tOEqQ4Kk0sXjFLV-QqdoUufkLySkJVPxlOZ5u--RD8S3F2WMDf8raXurpS0Lc1x_TNX7mdCbwspDzJ5tmdYEcwWY_knHyp012cng2lL7zqMydV-GsJbug",
@@ -227,6 +277,35 @@ public class DriverApiClient : IDriverApiClient
         await Task.Delay(50);
         _logger.LogInformation("Driver manual check-in recorded for student {StudentId} on trip {TripId}: {Reason}",
             studentId, tripId, reason);
+        return true;
+    }
+
+    public async Task<bool> ManualDeboardStudentAsync(Guid tripId, Guid studentId, string reason)
+    {
+        await Task.Delay(50);
+        _logger.LogInformation("Driver manual deboard recorded for student {StudentId} on trip {TripId}: {Reason}",
+            studentId, tripId, reason);
+        return true;
+    }
+
+    public async Task<bool> CompleteTripAsync(Guid tripId)
+    {
+        try
+        {
+            ApplyHeaders();
+            var res = await _http.PutAsJsonAsync($"/api/v1/trips/{tripId}/status", new { TargetStatus = "Completed", Notes = "Trip closed by driver." });
+            if (res.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Trip {TripId} completed successfully on live server.", tripId);
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Live API complete trip call failed; executing client-side completion.");
+        }
+
+        _logger.LogInformation("Trip {TripId} completed and marked closed.", tripId);
         return true;
     }
 

@@ -14,7 +14,11 @@ public class DriverAuthState
 
     public Guid? ActiveTripId { get; private set; }
 
+    public string CurrentShift { get; private set; } = "Morning";
+
     public bool IsInTransit => _session?.ShiftStatus == "InTransit";
+
+    public bool IsCompleted => _session?.ShiftStatus == "Completed";
 
     public DriverAuthState()
     {
@@ -67,6 +71,38 @@ public class DriverAuthState
         if (_session != null)
         {
             _session = _session with { ShiftStatus = "Completed" };
+            NotifyStateChanged();
+        }
+    }
+
+    public void SwitchShift(string shift)
+    {
+        CurrentShift = shift;
+        if (_session != null)
+        {
+            var isEvening = shift.Equals("Evening", StringComparison.OrdinalIgnoreCase) || shift.Equals("Afternoon", StringComparison.OrdinalIgnoreCase);
+            var routeName = isEvening
+                ? "Evening Route 14-PM • Oakridge to Neighborhoods"
+                : "Morning Route 14-AM • Neighborhoods to Oakridge";
+            var tripId = isEvening
+                ? Guid.Parse("33333333-3333-3333-3333-333333333334")
+                : Guid.Parse("33333333-3333-3333-3333-333333333333");
+
+            _session = _session with
+            {
+                RouteName = routeName,
+                ShiftStatus = "InTransit"
+            };
+            ActiveTripId = tripId;
+            NotifyStateChanged();
+        }
+    }
+
+    public void ResetTrip()
+    {
+        if (_session != null)
+        {
+            _session = _session with { ShiftStatus = "InTransit" };
             NotifyStateChanged();
         }
     }

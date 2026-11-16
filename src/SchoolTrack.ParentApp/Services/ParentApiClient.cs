@@ -123,8 +123,10 @@ public class ParentApiClient : IParentApiClient
         return await LoginWithPhoneAsync("+1 (555) 019-2834", "8421");
     }
 
-    public async Task<ChildActiveTripModel?> GetChildActiveTripAsync(Guid studentId)
+    public async Task<ChildActiveTripModel?> GetChildActiveTripAsync(Guid studentId, string shift = "Morning")
     {
+        var effectiveShift = string.IsNullOrWhiteSpace(shift) ? _authState.CurrentShift : shift;
+
         try
         {
             ApplyHeaders();
@@ -132,7 +134,7 @@ public class ParentApiClient : IParentApiClient
             if (res?.Data != null)
             {
                 var loc = res.Data;
-                return BuildActiveTrip(loc.Latitude, loc.Longitude, loc.SpeedKmh, loc.Heading);
+                return BuildActiveTrip(loc.Latitude, loc.Longitude, loc.SpeedKmh, loc.Heading, effectiveShift);
             }
         }
         catch (Exception ex)
@@ -140,47 +142,230 @@ public class ParentApiClient : IParentApiClient
             _logger.LogWarning(ex, "API GetChildActiveTrip failed; using simulated telemetry.");
         }
 
-        return BuildActiveTrip(37.774929m, -122.419416m, 38.6m, 45m);
+        return BuildActiveTrip(37.774929m, -122.419416m, 38.6m, 45m, effectiveShift);
     }
 
-    private ChildActiveTripModel BuildActiveTrip(decimal lat, decimal lng, decimal speed, decimal heading)
+    private ChildActiveTripModel BuildActiveTrip(decimal lat, decimal lng, decimal speed, decimal heading, string shift)
     {
-        var waypoints = new List<TripWaypointModel>
+        var isMorning = shift.Equals("Morning", StringComparison.OrdinalIgnoreCase);
+        var isClosed = _authState.IsTripClosed;
+        var activeChild = _authState.ActiveChild;
+        var childOnBus = activeChild?.IsOnBus ?? (!isClosed);
+
+        List<TripWaypointModel> waypoints;
+        string routeName;
+        string destName;
+        string approachingStop;
+        string etaTime;
+        int minsRemaining;
+        int currentStopIndex;
+        int totalStops;
+        int completionPercent;
+        string lastRfidInfo;
+        string boardingPhase;
+        string inOutStatus;
+        string pickupStopEta;
+        string destinationEta;
+
+        if (isMorning)
         {
-            new(1, "Oakridge & 5th Ave (Leo's Stop)", 37.7720m, -122.4220m, "07:42 AM", true, false, true),
-            new(2, "Oakridge Blvd & Pine St", 37.7735m, -122.4205m, "07:48 AM", true, false, false),
-            new(3, "Maple Crest Corner", 37.7749m, -122.4194m, "07:55 AM", true, false, false),
-            new(4, "Sunset Meadow Way", 37.7765m, -122.4178m, "08:02 AM", false, true, false),
-            new(5, "West River Gate", 37.7780m, -122.4160m, "08:05 AM", false, false, false),
-            new(6, "Oakridge Elementary Campus", 37.7795m, -122.4140m, "08:10 AM", false, false, false)
-        };
+            routeName = "Morning Route A • Oakridge Bound (School)";
+            destName = "Oakridge Elementary Campus";
+            totalStops = 6;
+
+            if (isClosed)
+            {
+                currentStopIndex = 6;
+                completionPercent = 100;
+                approachingStop = "Oakridge Elementary Campus (Arrived)";
+                etaTime = "08:12 AM";
+                minsRemaining = 0;
+                boardingPhase = "SafelyDelivered";
+                inOutStatus = "OUT (Safe Arrival at School)";
+                pickupStopEta = "Completed at 07:42 AM";
+                destinationEta = "Arrived safely at 08:12 AM";
+                lastRfidInfo = "Safe Arrival Verified • Gate Tap at 08:12 AM";
+
+                waypoints = new List<TripWaypointModel>
+                {
+                    new(1, "Oakridge & 5th Ave (Leo's Stop)", 37.7720m, -122.4220m, "07:42 AM", true, false, true),
+                    new(2, "Oakridge Blvd & Pine St", 37.7735m, -122.4205m, "07:48 AM", true, false, false),
+                    new(3, "Maple Crest Corner", 37.7749m, -122.4194m, "07:55 AM", true, false, false),
+                    new(4, "Sunset Meadow Way", 37.7765m, -122.4178m, "08:02 AM", true, false, false),
+                    new(5, "West River Gate", 37.7780m, -122.4160m, "08:05 AM", true, false, false),
+                    new(6, "Oakridge Elementary Campus", 37.7795m, -122.4140m, "08:12 AM", true, true, false)
+                };
+            }
+            else if (!childOnBus)
+            {
+                // Bus hasn't reached Leo's stop yet (Phase 1: Bus jar pickup point la nahi pohocli tar approx reaching time)
+                currentStopIndex = 1;
+                completionPercent = 15;
+                approachingStop = "Oakridge & 5th Ave (Leo's Stop)";
+                etaTime = "07:42 AM";
+                minsRemaining = 7;
+                boardingPhase = "BeforePickup";
+                inOutStatus = "WAITING (At Pickup Stop)";
+                pickupStopEta = "7 mins (07:42 AM)";
+                destinationEta = "38 mins (08:15 AM)";
+                lastRfidInfo = "Waiting for bus arrival at Oakridge & 5th Ave";
+
+                waypoints = new List<TripWaypointModel>
+                {
+                    new(1, "Oakridge & 5th Ave (Leo's Stop)", 37.7720m, -122.4220m, "07:42 AM", false, true, true),
+                    new(2, "Oakridge Blvd & Pine St", 37.7735m, -122.4205m, "07:48 AM", false, false, false),
+                    new(3, "Maple Crest Corner", 37.7749m, -122.4194m, "07:55 AM", false, false, false),
+                    new(4, "Sunset Meadow Way", 37.7765m, -122.4178m, "08:02 AM", false, false, false),
+                    new(5, "West River Gate", 37.7780m, -122.4160m, "08:05 AM", false, false, false),
+                    new(6, "Oakridge Elementary Campus", 37.7795m, -122.4140m, "08:15 AM", false, false, false)
+                };
+            }
+            else
+            {
+                // Child has been picked up, bus is en route (Phase 2: pickup point varun nighali tar approx reaching time)
+                currentStopIndex = 4;
+                completionPercent = 65;
+                approachingStop = "Sunset Meadow Way";
+                etaTime = "08:05 AM";
+                minsRemaining = 8;
+                boardingPhase = "OnboardTransit";
+                inOutStatus = "IN (On-Bus • Safe Transit)";
+                pickupStopEta = "Picked up at 07:42 AM (Verified)";
+                destinationEta = "18 mins (08:15 AM)";
+                lastRfidInfo = "Tapped in at 07:42 AM (Oakridge & 5th Ave)";
+
+                waypoints = new List<TripWaypointModel>
+                {
+                    new(1, "Oakridge & 5th Ave (Leo's Stop)", 37.7720m, -122.4220m, "07:42 AM", true, false, true),
+                    new(2, "Oakridge Blvd & Pine St", 37.7735m, -122.4205m, "07:48 AM", true, false, false),
+                    new(3, "Maple Crest Corner", 37.7749m, -122.4194m, "07:55 AM", true, false, false),
+                    new(4, "Sunset Meadow Way", 37.7765m, -122.4178m, "08:02 AM", false, true, false),
+                    new(5, "West River Gate", 37.7780m, -122.4160m, "08:05 AM", false, false, false),
+                    new(6, "Oakridge Elementary Campus", 37.7795m, -122.4140m, "08:15 AM", false, false, false)
+                };
+            }
+        }
+        else
+        {
+            // Evening Shift (Returning from School - Yetana)
+            routeName = "Evening Route B • Neighborhood Bound (Home)";
+            destName = "Home Front Porch";
+            totalStops = 6;
+
+            if (isClosed)
+            {
+                currentStopIndex = 6;
+                completionPercent = 100;
+                approachingStop = "Home Front Porch (Arrived)";
+                etaTime = "03:35 PM";
+                minsRemaining = 0;
+                boardingPhase = "SafelyDelivered";
+                inOutStatus = "OUT (Deboarded at Home)";
+                pickupStopEta = "Boarded at 03:02 PM";
+                destinationEta = "Delivered safely at 03:35 PM";
+                lastRfidInfo = "Safe Home Delivery • Parent Handover Confirmed";
+
+                waypoints = new List<TripWaypointModel>
+                {
+                    new(1, "Oakridge Campus Gate (Departure)", 37.7795m, -122.4140m, "03:00 PM", true, false, false),
+                    new(2, "West River Gate", 37.7780m, -122.4160m, "03:08 PM", true, false, false),
+                    new(3, "Sunset Meadow Way", 37.7765m, -122.4178m, "03:15 PM", true, false, false),
+                    new(4, "Maple Crest Corner", 37.7749m, -122.4194m, "03:22 PM", true, false, false),
+                    new(5, "Oakridge Blvd & Pine St", 37.7735m, -122.4205m, "03:28 PM", true, false, false),
+                    new(6, "Home Front Porch (Leo's Drop)", 37.7720m, -122.4220m, "03:35 PM", true, true, true)
+                };
+            }
+            else if (!childOnBus)
+            {
+                // Child waiting at school for boarding
+                currentStopIndex = 1;
+                completionPercent = 10;
+                approachingStop = "Oakridge Campus Gate (Boarding)";
+                etaTime = "03:00 PM";
+                minsRemaining = 5;
+                boardingPhase = "BeforePickup";
+                inOutStatus = "WAITING (At School Gate)";
+                pickupStopEta = "Boarding starts in 5 mins (03:00 PM)";
+                destinationEta = "40 mins (03:35 PM)";
+                lastRfidInfo = "Waiting for afternoon boarding at Campus Gate";
+
+                waypoints = new List<TripWaypointModel>
+                {
+                    new(1, "Oakridge Campus Gate (Departure)", 37.7795m, -122.4140m, "03:00 PM", false, true, false),
+                    new(2, "West River Gate", 37.7780m, -122.4160m, "03:08 PM", false, false, false),
+                    new(3, "Sunset Meadow Way", 37.7765m, -122.4178m, "03:15 PM", false, false, false),
+                    new(4, "Maple Crest Corner", 37.7749m, -122.4194m, "03:22 PM", false, false, false),
+                    new(5, "Oakridge Blvd & Pine St", 37.7735m, -122.4205m, "03:28 PM", false, false, false),
+                    new(6, "Home Front Porch (Leo's Drop)", 37.7720m, -122.4220m, "03:35 PM", false, false, true)
+                };
+            }
+            else
+            {
+                // Child boarded evening bus, heading home (Dual-phase ETA: reaching home)
+                currentStopIndex = 4;
+                completionPercent = 60;
+                approachingStop = "Maple Crest Corner";
+                etaTime = "03:22 PM";
+                minsRemaining = 12;
+                boardingPhase = "OnboardTransit";
+                inOutStatus = "IN (On-Bus • Homeward Bound)";
+                pickupStopEta = "Departed School at 03:02 PM";
+                destinationEta = "13 mins (03:35 PM)";
+                lastRfidInfo = "Afternoon Boarding Scanned at 03:02 PM";
+
+                waypoints = new List<TripWaypointModel>
+                {
+                    new(1, "Oakridge Campus Gate (Departure)", 37.7795m, -122.4140m, "03:00 PM", true, false, false),
+                    new(2, "West River Gate", 37.7780m, -122.4160m, "03:08 PM", true, false, false),
+                    new(3, "Sunset Meadow Way", 37.7765m, -122.4178m, "03:15 PM", true, false, false),
+                    new(4, "Maple Crest Corner", 37.7749m, -122.4194m, "03:22 PM", false, true, false),
+                    new(5, "Oakridge Blvd & Pine St", 37.7735m, -122.4205m, "03:28 PM", false, false, false),
+                    new(6, "Home Front Porch (Leo's Drop)", 37.7720m, -122.4220m, "03:35 PM", false, false, true)
+                };
+            }
+        }
+
+        var safeSummary = isClosed
+            ? (isMorning
+                ? $"{activeChild?.FullName ?? "Leo"} safely arrived at Oakridge Elementary Campus at 08:12 AM. Verified by RFID Gate Tap. Morning trip closed."
+                : $"{activeChild?.FullName ?? "Leo"} safely reached Home Front Porch at 03:35 PM. Deboarded bus #14. Evening trip closed.")
+            : null;
 
         return new ChildActiveTripModel(
             TripId: Guid.Parse("33333333-3333-3333-3333-333333333333"),
             SchoolId: Guid.Parse("11111111-1111-1111-1111-111111111111"),
             BusId: Guid.Parse("22222222-2222-2222-2222-222222222222"),
             BusNumber: "Bus #14",
-            RouteName: "Morning Route A • Oakridge Bound",
+            RouteName: routeName,
             DriverName: "Robert Jenkins",
             DriverPhone: "+1 (555) 329-8472",
             DriverAvatarUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAFrPPwe8Q228TD2qqumI7mbdRj2huhzXJ4IIeNLkiVyNwREAD3fXB8WR9UWI-f8oqn-DfnM14NsLr_fA8gCMOJ7DyskjIurGpVIpCCrZMohsoTpDMxaSHZuKEm3D4xBsoHZz1e8tkLGYnm8lCsOnMbHDKIngoN98ofTTAb1SYpTPusgVlhuXGmx9FQ0fUtpb6TsaDZGIjALJusVxxi2cofTOGO4YO2J4TES6BjmVM",
             DriverRating: 4.9,
             CurrentLatitude: lat,
             CurrentLongitude: lng,
-            SpeedKmh: speed,
+            SpeedKmh: isClosed ? 0 : speed,
             HeadingDegrees: heading,
-            CurrentStreetLocation: "Maple Crest Corner near Elm St",
-            ApproachingStopName: "Sunset Meadow Way",
-            EstimatedArrivalTime: "08:05 AM",
-            MinutesRemaining: 8,
-            CurrentStopIndex: 4,
-            TotalStops: 6,
-            CompletionPercentage: 65,
-            IsLive: true,
+            CurrentStreetLocation: isClosed ? destName : (isMorning ? "Maple Crest Corner near Elm St" : "West River Pkwy near Maple"),
+            ApproachingStopName: approachingStop,
+            EstimatedArrivalTime: etaTime,
+            MinutesRemaining: minsRemaining,
+            CurrentStopIndex: currentStopIndex,
+            TotalStops: totalStops,
+            CompletionPercentage: completionPercent,
+            IsLive: !isClosed,
             WeatherStatus: "Clear 68°F",
-            LastRfidBoardingInfo: "Tapped in at 07:42 AM (Oakridge & 5th Ave)",
+            LastRfidBoardingInfo: lastRfidInfo,
             LastUpdated: DateTimeOffset.UtcNow,
-            Waypoints: waypoints
+            Waypoints: waypoints,
+            Shift: shift,
+            ChildBoardingPhase: boardingPhase,
+            ChildInOutStatus: inOutStatus,
+            PickupStopEtaText: pickupStopEta,
+            DestinationEtaText: destinationEta,
+            DestinationName: destName,
+            IsTripClosed: isClosed,
+            ClosedAt: _authState.ClosedAt,
+            SafeArrivalSummary: safeSummary
         );
     }
 
@@ -312,5 +497,27 @@ public class ParentApiClient : IParentApiClient
                 true
             )
         };
+    }
+
+    public async Task<bool> CloseParentTripAsync(Guid studentId)
+    {
+        await Task.Delay(50);
+        _authState.CompleteTrip();
+        return true;
+    }
+
+    public async Task<bool> ToggleSimulationChildBoardingStateAsync(Guid studentId, string nextState)
+    {
+        await Task.Delay(30);
+        var isOnBus = nextState.Equals("OnboardTransit", StringComparison.OrdinalIgnoreCase);
+        var inOut = nextState switch
+        {
+            "BeforePickup" => "WAITING (At Pickup Stop)",
+            "OnboardTransit" => "IN (On-Bus • Safe Transit)",
+            "SafelyDelivered" => "OUT (Safely Deboarded)",
+            _ => "IN (On-Bus)"
+        };
+        _authState.UpdateActiveChildStatus(inOut, isOnBus);
+        return true;
     }
 }
