@@ -50,38 +50,38 @@ public class ParentTrackingHubService : IAsyncDisposable
             _hubConnection.On<LatestBusLocationDto>("ReceiveBusLocation", loc =>
             {
                 CurrentLocation = loc;
-                OnBusLocationUpdated?.Invoke(loc);
+                try { OnBusLocationUpdated?.Invoke(loc); } catch { }
             });
 
             _hubConnection.On<BoardingNotificationDto>("ReceiveBoardingNotification", notif =>
             {
-                OnBoardingNotification?.Invoke(notif);
+                try { OnBoardingNotification?.Invoke(notif); } catch { }
             });
 
             _hubConnection.On<TripStatusChangedDto>("ReceiveTripStatusChanged", status =>
             {
-                OnTripStatusChanged?.Invoke(status);
+                try { OnTripStatusChanged?.Invoke(status); } catch { }
             });
 
             _hubConnection.On<TripStopStatusChangedDto>("ReceiveTripStopStatusChanged", stop =>
             {
-                OnTripStopStatusChanged?.Invoke(stop);
+                try { OnTripStopStatusChanged?.Invoke(stop); } catch { }
             });
 
             _hubConnection.On<BusConnectivityChangedDto>("ReceiveBusConnectivityChanged", conn =>
             {
-                OnBusConnectivityChanged?.Invoke(conn);
+                try { OnBusConnectivityChanged?.Invoke(conn); } catch { }
             });
 
             _hubConnection.Reconnected += connectionId =>
             {
-                OnConnectionStateChanged?.Invoke(true);
+                try { OnConnectionStateChanged?.Invoke(true); } catch { }
                 return Task.CompletedTask;
             };
 
             _hubConnection.Closed += error =>
             {
-                OnConnectionStateChanged?.Invoke(false);
+                try { OnConnectionStateChanged?.Invoke(false); } catch { }
                 StartSimulation();
                 return Task.CompletedTask;
             };
@@ -165,7 +165,11 @@ public class ParentTrackingHubService : IAsyncDisposable
                         UpdatedAt: DateTimeOffset.UtcNow
                     );
 
-                    OnBusLocationUpdated?.Invoke(CurrentLocation);
+                    try
+                    {
+                        OnBusLocationUpdated?.Invoke(CurrentLocation);
+                    }
+                    catch { }
                 }
                 catch (TaskCanceledException)
                 {

@@ -229,8 +229,12 @@
     {
         InvokeAsync(async () =>
         {
-            await LoadData();
-            StateHasChanged();
+            try
+            {
+                await LoadData();
+                StateHasChanged();
+            }
+            catch { }
         });
     }
 
@@ -238,17 +242,21 @@
     {
         InvokeAsync(async () =>
         {
-            _currentSpeed = loc.SpeedKmh;
-            if (_mapInitialized)
+            try
             {
-                try
+                _currentSpeed = loc.SpeedKmh;
+                if (_mapInitialized)
                 {
-                    await JS.InvokeVoidAsync("parentMapInterop.updateBusPosition",
-                        (double)loc.Latitude, (double)loc.Longitude, (double)loc.SpeedKmh, (double)loc.Heading);
+                    try
+                    {
+                        await JS.InvokeVoidAsync("parentMapInterop.updateBusPosition",
+                            (double)loc.Latitude, (double)loc.Longitude, (double)loc.SpeedKmh, (double)loc.Heading);
+                    }
+                    catch { }
                 }
-                catch { }
+                StateHasChanged();
             }
-            StateHasChanged();
+            catch { }
         });
     }
 
