@@ -27,10 +27,15 @@ window.driverMapInterop = {
             attributionControl: false
         }).setView([this.lastLat, this.lastLng], 15);
 
-        // High-contrast clean CartoDB Voyager tiles for driver readability
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19
-        }).addTo(this.map);
+        // OpenStreetMap primary tiles for reliable high-contrast navigation
+        try {
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(this.map);
+        } catch (e) {
+            console.warn("Driver tile layer init warning:", e);
+        }
 
         // In-cab large directional bus icon
         const busIconHtml = `
@@ -51,6 +56,11 @@ window.driverMapInterop = {
 
         this.busMarker = L.marker([this.lastLat, this.lastLng], { icon: busIcon }).addTo(this.map);
         this.busMarker.bindPopup(`<b>${busLabel || 'Bus #14'}</b><br>Active GPS Navigation`);
+
+        // Multiple size invalidation passes to prevent grey map box in Blazor WebViews
+        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 150);
+        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 400);
+        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 1000);
     },
 
     updateBusPosition: function (lat, lng, speed, heading) {

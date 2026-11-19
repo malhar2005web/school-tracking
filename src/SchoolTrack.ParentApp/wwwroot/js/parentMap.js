@@ -27,10 +27,15 @@ window.parentMapInterop = {
             attributionControl: false
         }).setView([busLat, busLng], 14);
 
-        // Soft CartoDB Positron tiles for claymorphic aesthetics
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19
-        }).addTo(this.map);
+        // OpenStreetMap primary tiles
+        try {
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(this.map);
+        } catch (e) {
+            console.warn("Tile layer init warning:", e);
+        }
 
         // Add custom Clay Bus Marker with pulsing radar wave
         const busIconHtml = `
@@ -51,6 +56,11 @@ window.parentMapInterop = {
 
         this.busMarker = L.marker([busLat, busLng], { icon: busIcon }).addTo(this.map);
         this.busMarker.bindPopup(`<b>${busLabel || 'Bus #14'}</b><br>Live Tracking Active`);
+
+        // Multiple size invalidation passes to prevent grey map box in Blazor WebViews
+        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 150);
+        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 400);
+        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 1000);
     },
 
     updateBusPosition: function (lat, lng, speed, heading) {
