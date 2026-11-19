@@ -295,6 +295,18 @@
 
         TrackingHub.OnStudentBoardedViaRfid += HandleRfidEvent;
         _ = TrackingHub.StartAsync();
+
+#if ANDROID
+        try
+        {
+            var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+            if (status != PermissionStatus.Granted)
+            {
+                await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            }
+        }
+        catch { }
+#endif
     }
 
     private async Task LoadRouteData()
