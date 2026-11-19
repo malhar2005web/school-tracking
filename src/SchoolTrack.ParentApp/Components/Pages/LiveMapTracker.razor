@@ -205,8 +205,20 @@
             await Task.Delay(200); // Allow DOM container to mount
             try
             {
-                var lat = (double)(_trip?.CurrentLatitude ?? 37.7749m);
-                var lng = (double)(_trip?.CurrentLongitude ?? -122.4194m);
+                var lat = (double)(_trip?.CurrentLatitude ?? 18.5204m);
+                var lng = (double)(_trip?.CurrentLongitude ?? 73.8567m);
+
+                try
+                {
+                    var lastLoc = await Geolocation.Default.GetLastKnownLocationAsync();
+                    if (lastLoc != null)
+                    {
+                        lat = lastLoc.Latitude;
+                        lng = lastLoc.Longitude;
+                    }
+                }
+                catch { }
+
                 var label = _trip?.BusNumber ?? "Bus #14";
 
                 await JS.InvokeVoidAsync("parentMapInterop.initParentMap", "parent-map-container", lat, lng, label);

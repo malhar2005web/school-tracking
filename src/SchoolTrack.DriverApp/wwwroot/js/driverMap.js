@@ -86,6 +86,15 @@ window.driverMapInterop = {
         this.map.panTo([this.lastLat, this.lastLng], { animate: true });
     },
 
+    setCenter: function (lat, lng, zoom) {
+        if (!this.map) return;
+        this.lastLat = lat;
+        this.lastLng = lng;
+        if (this.busMarker) this.busMarker.setLatLng([lat, lng]);
+        this.map.setView([lat, lng], zoom || 15);
+        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 100);
+    },
+
     renderRouteStops: function (stopsJson) {
         if (!this.map) return;
         try {
