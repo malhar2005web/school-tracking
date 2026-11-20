@@ -1,5 +1,6 @@
-@page "/"
-@page "/dashboard"
+﻿@page "/parent"
+@page "/parent/dashboard"
+@layout Layout.ParentLayout
 @inject NavigationManager Navigation
 @inject ParentAuthState AuthState
 @inject IParentApiClient ApiClient
@@ -91,7 +92,7 @@
                 <img src="@(ActiveChild?.AvatarUrl)" style="width:3rem; height:3rem; border-radius:50%; object-fit:cover; border:2px solid #9b83f6;" />
                 <div>
                     <h2 style="font-size:17px; font-weight:800; color:#181930; margin:0;">@(ActiveChild?.FullName ?? "Leo Martinez")</h2>
-                    <span style="font-size:12px; color:#484552;">@(ActiveChild?.BusNumber ?? "Bus #14") • @(ActiveChild?.Grade)</span>
+                    <span style="font-size:12px; color:#484552;">@(ActiveChild?.BusNumber ?? "Bus #14") â€¢ @(ActiveChild?.Grade)</span>
                 </div>
             </div>
 
@@ -213,7 +214,7 @@
             </div>
         </div>
 
-        <button class="clay-btn clay-btn-primary" style="width:100%; height:2.5rem; font-size:12px;" @onclick='() => Navigation.NavigateTo("/live-map")'>
+        <button class="clay-btn clay-btn-primary" style="width:100%; height:2.5rem; font-size:12px;" @onclick='() => Navigation.NavigateTo("/parent/live-map")'>
             <span class="material-symbols-outlined" style="font-size:17px;">map</span>
             <span>View Full Live Map</span>
             <span class="material-symbols-outlined" style="font-size:15px;">arrow_forward</span>
@@ -557,7 +558,7 @@
         if (ActiveChild != null)
         {
             await ApiClient.TriggerEmergencyAlertAsync(ActiveChild.StudentId, "Parent Emergency SOS triggered from Dashboard");
-            NotificationService.ShowToast("🚨 SOS TRANSMITTED", "Emergency response team and Driver have been notified with GPS telemetry.", "SOS");
+            NotificationService.ShowToast("ðŸš¨ SOS TRANSMITTED", "Emergency response team and Driver have been notified with GPS telemetry.", "SOS");
             CloseModals();
         }
     }
@@ -569,3 +570,4 @@
         TrackingHub.OnBoardingNotification -= HandleBoarding;
     }
 }
+

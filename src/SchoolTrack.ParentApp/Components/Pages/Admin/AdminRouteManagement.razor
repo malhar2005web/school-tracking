@@ -1,0 +1,221 @@
+﻿@page "/admin/routes"
+@layout Layout.AdminLayout
+@inject IApiClient ApiClient
+@inject AdminAuthStateProvider AuthState
+
+<PageTitle>Route Management â€” SchoolTrack</PageTitle>
+
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Title & Action Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); margin-bottom: 0.25rem;">
+                <span>Transit Corridor Planning</span>
+                <span class="material-symbols-outlined" style="font-size: 0.875rem;">chevron_right</span>
+                <span style="color: var(--color-primary);">Route & Geofence Engine</span>
+            </div>
+            <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-on-surface); margin: 0; letter-spacing: -0.02em;">District Route Directory</h1>
+            <p style="font-size: 0.875rem; color: var(--color-on-surface-variant); margin: 0.25rem 0 0 0;">Manage morning and afternoon bus stops, waypoint sequences, and safety geofence radii</p>
+        </div>
+
+        <button class="clay-btn clay-btn-primary" type="button" @onclick="() => _showCreateRouteModal = true">
+            <span class="material-symbols-outlined" style="font-size: 1.125rem;">add_circle</span>
+            <span>+ Create New Corridor Route</span>
+        </button>
+    </div>
+
+    <!-- Routes Grid & Stop Details -->
+    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem; align-items: flex-start;">
+        <!-- Left: Route List -->
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            @foreach (var route in _routes)
+            {
+                <div class="clay-card @(_selectedRoute?.Id == route.Id ? "ring-2 ring-primary" : "")" style="padding: 1.25rem; background: #ffffff; cursor: pointer; border: @(_selectedRoute?.Id == route.Id ? "2px solid var(--color-primary)" : "none");" @onclick="() => SelectRoute(route)">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <h3 style="font-size: 1.125rem; font-weight: 800; color: var(--color-on-surface); margin: 0;">@route.Name</h3>
+                                <span class="clay-badge clay-badge-neutral">@route.Code</span>
+                            </div>
+                            <span style="font-size: 0.75rem; color: var(--color-on-surface-variant); margin-top: 0.25rem; display: block;">Direction: <strong>@route.DirectionType</strong></span>
+                        </div>
+                        <span class="clay-badge clay-badge-secondary">Active Corridor</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--color-surface-container-high);">
+                        <div style="display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; color: var(--color-on-surface-variant);">
+                            <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--color-primary);">pin_drop</span>
+                            <span>@route.Stops.Count Ordered Stops</span>
+                        </div>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-primary);">Select to Inspect &rarr;</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Right: Ordered Stops & Geofence Sequence for Selected Route -->
+        @if (_selectedRoute != null)
+        {
+            <div class="clay-card" style="padding: 1.75rem; background: #ffffff;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-surface-container-high); padding-bottom: 1rem;">
+                    <div>
+                        <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--color-on-surface); margin: 0;">Stop Sequence: @_selectedRoute.Name</h2>
+                        <span style="font-size: 0.75rem; color: var(--color-on-surface-variant);">Sequential geofenced waypoints for live telemetry tracking</span>
+                    </div>
+                    <button class="clay-btn clay-btn-surface clay-btn-sm" type="button" @onclick="() => _showAddStopModal = true">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">add_location</span>
+                        <span>Add Stop</span>
+                    </button>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    @foreach (var stop in _selectedRoute.Stops.OrderBy(s => s.SequenceOrder))
+                    {
+                        <div class="clay-inset" style="padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="width: 2.25rem; height: 2.25rem; border-radius: 9999px; background: var(--color-primary-container); color: var(--color-on-primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.875rem;">
+                                    @stop.SequenceOrder
+                                </div>
+                                <div>
+                                    <h4 style="font-size: 0.9375rem; font-weight: 700; color: var(--color-on-surface); margin: 0;">@stop.StopName</h4>
+                                    <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">
+                                        Lat: @stop.Latitude.ToString("F4"), Lng: @stop.Longitude.ToString("F4") â€¢ +@stop.ScheduledOffsetMinutes mins offset
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="clay-badge clay-badge-secondary">
+                                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">radio_button_checked</span>
+                                    <span>@stop.GeofenceRadiusMeters m Radius</span>
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (_showCreateRouteModal)
+{
+    <!-- Create Route Modal -->
+    <div style="position: fixed; inset: 0; background: rgba(24, 25, 48, 0.45); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center;">
+        <div class="clay-card" style="width: 100%; max-width: 32rem; padding: 2rem; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Create New Route Corridor</h3>
+                <button type="button" style="background: none; border: none; cursor: pointer;" @onclick="() => _showCreateRouteModal = false">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Route Name</label>
+                    <input class="clay-input" placeholder="e.g. Route South Express E" @bind="_newRouteName" />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Route Code</label>
+                    <input class="clay-input" placeholder="e.g. S-E" @bind="_newRouteCode" />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Direction</label>
+                    <select class="clay-input clay-select" @bind="_newRouteDirection">
+                        <option value="Inbound">Inbound (Home to School)</option>
+                        <option value="Outbound">Outbound (School to Home)</option>
+                    </select>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+                    <button class="clay-btn clay-btn-surface" type="button" @onclick="() => _showCreateRouteModal = false">Cancel</button>
+                    <button class="clay-btn clay-btn-primary" type="button" @onclick="CreateRoute">Create Route</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showAddStopModal)
+{
+    <!-- Add Stop Modal -->
+    <div style="position: fixed; inset: 0; background: rgba(24, 25, 48, 0.45); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center;">
+        <div class="clay-card" style="width: 100%; max-width: 32rem; padding: 2rem; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Add Stop to @_selectedRoute?.Name</h3>
+                <button type="button" style="background: none; border: none; cursor: pointer;" @onclick="() => _showAddStopModal = false">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Stop Name</label>
+                    <input class="clay-input" placeholder="e.g. Oakridge High Gate" @bind="_newStopName" />
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Latitude</label>
+                        <input class="clay-input" type="number" step="0.0001" @bind="_newStopLat" />
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Longitude</label>
+                        <input class="clay-input" type="number" step="0.0001" @bind="_newStopLng" />
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+                    <button class="clay-btn clay-btn-surface" type="button" @onclick="() => _showAddStopModal = false">Cancel</button>
+                    <button class="clay-btn clay-btn-primary" type="button" @onclick="AddStopToRoute">Add Stop</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<RouteDto> _routes = new();
+    private RouteDto? _selectedRoute;
+    private bool _showCreateRouteModal = false;
+    private bool _showAddStopModal = false;
+    private string _newRouteName = string.Empty;
+    private string _newRouteCode = string.Empty;
+    private string _newRouteDirection = "Inbound";
+    private string _newStopName = string.Empty;
+    private decimal _newStopLat = 37.7800m;
+    private decimal _newStopLng = -122.4200m;
+
+    private void AddStopToRoute()
+    {
+        if (_selectedRoute != null && !string.IsNullOrWhiteSpace(_newStopName))
+        {
+            var stops = _selectedRoute.Stops.ToList();
+            var nextSeq = stops.Count + 1;
+            stops.Add(new RouteStopDto(Guid.NewGuid(), _selectedRoute.Id, _newStopName, nextSeq, _newStopLat, _newStopLng, 5 * nextSeq, 50));
+            _selectedRoute = new RouteDto(_selectedRoute.Id, _selectedRoute.SchoolId, _selectedRoute.Name, _selectedRoute.Code, _selectedRoute.DirectionType, _selectedRoute.IsActive, stops);
+            _showAddStopModal = false;
+            _newStopName = string.Empty;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _routes = await ApiClient.GetRoutesAsync(AuthState.CurrentSession.SchoolId);
+        _selectedRoute = _routes.FirstOrDefault();
+    }
+
+    private void SelectRoute(RouteDto route)
+    {
+        _selectedRoute = route;
+    }
+
+    private void CreateRoute()
+    {
+        if (!string.IsNullOrWhiteSpace(_newRouteName))
+        {
+            var newRoute = new RouteDto(Guid.NewGuid(), AuthState.CurrentSession.SchoolId, _newRouteName, _newRouteCode, _newRouteDirection, true, new List<RouteStopDto>());
+            _routes.Add(newRoute);
+            _selectedRoute = newRoute;
+            _showCreateRouteModal = false;
+            _newRouteName = string.Empty;
+            _newRouteCode = string.Empty;
+        }
+    }
+}
+

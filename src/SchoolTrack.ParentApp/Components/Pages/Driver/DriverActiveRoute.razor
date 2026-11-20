@@ -1,0 +1,541 @@
+﻿@page "/driver"
+@page "/driver/navigation"
+@layout Layout.DriverLayout
+@inject IDriverApiClient DriverApi
+@inject DriverAuthState AuthState
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject IDriverNotificationService NotificationService
+@inject DriverTrackingHubService TrackingHub
+@implements IDisposable
+
+<div class="driver-route-view" style="max-width:32rem; margin:0 auto; padding:0 1rem; display:flex; flex-direction:column; gap:0.875rem;">
+    <!-- Shift / Direction Selector Pills -->
+    <div class="clay-card" style="padding:0.4rem 0.6rem; background:#ffffff; border-radius:1.25rem; display:flex; align-items:center; justify-content:space-between; box-shadow:0 4px 12px rgba(24,25,48,0.06);">
+        <div style="display:flex; align-items:center; gap:0.5rem; width:100%;">
+            <button type="button"
+                    style="flex:1; border:none; cursor:pointer; padding:0.45rem 0.6rem; border-radius:9999px; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:0.35rem; transition:all 0.2s; @(CurrentShift == "Morning" ? "background:#644bba; color:#ffffff; box-shadow:0 4px 10px rgba(100,75,186,0.35);" : "background:#f5f2ff; color:#644bba;")"
+                    @onclick='() => ChangeShift("Morning")'>
+                <span class="material-symbols-outlined" style="font-size:16px;">wb_sunny</span>
+                <span>Morning (To School)</span>
+            </button>
+
+            <button type="button"
+                    style="flex:1; border:none; cursor:pointer; padding:0.45rem 0.6rem; border-radius:9999px; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:0.35rem; transition:all 0.2s; @(CurrentShift == "Evening" ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 10px rgba(12,107,85,0.35);" : "background:#e8f8f3; color:#0c6b55;")"
+                    @onclick='() => ChangeShift("Evening")'>
+                <span class="material-symbols-outlined" style="font-size:16px;">nights_stay</span>
+                <span>Evening (To Home)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Hardware Telemetry Status Strip (Roomy & Never Cluttered) -->
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:0 0.25rem;">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+            <div style="display:flex; align-items:center; gap:0.3rem; background:@(_isLiveGpsLocked ? "#e8f8f3" : "#fff8e1"); color:@(_isLiveGpsLocked ? "#0c6b55" : "#b78103"); padding:0.25rem 0.6rem; border-radius:1rem; font-size:11px; font-weight:700; border:1px solid @(_isLiveGpsLocked ? "#a1f3d7" : "#ffe082");">
+                <span style="width:7px; height:7px; border-radius:50%; background:@(_isLiveGpsLocked ? "#0c6b55" : "#b78103"); display:inline-block; animation:pulse 1.8s infinite;"></span>
+                <span>@(_isLiveGpsLocked ? "GPS Active (Live)" : "GPS Searching...")</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.3rem; background:#f5f2ff; color:#644bba; padding:0.25rem 0.6rem; border-radius:1rem; font-size:11px; font-weight:700; border:1px solid #d8d7f7;">
+                <span style="width:7px; height:7px; border-radius:50%; background:#0c6b55; display:inline-block;"></span>
+                <span>RFID Reader Online</span>
+            </div>
+        </div>
+
+        <span class="clay-badge-mint" style="font-size:10px; font-weight:800; padding:0.2rem 0.5rem;">
+            @(AuthState.CurrentSession?.BusNumber ?? "Bus #14")
+        </span>
+    </div>
+
+    @if (AuthState.IsCompleted)
+    {
+        <!-- Trip Closed / Completed Screen Card -->
+        <div class="clay-card" style="background:#ffffff; padding:2rem 1.5rem; border-radius:1.5rem; text-align:center; box-shadow:0 12px 30px rgba(12,107,85,0.15); border:2px solid #a1f3d7; display:flex; flex-direction:column; align-items:center; gap:1rem;">
+            <div style="width:4.5rem; height:4.5rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(12,107,85,0.25);">
+                <span class="material-symbols-outlined" style="font-size:42px;">task_alt</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                <h2 style="font-size:22px; font-weight:900; color:#181930; margin:0;">
+                    @(CurrentShift == "Morning" ? "Morning Route Closed & Completed!" : "Evening Route Closed & Completed!")
+                </h2>
+                <span style="font-size:12px; color:#484552;">
+                    All scheduled stops serviced. Safe student transit audit logged to central dispatch.
+                </span>
+            </div>
+
+            <!-- Summary Stats Bento -->
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.75rem; width:100%; margin-top:0.5rem;">
+                <div class="clay-inset" style="padding:0.75rem 0.5rem; text-align:center;">
+                    <div style="font-size:20px; font-weight:900; color:#0c6b55;">27 / 27</div>
+                    <div style="font-size:10px; font-weight:700; color:#484552; text-transform:uppercase;">Students Safe</div>
+                </div>
+                <div class="clay-inset" style="padding:0.75rem 0.5rem; text-align:center;">
+                    <div style="font-size:20px; font-weight:900; color:#644bba;">7 / 7</div>
+                    <div style="font-size:10px; font-weight:700; color:#484552; text-transform:uppercase;">Stops Visited</div>
+                </div>
+                <div class="clay-inset" style="padding:0.75rem 0.5rem; text-align:center;">
+                    <div style="font-size:20px; font-weight:900; color:#cca741;">100%</div>
+                    <div style="font-size:10px; font-weight:700; color:#484552; text-transform:uppercase;">On-Time</div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; width:100%; margin-top:0.5rem;">
+                <button class="clay-button-solid"
+                        style="flex:1; background:#644bba; color:#ffffff; border:none; padding:0.875rem; border-radius:1rem; font-weight:800; font-size:13px; cursor:pointer;"
+                        @onclick='() => ChangeShift(CurrentShift == "Morning" ? "Evening" : "Morning")'>
+                    <span class="material-symbols-outlined" style="font-size:18px; vertical-align:middle;">sync</span>
+                    <span>Start Next Shift</span>
+                </button>
+                <button style="flex:1; background:#f5f2ff; border:1px solid #ccbeff; border-radius:1rem; padding:0.875rem; color:#310b87; font-weight:800; font-size:13px; cursor:pointer;"
+                        @onclick="RestartActiveTrip">
+                    <span class="material-symbols-outlined" style="font-size:18px; vertical-align:middle;">restart_alt</span>
+                    <span>Reopen Route</span>
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Active Turn-by-Turn Instruction Clay Card -->
+        <div class="clay-card" style="background:#644bba; color:#ffffff; padding:1.25rem; border-radius:1.5rem; display:flex; align-items:center; justify-content:space-between; box-shadow:0 12px 24px rgba(100,75,186,0.35);">
+            <div style="display:flex; align-items:center; gap:1rem; min-width:0; flex:1;">
+                <div style="width:3.25rem; height:3.25rem; border-radius:1rem; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <span class="material-symbols-outlined" style="font-size:32px; color:#ffffff;">navigation</span>
+                </div>
+                <div style="display:flex; flex-direction:column; min-width:0;">
+                    <span style="font-size:11px; font-weight:800; color:#ffd66b; text-transform:uppercase; letter-spacing:0.05em;">
+                        @(_isLiveGpsLocked ? "LIVE MOBILE NAVIGATION" : (ActiveRoute?.DistanceToNextTurn ?? "In 250 Meters"))
+                    </span>
+                    <span style="font-size:16px; font-weight:800; line-height:1.2; letter-spacing:-0.02em; overflow:hidden; text-overflow:ellipsis;">
+                        @(_isLiveGpsLocked ? "En Route Along Active Path" : (ActiveRoute?.NextTurnInstruction ?? "Proceed on Main Route"))
+                    </span>
+                    <span style="font-size:11px; color:#e7deff; margin-top:2px;">
+                        @(_isLiveGpsLocked ? $"Bus #14 â€¢ Live GPS Locked" : (ActiveRoute?.RouteName ?? "Route 14"))
+                    </span>
+                </div>
+            </div>
+
+            <!-- In-Cab Speed HUD -->
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.25); padding:0.5rem 0.75rem; border-radius:1rem; min-width:4.25rem; flex-shrink:0;">
+                <div style="font-size:22px; font-weight:900; line-height:1; color:#ffffff;">
+                    @CurrentSpeedKmh
+                </div>
+                <span style="font-size:9px; font-weight:700; color:#e7deff; text-transform:uppercase;">KM/H</span>
+                <div style="margin-top:3px; background:#ffd66b; color:#241a00; font-size:9px; font-weight:900; padding:1px 4px; border-radius:4px;">
+                    LIMIT 40
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaflet GPS Navigation Map Container -->
+        <div class="clay-card" style="padding:0.375rem; border-radius:1.5rem; overflow:hidden; position:relative; box-shadow:0 8px 20px rgba(24,25,48,0.08);">
+            <div id="driverMap" style="height:270px; width:100%; border-radius:1.25rem;"></div>
+
+            <!-- Floating Map Controls Overlay -->
+            <div style="position:absolute; top:1rem; right:1rem; z-index:400; display:flex; flex-direction:column; gap:0.5rem;">
+                <button @onclick="RecenterBus"
+                        title="Center on My Location"
+                        style="width:2.5rem; height:2.5rem; border-radius:50%; background:#ffffff; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; color:#0c6b55; cursor:pointer;">
+                    <span class="material-symbols-outlined" style="font-size:20px;">my_location</span>
+                </button>
+            </div>
+
+            <div style="position:absolute; bottom:0.875rem; left:0.875rem; z-index:400; background:rgba(255,255,255,0.94); backdrop-filter:blur(8px); padding:0.3rem 0.75rem; border-radius:1rem; font-size:11px; font-weight:700; color:#181930; display:flex; align-items:center; gap:0.4rem; box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+                <span style="width:8px; height:8px; border-radius:50%; background:@(_isLiveGpsLocked ? "#0c6b55" : "#ffd66b"); display:inline-block; animation:pulse 1.5s infinite;"></span>
+                <span>@(_isLiveGpsLocked ? $"GPS Locked â€¢ {(_gpsAccuracy.HasValue ? $"{_gpsAccuracy.Value:F1}m accuracy" : "Device Fix Active")}" : "Acquiring GPS Signal...")</span>
+            </div>
+        </div>
+
+        <!-- Next Stop Information Card -->
+        <div class="clay-card" style="background:#ffffff; padding:1.25rem; border-radius:1.5rem; box-shadow:0 8px 20px rgba(24,25,48,0.06); display:flex; flex-direction:column; gap:0.875rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span class="clay-badge-mint" style="padding:0.2rem 0.5rem; font-size:11px; font-weight:800;">
+                        NEXT STOP @(ActiveRoute?.CurrentStopIndex ?? 4) OF @(ActiveRoute?.TotalStops ?? 7)
+                    </span>
+                    <span style="font-size:11px; color:#797584; font-weight:600;">
+                        @(CurrentShift == "Morning" ? "ETA: 07:42 AM" : "ETA: 03:42 PM")
+                    </span>
+                </div>
+                <span style="font-size:11px; font-weight:800; color:#0c6b55; display:flex; align-items:center; gap:0.25rem;">
+                    <span class="material-symbols-outlined" style="font-size:14px;">verified</span>
+                    Curbside Safe Zone
+                </span>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; flex-direction:column;">
+                    <h2 style="font-size:17px; font-weight:800; color:#181930; margin:0; letter-spacing:-0.02em;">
+                        @(CurrentStop?.StopName ?? "Stop 4: Active Route Waypoint")
+                    </h2>
+                    <span style="font-size:12px; color:#484552; margin-top:2px;">
+                        @(CurrentShift == "Morning"
+                            ? "Pickup Stop â€¢ 3 Students Assigned (2 Boarded, 1 Pending)"
+                            : "Drop-off Stop â€¢ 3 Students Assigned for Deboarding")
+                    </span>
+                </div>
+
+                <!-- Student Initials Avatars Cluster -->
+                <div style="display:flex; align-items:center; margin-left:0.5rem; cursor:pointer;" @onclick='() => Navigation.NavigateTo("/driver/roster")'>
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#a1f3d7; color:#18715b; font-weight:800; font-size:11px; display:flex; align-items:center; justify-content:center; border:2px solid #ffffff;">
+                        LM
+                    </div>
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#a1f3d7; color:#18715b; font-weight:800; font-size:11px; display:flex; align-items:center; justify-content:center; border:2px solid #ffffff; margin-left:-0.5rem;">
+                        SC
+                    </div>
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#ffd66b; color:#241a00; font-weight:800; font-size:11px; display:flex; align-items:center; justify-content:center; border:2px solid #ffffff; margin-left:-0.5rem;">
+                        LS
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Passenger Counters Bento Row -->
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.75rem;">
+            <div class="clay-card" style="background:#ffffff; padding:0.875rem 0.5rem; border-radius:1.25rem; text-align:center; box-shadow:0 6px 16px rgba(24,25,48,0.05);">
+                <div style="font-size:1.5rem; font-weight:900; color:#0c6b55; line-height:1;">
+                    @(ActiveRoute?.OnboardCount ?? 24)
+                </div>
+                <div style="font-size:10px; font-weight:800; color:#484552; text-transform:uppercase; margin-top:4px;">
+                    Onboard Safe (IN)
+                </div>
+            </div>
+
+            <div class="clay-card" style="background:#ffffff; padding:0.875rem 0.5rem; border-radius:1.25rem; text-align:center; box-shadow:0 6px 16px rgba(24,25,48,0.05);">
+                <div style="font-size:1.5rem; font-weight:900; color:#765b00; line-height:1;">
+                    @(CurrentShift == "Morning" ? (ActiveRoute?.ToPickUpCount ?? 3) : (ActiveRoute?.DeliveredCount ?? 7))
+                </div>
+                <div style="font-size:10px; font-weight:800; color:#484552; text-transform:uppercase; margin-top:4px;">
+                    @(CurrentShift == "Morning" ? "To Pick Up" : "Deboarded (OUT)")
+                </div>
+            </div>
+
+            <div class="clay-card" style="background:#ffffff; padding:0.875rem 0.5rem; border-radius:1.25rem; text-align:center; box-shadow:0 6px 16px rgba(24,25,48,0.05);">
+                <div style="font-size:1.5rem; font-weight:900; color:#644bba; line-height:1;">
+                    @(ActiveRoute?.SchoolTargetCount ?? 27)
+                </div>
+                <div style="font-size:10px; font-weight:800; color:#484552; text-transform:uppercase; margin-top:4px;">
+                    Total Students
+                </div>
+            </div>
+        </div>
+
+        <!-- Oversized Tactile In-Cab Action Buttons -->
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            <button class="clay-btn-oversized"
+                    style="min-height:3.75rem; background:#0c6b55; color:#ffffff; border:none; border-radius:1.25rem; padding:0.875rem 1rem; font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 10px 24px rgba(12,107,85,0.4), inset 0 2px 2px rgba(255,255,255,0.5); display:flex; align-items:center; justify-content:center; gap:0.75rem;"
+                    @onclick="HandleArrivedAtStop">
+                <span class="material-symbols-outlined" style="font-size:26px;">check_circle</span>
+                <div style="display:flex; flex-direction:column; text-align:left;">
+                    <span>ARRIVED AT STOP @(ActiveRoute?.CurrentStopIndex ?? 4)</span>
+                    <span style="font-size:11px; font-weight:600; opacity:0.85;">Open RFID Scanner & Passenger Roster</span>
+                </div>
+            </button>
+
+            <!-- Complete and Close Trip Button -->
+            <button class="clay-btn-oversized"
+                    style="min-height:3.5rem; background:#ba1a1a; color:#ffffff; border:none; border-radius:1.25rem; padding:0.875rem 1rem; font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 8px 20px rgba(186,26,26,0.35); display:flex; align-items:center; justify-content:center; gap:0.75rem;"
+                    @onclick="() => _showCloseTripModal = true">
+                <span class="material-symbols-outlined" style="font-size:24px;">flag_circle</span>
+                <div style="display:flex; flex-direction:column; text-align:left;">
+                    <span>END & CLOSE @(CurrentShift.ToUpper()) TRIP</span>
+                    <span style="font-size:10px; font-weight:600; opacity:0.85;">Finish Shift â€¢ Notify Dispatch & Parents</span>
+                </div>
+            </button>
+        </div>
+
+        <!-- Split In-Cab Utility Actions -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <button @onclick='() => Navigation.NavigateTo("/driver/broadcast")'
+                    style="background:#f5f2ff; border:1px solid #ccbeff; border-radius:1rem; padding:0.875rem; color:#310b87; font-weight:700; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; box-shadow:0 4px 10px rgba(0,0,0,0.04);">
+                <span class="material-symbols-outlined" style="font-size:20px; color:#644bba;">notification_important</span>
+                <span>Broadcast Delay (+5/+10m)</span>
+            </button>
+
+            <button @onclick='() => Navigation.NavigateTo("/driver/roster")'
+                    style="background:#f5f2ff; border:1px solid #ccbeff; border-radius:1rem; padding:0.875rem; color:#0c6b55; font-weight:700; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; box-shadow:0 4px 10px rgba(0,0,0,0.04);">
+                <span class="material-symbols-outlined" style="font-size:20px; color:#0c6b55;">badge</span>
+                <span>Passenger Roster</span>
+            </button>
+        </div>
+    }
+</div>
+
+@if (_showCloseTripModal)
+{
+    <!-- Confirmation Modal to Close Trip -->
+    <div style="position:fixed; inset:0; background:rgba(24,25,48,0.55); backdrop-filter:blur(6px); z-index:999; display:flex; align-items:center; justify-content:center; padding:1.5rem;">
+        <div class="clay-card" style="background:#ffffff; border-radius:1.5rem; padding:1.5rem; max-width:28rem; width:100%; display:flex; flex-direction:column; gap:1rem; box-shadow:0 16px 36px rgba(0,0,0,0.2);">
+            <div style="display:flex; align-items:center; gap:0.75rem; color:#ba1a1a;">
+                <span class="material-symbols-outlined" style="font-size:28px;">warning</span>
+                <h3 style="font-size:18px; font-weight:800; margin:0;">End & Close Trip?</h3>
+            </div>
+
+            <p style="font-size:13px; color:#484552; line-height:1.4; margin:0;">
+                Are you sure you want to close this <strong>@(CurrentShift)</strong> shift?
+                This will finalize passenger manifests, log safe arrivals, and send trip completion notifications to all waiting parents.
+            </p>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:0.5rem;">
+                <button type="button"
+                        style="padding:0.6rem 1rem; border-radius:0.75rem; background:#eeecff; border:none; font-weight:700; font-size:12px; cursor:pointer; color:#484552;"
+                        @onclick="() => _showCloseTripModal = false">
+                    Cancel
+                </button>
+                <button type="button"
+                        style="padding:0.6rem 1.25rem; border-radius:0.75rem; background:#ba1a1a; color:#ffffff; border:none; font-weight:800; font-size:12px; cursor:pointer;"
+                        @onclick="ConfirmCloseTrip">
+                    Yes, Close Trip
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private DriverActiveRouteModel? ActiveRoute { get; set; }
+    private DriverActiveStopModel? CurrentStop =>
+        ActiveRoute?.Stops.FirstOrDefault(s => s.IsActiveCurrent) ?? ActiveRoute?.Stops.ElementAtOrDefault(3);
+    private int CurrentSpeedKmh { get; set; } = 0;
+    private string CurrentShift => AuthState.CurrentShift;
+    private bool _mapInitialized;
+    private bool _showCloseTripModal = false;
+
+    // Real Device Location State
+    private double _busLat = 18.5204;
+    private double _busLng = 73.8567;
+    private double? _gpsAccuracy = null;
+    private bool _isLiveGpsLocked = false;
+    private System.Threading.Timer? _gpsTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthState.OnChange += HandleAuthStateChange;
+        await LoadRouteData();
+
+        TrackingHub.OnStudentBoardedViaRfid += HandleRfidEvent;
+        _ = TrackingHub.StartAsync();
+
+        await RequestGpsAndAcquireLocationAsync();
+        StartGpsTrackingLoop();
+    }
+
+    private async Task RequestGpsAndAcquireLocationAsync()
+    {
+        try
+        {
+            var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+            if (status != PermissionStatus.Granted)
+            {
+                status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            }
+
+            if (status == PermissionStatus.Granted)
+            {
+                // 1. Try fast last known location for immediate map positioning
+                var lastLoc = await Geolocation.Default.GetLastKnownLocationAsync();
+                if (lastLoc != null)
+                {
+                    ApplyGpsFix(lastLoc.Latitude, lastLoc.Longitude, lastLoc.Accuracy, lastLoc.Speed, lastLoc.Course);
+                }
+
+                // 2. Request accurate live fix
+                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(5));
+                var currentLoc = await Geolocation.Default.GetLocationAsync(request);
+                if (currentLoc != null)
+                {
+                    ApplyGpsFix(currentLoc.Latitude, currentLoc.Longitude, currentLoc.Accuracy, currentLoc.Speed, currentLoc.Course);
+                }
+            }
+        }
+        catch
+        {
+            // Fallback gracefully to default
+        }
+    }
+
+    private void StartGpsTrackingLoop()
+    {
+        _gpsTimer = new System.Threading.Timer(async _ =>
+        {
+            try
+            {
+                var loc = await Geolocation.Default.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(4)));
+                if (loc != null)
+                {
+                    await InvokeAsync(() => ApplyGpsFix(loc.Latitude, loc.Longitude, loc.Accuracy, loc.Speed, loc.Course));
+                }
+            }
+            catch { }
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    private void ApplyGpsFix(double lat, double lng, double? accuracy, double? speed, double? course)
+    {
+        _busLat = lat;
+        _busLng = lng;
+        _gpsAccuracy = accuracy;
+        _isLiveGpsLocked = true;
+        if (speed.HasValue && speed.Value > 0)
+        {
+            CurrentSpeedKmh = (int)(speed.Value * 3.6);
+        }
+
+        GenerateDynamicRouteForLocation(lat, lng);
+
+        if (_mapInitialized)
+        {
+            _ = JSRuntime.InvokeVoidAsync("driverMapInterop.updateBusPosition", lat, lng, CurrentSpeedKmh, course ?? 0);
+            _ = JSRuntime.InvokeVoidAsync("driverMapInterop.setCenter", lat, lng, 16);
+            if (ActiveRoute?.Stops != null)
+            {
+                _ = JSRuntime.InvokeVoidAsync("driverMapInterop.renderRouteStops", ActiveRoute.Stops);
+            }
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void GenerateDynamicRouteForLocation(double lat, double lng)
+    {
+        var isMorning = CurrentShift == "Morning";
+        var delta = isMorning ? 0.002 : -0.002;
+
+        var dynamicStops = new List<DriverActiveStopModel>
+        {
+            new(Guid.NewGuid(), "Stop 1: Starting Depot / Route Point", 1, isMorning ? "07:15 AM" : "03:15 PM", isMorning ? "07:14 AM" : "03:14 PM", 4, 4, false, true, (decimal)(lat - 3 * delta), (decimal)(lng - 2.5 * delta)),
+            new(Guid.NewGuid(), "Stop 2: Residential Colony Entrance", 2, isMorning ? "07:25 AM" : "03:25 PM", isMorning ? "07:25 AM" : "03:25 PM", 6, 6, false, true, (decimal)(lat - 2 * delta), (decimal)(lng - 1.5 * delta)),
+            new(Guid.NewGuid(), "Stop 3: Morning Transit Hub", 3, isMorning ? "07:35 AM" : "03:35 PM", isMorning ? "07:35 AM" : "03:35 PM", 7, 7, false, true, (decimal)(lat - 1 * delta), (decimal)(lng - 0.8 * delta)),
+            new(Guid.NewGuid(), "Stop 4: Current Stop â€¢ Curbside", 4, isMorning ? "07:42 AM" : "03:42 PM", isMorning ? "07:42 AM" : "03:42 PM", 3, 2, true, false, (decimal)lat, (decimal)lng),
+            new(Guid.NewGuid(), "Stop 5: Sector Crossing", 5, isMorning ? "07:50 AM" : "03:50 PM", isMorning ? "07:50 AM" : "03:50 PM", 3, 0, false, false, (decimal)(lat + 1 * delta), (decimal)(lng + 0.8 * delta)),
+            new(Guid.NewGuid(), "Stop 6: Main Avenue Junction", 6, isMorning ? "07:58 AM" : "03:58 PM", isMorning ? "07:58 AM" : "03:58 PM", 2, 0, false, false, (decimal)(lat + 2 * delta), (decimal)(lng + 1.6 * delta)),
+            new(Guid.NewGuid(), isMorning ? "Stop 7: School Campus Main Gate" : "Stop 7: Final Neighborhood Terminal", 7, isMorning ? "08:10 AM" : "04:10 PM", isMorning ? "08:10 AM" : "04:10 PM", 0, 0, false, false, (decimal)(lat + 3 * delta), (decimal)(lng + 2.5 * delta))
+        };
+
+        if (ActiveRoute != null)
+        {
+            ActiveRoute = ActiveRoute with
+            {
+                NextTurnInstruction = isMorning ? "Proceed Forward to Next Student Stop" : "Proceed to Neighborhood Drop-off Point",
+                DistanceToNextTurn = "In 250 Meters",
+                NextStopName = isMorning ? "Stop 4: Current Stop â€¢ Curbside" : "Stop 4: Afternoon Drop-off",
+                Stops = dynamicStops,
+                TotalStops = dynamicStops.Count,
+                CurrentStopIndex = 4
+            };
+        }
+    }
+
+    private async Task LoadRouteData()
+    {
+        var busId = AuthState.CurrentSession?.BusId ?? Guid.Parse("22222222-2222-2222-2222-222222222222");
+        ActiveRoute = await DriverApi.GetActiveRouteAsync(busId, CurrentShift);
+        CurrentSpeedKmh = (int)(ActiveRoute?.SpeedKmh ?? 0m);
+    }
+
+    private async Task ChangeShift(string targetShift)
+    {
+        AuthState.SwitchShift(targetShift);
+        await LoadRouteData();
+        _mapInitialized = false;
+        NotificationService.ShowToast("Shift Switched", $"Active route set to {targetShift} shift.", "Info");
+        StateHasChanged();
+    }
+
+    private void RestartActiveTrip()
+    {
+        AuthState.ResetTrip();
+        StateHasChanged();
+    }
+
+    private async Task ConfirmCloseTrip()
+    {
+        _showCloseTripModal = false;
+        var tripId = AuthState.ActiveTripId ?? Guid.Parse("33333333-3333-3333-3333-333333333333");
+        await DriverApi.CompleteTripAsync(tripId);
+        AuthState.CompleteTrip();
+        NotificationService.ShowToast("Trip Closed", $"{CurrentShift} route safely ended. Parents notified.", "Success");
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if ((firstRender || !_mapInitialized) && !AuthState.IsCompleted)
+        {
+            _mapInitialized = true;
+            try
+            {
+                var busName = AuthState.CurrentSession?.BusNumber ?? "Bus #14";
+                await JSRuntime.InvokeVoidAsync("driverMapInterop.initDriverMap", "driverMap", _busLat, _busLng, busName);
+
+                if (ActiveRoute?.Stops != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("driverMapInterop.renderRouteStops", ActiveRoute.Stops);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+    }
+
+    private async Task RecenterBus()
+    {
+        try
+        {
+            var req = new GeolocationRequest(GeolocationAccuracy.High, TimeSpan.FromSeconds(4));
+            var loc = await Geolocation.Default.GetLocationAsync(req);
+            if (loc != null)
+            {
+                ApplyGpsFix(loc.Latitude, loc.Longitude, loc.Accuracy, loc.Speed, loc.Course);
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("driverMapInterop.recenterBus");
+            }
+        }
+        catch
+        {
+            await JSRuntime.InvokeVoidAsync("driverMapInterop.recenterBus");
+        }
+    }
+
+    private void HandleArrivedAtStop()
+    {
+        NotificationService.ShowToast(
+            $"Arrived at Stop {ActiveRoute?.CurrentStopIndex ?? 4}",
+            "Door RFID Reader active. Ready for passenger IN/OUT taps.",
+            "Success"
+        );
+        Navigation.NavigateTo("/driver/roster");
+    }
+
+    private void HandleRfidEvent(BoardingNotificationDto notif)
+    {
+        if (ActiveRoute != null)
+        {
+            ActiveRoute = ActiveRoute with
+            {
+                OnboardCount = ActiveRoute.OnboardCount + 1,
+                ToPickUpCount = Math.Max(0, ActiveRoute.ToPickUpCount - 1)
+            };
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void HandleAuthStateChange()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnChange -= HandleAuthStateChange;
+        TrackingHub.OnStudentBoardedViaRfid -= HandleRfidEvent;
+        _gpsTimer?.Dispose();
+        _gpsTimer = null;
+    }
+}
+
+

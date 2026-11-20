@@ -1,0 +1,208 @@
+﻿@page "/admin/trips"
+@layout Layout.AdminLayout
+@inject IApiClient ApiClient
+@inject AdminAuthStateProvider AuthState
+
+<PageTitle>Trip Dispatch Center â€” SchoolTrack</PageTitle>
+
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Top Command & Action Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); margin-bottom: 0.25rem;">
+                <span>Daily Operations</span>
+                <span class="material-symbols-outlined" style="font-size: 0.875rem;">chevron_right</span>
+                <span style="color: var(--color-primary);">Trip Dispatch & State Control</span>
+            </div>
+            <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-on-surface); margin: 0; letter-spacing: -0.02em;">Daily Trip Operations</h1>
+            <p style="font-size: 0.875rem; color: var(--color-on-surface-variant); margin: 0.25rem 0 0 0;">Deterministic lifecycle state engine: Scheduled &rarr; Started &rarr; InTransit &rarr; Arrived &rarr; Completed</p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button class="clay-btn clay-btn-surface" type="button" @onclick="ReloadTrips">
+                <span class="material-symbols-outlined" style="font-size: 1.125rem;">refresh</span>
+                <span>Refresh Trips</span>
+            </button>
+            <button class="clay-btn clay-btn-primary" type="button" @onclick="() => _showScheduleModal = true">
+                <span class="material-symbols-outlined" style="font-size: 1.125rem;">add_circle</span>
+                <span>+ Dispatch New Trip</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Trips Table Card -->
+    <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
+        <div class="clay-table-container">
+            <table class="clay-table">
+                <thead>
+                    <tr>
+                        <th>Route Corridor</th>
+                        <th>Bus & Assigned Driver</th>
+                        <th>Shift / Date</th>
+                        <th>Lifecycle Status</th>
+                        <th>Waypoints Progress</th>
+                        <th>Action State Control</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var trip in _trips)
+                    {
+                        <tr>
+                            <td>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-weight: 700; color: var(--color-on-surface);">@trip.RouteName</span>
+                                    <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">Trip ID: @trip.Id.ToString()[..8]...</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-weight: 700; color: var(--color-primary);">@trip.BusNumber</span>
+                                    <span style="font-size: 0.75rem; color: var(--color-on-surface-variant);">@trip.DriverName</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-weight: 600;">@trip.Shift</span>
+                                    <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">@trip.TripDate.ToString("MMM dd, yyyy")</span>
+                                </div>
+                            </td>
+                            <td>
+                                @if (trip.Status == "InTransit")
+                                {
+                                    <span class="clay-badge clay-badge-primary">
+                                        <span class="material-symbols-outlined" style="font-size: 0.875rem;">directions_bus</span>
+                                        <span>In Transit</span>
+                                    </span>
+                                }
+                                else if (trip.Status == "Arrived")
+                                {
+                                    <span class="clay-badge clay-badge-secondary">
+                                        <span class="material-symbols-outlined" style="font-size: 0.875rem;">school</span>
+                                        <span>Arrived at Gate</span>
+                                    </span>
+                                }
+                                else if (trip.Status == "Completed")
+                                {
+                                    <span class="clay-badge clay-badge-neutral">Completed</span>
+                                }
+                                else
+                                {
+                                    <span class="clay-badge clay-badge-tertiary">@trip.Status</span>
+                                }
+                            </td>
+                            <td>
+                                <span style="font-weight: 700; font-size: 0.8125rem;">
+                                    @trip.Stops.Count(s => s.Status == "Completed") / @trip.Stops.Count Stops
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.375rem;">
+                                    @if (trip.Status == "Scheduled")
+                                    {
+                                        <button class="clay-btn clay-btn-primary clay-btn-sm" type="button" @onclick='() => AdvanceTrip(trip, "Started")'>
+                                            Start Trip
+                                        </button>
+                                    }
+                                    else if (trip.Status == "Started")
+                                    {
+                                        <button class="clay-btn clay-btn-primary clay-btn-sm" type="button" @onclick='() => AdvanceTrip(trip, "InTransit")'>
+                                            Depart Corridor
+                                        </button>
+                                    }
+                                    else if (trip.Status == "InTransit")
+                                    {
+                                        <button class="clay-btn clay-btn-secondary clay-btn-sm" type="button" @onclick='() => AdvanceTrip(trip, "Arrived")'>
+                                            Mark Gate Arrival
+                                        </button>
+                                    }
+                                    else if (trip.Status == "Arrived")
+                                    {
+                                        <button class="clay-btn clay-btn-surface clay-btn-sm" type="button" @onclick='() => AdvanceTrip(trip, "Completed")'>
+                                            Complete Trip
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="clay-badge clay-badge-neutral">Finished</span>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (_showScheduleModal)
+{
+    <!-- Dispatch Trip Modal -->
+    <div style="position: fixed; inset: 0; background: rgba(24, 25, 48, 0.45); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center;">
+        <div class="clay-card" style="width: 100%; max-width: 32rem; padding: 2rem; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Dispatch Daily Trip</h3>
+                <button type="button" style="background: none; border: none; cursor: pointer;" @onclick="() => _showScheduleModal = false">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Select Corridor Route</label>
+                    <select class="clay-input clay-select">
+                        <option>Route Westview A (5 Stops)</option>
+                        <option>Route Maple East B (4 Stops)</option>
+                        <option>Route North Valley C (6 Stops)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Assigned Bus</label>
+                    <select class="clay-input clay-select">
+                        <option>Bus #14 (CA-88B-914)</option>
+                        <option>Bus #08 (CA-22M-008)</option>
+                        <option>Bus #22 (CA-55X-022)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Shift Type</label>
+                    <select class="clay-input clay-select">
+                        <option value="MorningPickup">Morning Pickup</option>
+                        <option value="AfternoonDropOff">Afternoon Drop-Off</option>
+                    </select>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+                    <button class="clay-btn clay-btn-surface" type="button" @onclick="() => _showScheduleModal = false">Cancel</button>
+                    <button class="clay-btn clay-btn-primary" type="button" @onclick="DispatchTrip">Dispatch Trip</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<TripDto> _trips = new();
+    private bool _showScheduleModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadTrips();
+    }
+
+    private async Task ReloadTrips()
+    {
+        _trips = await ApiClient.GetTripsAsync(AuthState.CurrentSession.SchoolId);
+    }
+
+    private async Task AdvanceTrip(TripDto trip, string newStatus)
+    {
+        await ApiClient.UpdateTripStatusAsync(AuthState.CurrentSession.SchoolId, trip.Id, newStatus);
+        await ReloadTrips();
+    }
+
+    private void DispatchTrip()
+    {
+        _showScheduleModal = false;
+    }
+}
+
+

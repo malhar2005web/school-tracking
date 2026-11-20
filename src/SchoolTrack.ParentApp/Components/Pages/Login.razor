@@ -1,180 +1,365 @@
+@page "/"
 @page "/login"
+@layout Layout.LoginLayout
 @inject NavigationManager Navigation
-@inject ParentAuthState AuthState
-@inject IParentApiClient ApiClient
+@inject ParentAuthState ParentAuth
+@inject IParentApiClient ParentApi
+@inject DriverAuthState DriverAuth
+@inject IDriverApiClient DriverApi
+@inject AdminAuthStateProvider AdminAuth
+@inject IApiClient AdminApi
 
-<div style="min-height:100vh; background:#fbf8ff; padding:1.25rem 1rem 3rem 1rem; display:flex; flex-direction:column; max-width:440px; margin:0 auto; user-select:none;">
-    <!-- Top Safe Ambience Micro-pills -->
+<div style="min-height:100vh; background:linear-gradient(180deg, #fbf8ff 0%, #f0edff 100%); padding:1.25rem 1rem 3rem 1rem; display:flex; flex-direction:column; max-width:460px; margin:0 auto; user-select:none; box-sizing:border-box;">
+    
+    <!-- Top System Live Pill & Badge -->
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; padding-top:env(safe-area-inset-top, 8px);">
         <div style="display:inline-flex; align-items:center; gap:0.375rem; padding:0.375rem 0.75rem; border-radius:9999px; background:#eeecff; box-shadow:0 4px 12px -2px rgba(41,42,66,0.06), inset 1px 1px 2px rgba(255,255,255,0.8);">
             <span style="width:8px; height:8px; border-radius:50%; background:#0c6b55; display:inline-block; animation:pulse 2s infinite;"></span>
-            <span style="font-size:11px; font-weight:700; color:#0c6b55; letter-spacing:0.03em;">SPRING TERM LIVE</span>
+            <span style="font-size:11px; font-weight:700; color:#0c6b55; letter-spacing:0.03em;">FLEET SYSTEM ONLINE</span>
         </div>
         <div style="display:inline-flex; align-items:center; gap:0.375rem; padding:0.375rem 0.75rem; border-radius:9999px; background:#e7e6ff; color:#484552; font-size:11px; font-weight:700;">
             <span class="material-symbols-outlined" style="font-size:16px; color:#644bba;">verified</span>
-            <span>Oakridge Certified</span>
+            <span>Unified Edition v2.4</span>
         </div>
     </div>
 
-    <!-- Mascot Ollie Stage -->
-    <div style="position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:1rem 0;">
-        <div style="position:absolute; width:11rem; height:11rem; border-radius:50%; background:rgba(155,131,246,0.3); filter:blur(24px); z-index:0;"></div>
+    <!-- Mascot & Header Section -->
+    <div style="position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0.5rem 0 1rem 0;">
+        <div style="position:absolute; width:10rem; height:10rem; border-radius:50%; background:rgba(155,131,246,0.25); filter:blur(24px); z-index:0;"></div>
         
         <div style="position:relative; z-index:1; cursor:pointer;" @onclick="MascotCheer">
-            <div style="width:10rem; height:10rem; border-radius:50%; padding:0.375rem; background:radial-gradient(135deg, #ffffff 0%, #eeecff 100%); box-shadow:0 16px 32px -6px rgba(100,75,186,0.28), 0 6px 14px -2px rgba(24,25,48,0.08), inset 3px 3px 6px rgba(255,255,255,0.95), inset -3px -3px 6px rgba(100,75,186,0.15); display:flex; align-items:center; justify-content:center; transform:@(_cheering ? "scale(1.08)" : "scale(1)"); transition:transform 0.3s ease;">
-                <img alt="Ollie the Owl Mascot" style="width:100%; height:100%; border-radius:50%; object-fit:contain; pointer-events:none;" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpLlyM0Broza9BqnBbgTBAhdP3Au4u0jnjcOLNGAdsbzyys417O6aUyWehYNuaZRB1Mw9wTMP6v4ayUVn7a7HCb5CzC1tZ-FIX8_ogG6eud--sgGqXEm9Czvb6keRmAvRFhCGJX7n6Haf8n8QYIVKOHMVDVeLxhflWT1wURn1ztnBhIQlcS23F9GdrI1EL9ckoZScqDdjZK3zPdY_hFHH0KgsDnxmc0xc7si-9LnQ" />
+            <div style="width:7.5rem; height:7.5rem; border-radius:50%; padding:0.35rem; background:radial-gradient(135deg, #ffffff 0%, #eeecff 100%); box-shadow:0 14px 28px -6px rgba(100,75,186,0.28), 0 6px 14px -2px rgba(24,25,48,0.08), inset 3px 3px 6px rgba(255,255,255,0.95), inset -3px -3px 6px rgba(100,75,186,0.15); display:flex; align-items:center; justify-content:center; transform:@(_cheering ? "scale(1.08)" : "scale(1)"); transition:transform 0.3s ease;">
+                <img alt="SchoolTrack Mascot" style="width:100%; height:100%; border-radius:50%; object-fit:contain; pointer-events:none;" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpLlyM0Broza9BqnBbgTBAhdP3Au4u0jnjcOLNGAdsbzyys417O6aUyWehYNuaZRB1Mw9wTMP6v4ayUVn7a7HCb5CzC1tZ-FIX8_ogG6eud--sgGqXEm9Czvb6keRmAvRFhCGJX7n6Haf8n8QYIVKOHMVDVeLxhflWT1wURn1ztnBhIQlcS23F9GdrI1EL9ckoZScqDdjZK3zPdY_hFHH0KgsDnxmc0xc7si-9LnQ" />
             </div>
 
             <!-- Speech Bubble -->
-            <div style="position:absolute; top:-0.75rem; right:-1.5rem; background:#ffffff; padding:0.375rem 0.75rem; border-radius:1rem; display:flex; align-items:center; gap:0.25rem; box-shadow:0 8px 18px -3px rgba(41,42,66,0.12), inset 1px 2px 2px rgba(255,255,255,0.9);">
-                <span style="font-size:1rem;">👋</span>
-                <span style="font-size:11px; font-weight:700; color:#181930;">@_speechMessage</span>
+            <div style="position:absolute; top:-0.5rem; right:-2rem; background:#ffffff; padding:0.35rem 0.65rem; border-radius:1rem; display:flex; align-items:center; gap:0.25rem; box-shadow:0 8px 18px -3px rgba(41,42,66,0.12), inset 1px 2px 2px rgba(255,255,255,0.9);">
+                <span style="font-size:0.9rem;">👋</span>
+                <span style="font-size:10px; font-weight:700; color:#181930;">@_speechMessage</span>
             </div>
         </div>
     </div>
 
-    <!-- Title & Narrative -->
-    <div style="text-align:center; margin-bottom:1.5rem;">
-        <h1 style="font-size:28px; font-weight:800; color:#181930; letter-spacing:-0.02em; margin:0 0 0.25rem 0;">SchoolTrack</h1>
-        <p style="font-size:14px; color:#484552; margin:0;">Safe, fun & stress-free journeys for your little stars.</p>
+    <!-- Title & Subtitle -->
+    <div style="text-align:center; margin-bottom:1.25rem;">
+        <h1 style="font-size:26px; font-weight:800; color:#181930; letter-spacing:-0.02em; margin:0 0 0.25rem 0;">SchoolTrack</h1>
+        <p style="font-size:13px; color:#484552; margin:0;">One Unified Portal for Parents, Drivers & Admins</p>
     </div>
 
-    <!-- Feature Strips -->
-    <div style="display:flex; flex-direction:column; gap:0.625rem; margin-bottom:1.5rem;">
-        <div class="clay-card" style="padding:0.75rem 1rem; border-radius:1rem; display:flex; align-items:center; justify-content:space-between;">
-            <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:2.5rem; height:2.5rem; border-radius:1rem; background:#a1f3d7; display:flex; align-items:center; justify-content:center; color:#0c6b55;">
-                    <span class="material-symbols-outlined" style="font-size:20px;">directions_bus</span>
-                </div>
-                <div>
-                    <div style="font-size:13px; font-weight:700; color:#181930;">Live GPS Bus Tracking</div>
-                    <div style="font-size:12px; color:#484552;">Turn-by-turn live route maps</div>
-                </div>
-            </div>
-            <span class="clay-badge clay-badge-secondary">Real-Time</span>
-        </div>
-
-        <div class="clay-card" style="padding:0.75rem 1rem; border-radius:1rem; display:flex; align-items:center; justify-content:space-between;">
-            <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:2.5rem; height:2.5rem; border-radius:1rem; background:#ffd66b; display:flex; align-items:center; justify-content:center; color:#765b00;">
-                    <span class="material-symbols-outlined" style="font-size:20px;">contactless</span>
-                </div>
-                <div>
-                    <div style="font-size:13px; font-weight:700; color:#181930;">Instant RFID Tap Alerts</div>
-                    <div style="font-size:12px; color:#484552;">Boarding & drop-off chime</div>
-                </div>
-            </div>
-            <span class="clay-badge clay-badge-tertiary">Smart Tap</span>
-        </div>
-
-        <div class="clay-card" style="padding:0.75rem 1rem; border-radius:1rem; display:flex; align-items:center; justify-content:space-between;">
-            <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:2.5rem; height:2.5rem; border-radius:1rem; background:#ffdad6; display:flex; align-items:center; justify-content:center; color:#ba1a1a;">
-                    <span class="material-symbols-outlined" style="font-size:20px;">support_agent</span>
-                </div>
-                <div>
-                    <div style="font-size:13px; font-weight:700; color:#181930;">Direct Driver & School SOS</div>
-                    <div style="font-size:12px; color:#484552;">Instant 1-tap priority line</div>
-                </div>
-            </div>
-            <span class="clay-badge clay-badge-error">24/7 Guard</span>
-        </div>
+    <!-- Role Selection Tabs -->
+    <div style="background:#eeecff; padding:4px; border-radius:1rem; display:flex; gap:4px; margin-bottom:1.25rem; box-shadow:inset 0 1px 3px rgba(24,25,48,0.06);">
+        <button type="button"
+                style="flex:1; border:none; padding:0.6rem 0.5rem; border-radius:0.75rem; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s; @(_selectedRole == "Parent" ? "background:#644bba; color:#ffffff; box-shadow:0 4px 10px rgba(100,75,186,0.35);" : "background:transparent; color:#484552;")"
+                @onclick='() => SetRole("Parent")'>
+            <span class="material-symbols-outlined" style="font-size:17px;">family_restroom</span>
+            <span>Parent</span>
+        </button>
+        <button type="button"
+                style="flex:1; border:none; padding:0.6rem 0.5rem; border-radius:0.75rem; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s; @(_selectedRole == "Driver" ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 10px rgba(12,107,85,0.35);" : "background:transparent; color:#484552;")"
+                @onclick='() => SetRole("Driver")'>
+            <span class="material-symbols-outlined" style="font-size:17px;">directions_bus</span>
+            <span>Driver</span>
+        </button>
+        <button type="button"
+                style="flex:1; border:none; padding:0.6rem 0.5rem; border-radius:0.75rem; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s; @(_selectedRole == "Admin" ? "background:#181930; color:#ffffff; box-shadow:0 4px 10px rgba(24,25,48,0.35);" : "background:transparent; color:#484552;")"
+                @onclick='() => SetRole("Admin")'>
+            <span class="material-symbols-outlined" style="font-size:17px;">admin_panel_settings</span>
+            <span>Admin</span>
+        </button>
     </div>
 
-    <!-- Parent Sign In Clay Card -->
-    <div class="clay-card" style="padding:1.25rem; border-radius:1.5rem; margin-bottom:1.5rem;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-            <div>
-                <h2 style="font-size:18px; font-weight:800; color:#181930; margin:0;">Parent Sign In</h2>
-                <p style="font-size:12px; color:#484552; margin:0;">Access your registered student fleet</p>
-            </div>
-            <div style="width:2rem; height:2rem; border-radius:50%; background:#e7deff; color:#644bba; display:flex; align-items:center; justify-content:center;">
-                <span class="material-symbols-outlined" style="font-size:18px;">lock_open</span>
-            </div>
-        </div>
-
-        <div style="margin-bottom:1rem;">
-            <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.375rem; margin-left:0.25rem;">Mobile Phone Number</label>
-            <div class="clay-inset" style="display:flex; align-items:center; height:3.25rem; padding:0 0.875rem;">
-                <div style="display:flex; align-items:center; gap:0.375rem; padding-right:0.625rem; margin-right:0.625rem; border-right:1px solid #cac4d4;">
-                    <span style="font-size:1.125rem;">🇺🇸</span>
-                    <span style="font-size:13px; font-weight:700; color:#181930;">+1</span>
+    <!-- Active Role Sign-In Form Card -->
+    <div class="clay-card" style="padding:1.25rem; border-radius:1.5rem; margin-bottom:1.25rem;">
+        
+        @if (_selectedRole == "Parent")
+        {
+            <!-- Parent Form -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                <div>
+                    <h2 style="font-size:17px; font-weight:800; color:#181930; margin:0;">Parent Guardian Portal</h2>
+                    <p style="font-size:12px; color:#484552; margin:0;">Track child, live stops & RFID taps</p>
                 </div>
-                <input style="width:100%; background:transparent; border:none; outline:none; font-size:15px; font-weight:600; color:#181930;" type="tel" @bind="_phoneNumber" placeholder="(555) 019-2834" />
+                <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#e7deff; color:#644bba; display:flex; align-items:center; justify-content:center;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">badge</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom:0.875rem;">
+                <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.35rem; margin-left:0.25rem;">Mobile Phone Number</label>
+                <div class="clay-inset" style="display:flex; align-items:center; height:3rem; padding:0 0.75rem;">
+                    <div style="display:flex; align-items:center; gap:0.35rem; padding-right:0.5rem; margin-right:0.5rem; border-right:1px solid #cac4d4;">
+                        <span style="font-size:1rem;">🇺🇸</span>
+                        <span style="font-size:12px; font-weight:700; color:#181930;">+1</span>
+                    </div>
+                    <input style="width:100%; background:transparent; border:none; outline:none; font-size:14px; font-weight:600; color:#181930;" type="tel" @bind="_parentPhone" placeholder="(555) 019-2834" />
+                </div>
+            </div>
+
+            <div style="margin-bottom:0.875rem;">
+                <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.35rem; margin-left:0.25rem;">4-Digit Safety OTP</label>
+                <div class="clay-inset" style="display:flex; align-items:center; height:3rem; padding:0 0.75rem;">
+                    <span class="material-symbols-outlined" style="font-size:18px; color:#644bba; margin-right:0.5rem;">pin</span>
+                    <input style="width:100%; background:transparent; border:none; outline:none; font-size:16px; font-weight:700; letter-spacing:0.2em; color:#181930;" type="text" maxlength="4" @bind="_parentOtp" placeholder="8421" />
+                </div>
+            </div>
+        }
+        else if (_selectedRole == "Driver")
+        {
+            <!-- Driver Form -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                <div>
+                    <h2 style="font-size:17px; font-weight:800; color:#181930; margin:0;">Driver In-Cab Console</h2>
+                    <p style="font-size:12px; color:#484552; margin:0;">Active route, passenger roster & SOS</p>
+                </div>
+                <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">airline_seat_recline_normal</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom:0.875rem;">
+                <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.35rem; margin-left:0.25rem;">Driver License / Assigned Bus</label>
+                <div class="clay-inset" style="display:flex; align-items:center; height:3rem; padding:0 0.75rem;">
+                    <span class="material-symbols-outlined" style="font-size:18px; color:#0c6b55; margin-right:0.5rem;">directions_bus</span>
+                    <input style="width:100%; background:transparent; border:none; outline:none; font-size:14px; font-weight:600; color:#181930;" type="text" @bind="_driverId" placeholder="Bus #14 (Robert Jenkins)" />
+                </div>
+            </div>
+
+            <div style="margin-bottom:0.875rem;">
+                <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.35rem; margin-left:0.25rem;">Security PIN</label>
+                <div class="clay-inset" style="display:flex; align-items:center; height:3rem; padding:0 0.75rem;">
+                    <span class="material-symbols-outlined" style="font-size:18px; color:#0c6b55; margin-right:0.5rem;">lock</span>
+                    <input style="width:100%; background:transparent; border:none; outline:none; font-size:16px; font-weight:700; letter-spacing:0.2em; color:#181930;" type="password" maxlength="6" @bind="_driverPin" placeholder="••••" />
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Admin Form -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                <div>
+                    <h2 style="font-size:17px; font-weight:800; color:#181930; margin:0;">District Admin Portal</h2>
+                    <p style="font-size:12px; color:#484552; margin:0;">Route builder, fleet radar & analytics</p>
+                </div>
+                <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#eeecff; color:#181930; display:flex; align-items:center; justify-content:center;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">domain</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom:0.875rem;">
+                <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.35rem; margin-left:0.25rem;">Staff Email Address</label>
+                <div class="clay-inset" style="display:flex; align-items:center; height:3rem; padding:0 0.75rem;">
+                    <span class="material-symbols-outlined" style="font-size:18px; color:#644bba; margin-right:0.5rem;">mail</span>
+                    <input style="width:100%; background:transparent; border:none; outline:none; font-size:14px; font-weight:600; color:#181930;" type="email" @bind="_adminEmail" placeholder="admin@oakridge.edu" />
+                </div>
+            </div>
+
+            <div style="margin-bottom:0.875rem;">
+                <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.35rem; margin-left:0.25rem;">Password</label>
+                <div class="clay-inset" style="display:flex; align-items:center; height:3rem; padding:0 0.75rem;">
+                    <span class="material-symbols-outlined" style="font-size:18px; color:#644bba; margin-right:0.5rem;">key</span>
+                    <input style="width:100%; background:transparent; border:none; outline:none; font-size:14px; font-weight:600; color:#181930;" type="password" @bind="_adminPassword" placeholder="••••••••" />
+                </div>
+            </div>
+        }
+
+        <!-- Remember Me Checkbox (MAUI Persistent Storage) -->
+        <div style="display:flex; align-items:center; gap:0.625rem; padding:0.5rem 0.25rem 0.75rem 0.25rem; cursor:pointer;" @onclick="ToggleRememberMe">
+            <div style="width:1.35rem; height:1.35rem; border-radius:0.35rem; display:flex; align-items:center; justify-content:center; transition:all 0.2s; @(_rememberMe ? "background:#644bba; color:#ffffff; box-shadow:0 2px 6px rgba(100,75,186,0.35);" : "background:#eeecff; border:1px solid #cac4d4; color:transparent;")">
+                <span class="material-symbols-outlined" style="font-size:16px; font-weight:800;">check</span>
+            </div>
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-size:13px; font-weight:700; color:#181930;">Remember Me on this device</span>
+                <span style="font-size:11px; color:#797584;">Stay logged in across app restarts</span>
             </div>
         </div>
 
-        <!-- One-Tap Demo Sign-In Button -->
-        <button class="clay-btn clay-btn-primary" style="width:100%; height:3.25rem; font-size:15px; margin-bottom:0.75rem;" @onclick="HandleLogin">
+        <!-- Role Sign-In Button -->
+        <button class="clay-btn @GetRoleButtonClass()" style="width:100%; height:3.25rem; font-size:15px; margin-top:0.25rem;" @onclick="HandleRoleLogin">
             @if (_isLoading)
             {
                 <span class="material-symbols-outlined" style="animation:spin 1s infinite linear;">refresh</span>
-                <span>Connecting to Fleet...</span>
+                <span>Signing in...</span>
             }
             else
             {
-                <span>Get Verification Code</span>
+                <span>@GetRoleButtonText()</span>
                 <span class="material-symbols-outlined" style="font-size:20px;">arrow_forward</span>
             }
         </button>
     </div>
 
-    <!-- Demo OTP Simulator Card -->
-    <div style="padding:1.25rem; border-radius:1.5rem; background:#eeecff; box-shadow:0 12px 28px -6px rgba(41,42,66,0.08), inset 2px 2px 4px rgba(255,255,255,0.9); margin-bottom:1.5rem;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
-            <div style="display:flex; align-items:center; gap:0.5rem;">
-                <span style="width:8px; height:8px; border-radius:50%; background:#644bba; display:inline-block; animation:ping 1.5s infinite;"></span>
-                <span style="font-size:13px; font-weight:700; color:#181930;">Demo OTP Simulator</span>
-            </div>
-            <span style="font-size:12px; font-weight:700; color:#644bba;">Auto-sent</span>
+    <!-- Quick 1-Tap Demo Switcher (Instant Evaluation for Sir/Testers) -->
+    <div style="padding:1rem; border-radius:1.5rem; background:#ffffff; box-shadow:0 8px 24px -4px rgba(41,42,66,0.08); margin-bottom:1rem;">
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+            <span class="material-symbols-outlined" style="color:#644bba; font-size:18px;">rocket_launch</span>
+            <span style="font-size:12px; font-weight:800; color:#181930; text-transform:uppercase; letter-spacing:0.04em;">1-Tap Quick Demo Logins</span>
         </div>
+        
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            <!-- Demo Parent -->
+            <button type="button" class="clay-card" style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.85rem; border-radius:1rem; border:none; cursor:pointer; text-align:left; background:#fbf8ff; width:100%; transition:transform 0.1s;" @onclick='() => DemoLoginAs("Parent")'>
+                <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#e7deff; color:#644bba; display:flex; align-items:center; justify-content:center;">
+                        <span class="material-symbols-outlined" style="font-size:16px;">family_restroom</span>
+                    </div>
+                    <div>
+                        <div style="font-size:12px; font-weight:800; color:#181930;">Login as Parent</div>
+                        <div style="font-size:11px; color:#484552;">Sarah Jenkins (Leo • Bus #14)</div>
+                    </div>
+                </div>
+                <span class="clay-badge clay-badge-secondary" style="font-size:10px;">ENTER</span>
+            </button>
 
-        <p style="font-size:12px; color:#484552; margin:0 0 0.75rem 0;">Safety code auto-generated for demo testing:</p>
+            <!-- Demo Driver -->
+            <button type="button" class="clay-card" style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.85rem; border-radius:1rem; border:none; cursor:pointer; text-align:left; background:#fbf8ff; width:100%; transition:transform 0.1s;" @onclick='() => DemoLoginAs("Driver")'>
+                <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center;">
+                        <span class="material-symbols-outlined" style="font-size:16px;">directions_bus</span>
+                    </div>
+                    <div>
+                        <div style="font-size:12px; font-weight:800; color:#181930;">Login as Driver</div>
+                        <div style="font-size:11px; color:#484552;">Robert Jenkins (Bus #14 Console)</div>
+                    </div>
+                </div>
+                <span class="clay-badge clay-badge-mint" style="font-size:10px;">ENTER</span>
+            </button>
 
-        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.75rem; margin-bottom:1rem;">
-            <div class="clay-inset" style="height:3.25rem; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#644bba; background:#ffffff;">8</div>
-            <div class="clay-inset" style="height:3.25rem; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#644bba; background:#ffffff;">4</div>
-            <div class="clay-inset" style="height:3.25rem; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#644bba; background:#ffffff;">2</div>
-            <div class="clay-inset" style="height:3.25rem; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#644bba; background:#ffffff;">1</div>
+            <!-- Demo Admin -->
+            <button type="button" class="clay-card" style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.85rem; border-radius:1rem; border:none; cursor:pointer; text-align:left; background:#fbf8ff; width:100%; transition:transform 0.1s;" @onclick='() => DemoLoginAs("Admin")'>
+                <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#eeecff; color:#181930; display:flex; align-items:center; justify-content:center;">
+                        <span class="material-symbols-outlined" style="font-size:16px;">admin_panel_settings</span>
+                    </div>
+                    <div>
+                        <div style="font-size:12px; font-weight:800; color:#181930;">Login as District Admin</div>
+                        <div style="font-size:11px; color:#484552;">Elena Vasquez (Oakridge Academy)</div>
+                    </div>
+                </div>
+                <span class="clay-badge clay-badge-tertiary" style="font-size:10px;">ENTER</span>
+            </button>
         </div>
-
-        <button class="clay-btn clay-btn-secondary" style="width:100%; height:3rem; font-size:14px;" @onclick="HandleLogin">
-            <span class="material-symbols-outlined" style="font-size:18px;">verified_user</span>
-            <span>Verify & Enter Parent Dashboard</span>
-        </button>
     </div>
 </div>
 
 @code {
-    private string _phoneNumber = "(555) 019-2834";
+    private string _selectedRole = "Parent";
+    private bool _rememberMe = true;
     private bool _isLoading = false;
     private bool _cheering = false;
-    private string _speechMessage = "Hoo's ready to ride?";
+    private string _speechMessage = "Select your role to begin!";
+
+    // Parent inputs
+    private string _parentPhone = "(555) 019-2834";
+    private string _parentOtp = "8421";
+
+    // Driver inputs
+    private string _driverId = "Bus #14 (Robert Jenkins)";
+    private string _driverPin = "7714";
+
+    // Admin inputs
+    private string _adminEmail = "admin@oakridge.edu";
+    private string _adminPassword = "••••••••";
+
+    protected override void OnInitialized()
+    {
+        // Check persistent local storage for "Remember Me"
+        var isRemembered = Preferences.Default.Get("ST_RememberMe", false);
+        if (isRemembered)
+        {
+            var savedRole = Preferences.Default.Get("ST_SavedRole", "Parent");
+            RedirectToRole(savedRole);
+        }
+    }
+
+    private void SetRole(string role)
+    {
+        _selectedRole = role;
+        if (role == "Parent") _speechMessage = "Welcome, Parent! 🌟";
+        else if (role == "Driver") _speechMessage = "Driver Console ready! 🚌";
+        else if (role == "Admin") _speechMessage = "Admin Portal online! 🏫";
+    }
+
+    private void ToggleRememberMe()
+    {
+        _rememberMe = !_rememberMe;
+    }
 
     private async Task MascotCheer()
     {
         _cheering = true;
-        _speechMessage = "Leo's bus is on track! ✨";
+        _speechMessage = "SchoolTrack is all set! ✨";
         StateHasChanged();
-        await Task.Delay(1500);
+        await Task.Delay(1200);
         _cheering = false;
-        _speechMessage = "Hoo's ready to ride?";
+        _speechMessage = "Select your role to begin!";
         StateHasChanged();
     }
 
-    private async Task HandleLogin()
+    private string GetRoleButtonClass() => _selectedRole switch
+    {
+        "Driver" => "clay-btn-mint",
+        "Admin" => "clay-btn-primary",
+        _ => "clay-btn-primary"
+    };
+
+    private string GetRoleButtonText() => _selectedRole switch
+    {
+        "Parent" => "Enter Parent Guardian App",
+        "Driver" => "Launch Driver Console",
+        "Admin" => "Access Admin Portal",
+        _ => "Sign In"
+    };
+
+    private async Task HandleRoleLogin()
     {
         _isLoading = true;
         StateHasChanged();
 
-        var session = await ApiClient.LoginWithPhoneAsync(_phoneNumber, "8421");
-        if (session != null)
+        await Task.Delay(300); // Gentle UI transition
+
+        if (_rememberMe)
         {
-            AuthState.SetSession(session);
-            Navigation.NavigateTo("/");
+            Preferences.Default.Set("ST_RememberMe", true);
+            Preferences.Default.Set("ST_SavedRole", _selectedRole);
+        }
+        else
+        {
+            Preferences.Default.Remove("ST_RememberMe");
+            Preferences.Default.Remove("ST_SavedRole");
         }
 
+        RedirectToRole(_selectedRole);
         _isLoading = false;
     }
-}
 
+    private void DemoLoginAs(string role)
+    {
+        _selectedRole = role;
+        if (_rememberMe)
+        {
+            Preferences.Default.Set("ST_RememberMe", true);
+            Preferences.Default.Set("ST_SavedRole", role);
+        }
+
+        RedirectToRole(role);
+    }
+
+    private void RedirectToRole(string role)
+    {
+        if (role == "Driver")
+        {
+            DriverAuth.InitializeDefaultDemoSession();
+            Navigation.NavigateTo("/driver/navigation");
+        }
+        else if (role == "Admin")
+        {
+            // Admin session already initialized in AdminAuthStateProvider
+            Navigation.NavigateTo("/admin/dashboard");
+        }
+        else
+        {
+            // Parent
+            Navigation.NavigateTo("/parent/dashboard");
+        }
+    }
+}

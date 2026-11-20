@@ -1,0 +1,343 @@
+@page "/admin/fleet-radar"
+@layout Layout.AdminLayout
+@implements IDisposable
+@inject IApiClient ApiClient
+@inject AdminAuthStateProvider AuthState
+@inject LiveFleetTrackingService TrackingService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Live Fleet Radar â€” SchoolTrack</PageTitle>
+
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Title & Status Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span class="clay-badge clay-badge-secondary" style="font-size: 0.6875rem; text-transform: uppercase;">
+                    Live Telemetry Grid v2.4
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 0.375rem; color: var(--color-secondary); font-size: 0.75rem; font-weight: 700;">
+                    <span style="width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--color-secondary); display: inline-block;" class="pulse-dot"></span>
+                    OpenStreetMap Satellite Radar Active
+                </span>
+            </div>
+            <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-on-surface); margin: 0; letter-spacing: -0.02em;">District Fleet Radar</h1>
+            <p style="font-size: 0.875rem; color: var(--color-on-surface-variant); margin: 0.25rem 0 0 0;">Sub-second GPS coordinates synchronized across 24 school transit corridors</p>
+        </div>
+
+        <!-- Filter Chips -->
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="clay-btn @(_filter == "all" ? "clay-btn-primary" : "clay-btn-surface")" type="button" @onclick='() => SetFilter("all")'>
+                All Fleet (18)
+            </button>
+            <button class="clay-btn @(_filter == "inbound" ? "clay-btn-primary" : "clay-btn-surface")" type="button" @onclick='() => SetFilter("inbound")'>
+                Morning Inbound (14)
+            </button>
+            <button class="clay-btn @(_filter == "gates" ? "clay-btn-primary" : "clay-btn-surface")" type="button" @onclick='() => SetFilter("gates")'>
+                At School Gates (3)
+            </button>
+            <button class="clay-btn @(_filter == "delayed" ? "clay-btn-danger" : "clay-btn-surface")" type="button" @onclick='() => SetFilter("delayed")'>
+                Delayed (1)
+            </button>
+        </div>
+    </div>
+
+    <!-- Map & Inspector Layout -->
+    <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+        <!-- Leaflet Interactive Map Viewport -->
+        <div class="clay-card" style="padding: 1rem; background: #ffffff; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; padding: 0 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span class="clay-badge clay-badge-primary">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">radar</span>
+                        <span>Corridor Safety Radar</span>
+                    </span>
+                    <span style="font-size: 0.75rem; color: var(--color-on-surface-variant);">Click any bus to inspect driver & route telemetry</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button class="clay-btn clay-btn-surface clay-btn-sm" type="button" @onclick="FitAllMarkers">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">my_location</span>
+                        <span>Fit All</span>
+                    </button>
+                    <button class="clay-btn clay-btn-surface clay-btn-sm" type="button" @onclick="CenterOnSelected">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">center_focus_strong</span>
+                        <span>Focus Selected</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Leaflet Container -->
+            <div id="fleetRadarMap" style="width: 100%; height: 500px; border-radius: 1.25rem; overflow: hidden; box-shadow: inset 2px 2px 6px rgba(41,42,66,0.1), inset -2px -2px 6px rgba(255,255,255,0.9); z-index: 1;"></div>
+        </div>
+
+        <!-- Selected Bus Deep Inspector Drawer -->
+        @if (_selectedBus != null)
+        {
+            <div class="clay-card" style="padding: 1.75rem; background: #ffffff;">
+                <!-- Driver & Bus Details -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem; border-bottom: 1px solid var(--color-surface-container-high); padding-bottom: 1.25rem;">
+                    <div style="display: flex; align-items: center; gap: 1.25rem;">
+                        <div style="position: relative;">
+                            <div style="width: 4rem; height: 4rem; border-radius: 9999px; background: var(--color-surface-container); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 14px -2px rgba(41,42,66,0.15); overflow: hidden;">
+                                <span class="material-symbols-outlined" style="font-size: 2.5rem; color: var(--color-primary);">face</span>
+                            </div>
+                            <span style="position: absolute; bottom: -0.25rem; right: -0.25rem; width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: var(--color-secondary); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                <span class="material-symbols-outlined" style="font-size: 1rem;">verified</span>
+                            </span>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <h2 style="font-size: 1.375rem; font-weight: 800; color: var(--color-on-surface); margin: 0;">@_selectedBus.BusNumber â€¢ @_selectedBus.RouteName</h2>
+                                <span class="clay-badge clay-badge-secondary">Live Telemetry Clean</span>
+                            </div>
+                            <p style="font-size: 0.875rem; color: var(--color-on-surface-variant); margin: 0.25rem 0 0 0;">
+                                Lead Driver: <strong style="color: var(--color-on-surface);">@_selectedBus.DriverName</strong> â€¢ License @_selectedBus.DriverLicense
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Tactical Quick Action Pucks -->
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="clay-btn clay-btn-primary" type="button" @onclick="TriggerRadio">
+                            <span class="material-symbols-outlined" style="font-size: 1.125rem;">mic</span>
+                            <span>Two-Way Radio</span>
+                        </button>
+                        <button class="clay-btn clay-btn-surface" type="button" @onclick="TriggerReroute">
+                            <span class="material-symbols-outlined" style="font-size: 1.125rem;">alt_route</span>
+                            <span>Broadcast Reroute</span>
+                        </button>
+                        <button class="clay-btn clay-btn-surface" type="button" @onclick="TriggerCctv">
+                            <span class="material-symbols-outlined" style="font-size: 1.125rem;">videocam</span>
+                            <span>Cabin CCTV</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3 Bento Telemetry Tiles -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.25rem;">
+                    <!-- Tile 1: Next Stop ETA -->
+                    <div class="clay-inset" style="padding: 1.25rem; background: var(--color-tertiary-fixed); box-shadow: inset 1px 1px 3px rgba(255,255,255,0.8), 0 8px 16px -4px rgba(233,194,89,0.35);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-tertiary-fixed); letter-spacing: 0.05em;">Next Stop ETA</span>
+                            <span class="material-symbols-outlined" style="color: var(--color-on-tertiary-fixed); font-size: 1.25rem;">timer</span>
+                        </div>
+                        <div style="margin: 0.5rem 0;">
+                            <span style="font-size: 2rem; font-weight: 900; color: var(--color-on-tertiary-fixed); line-height: 1;">@_selectedBus.NextStopEtaMinutes mins</span>
+                            <p style="font-size: 0.75rem; color: var(--color-on-tertiary-fixed); font-weight: 700; margin: 0.25rem 0 0 0;">@_selectedBus.NextStopName</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.375rem; color: var(--color-on-tertiary-fixed); font-size: 0.75rem; font-weight: 600;">
+                            <span class="material-symbols-outlined" style="font-size: 1rem;">speed</span>
+                            <span>Cruising steady at @Math.Round(_selectedBus.SpeedMph) mph</span>
+                        </div>
+                    </div>
+
+                    <!-- Tile 2: Passenger Manifest -->
+                    <div class="clay-inset" style="padding: 1.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); letter-spacing: 0.05em;">Cabin Manifest</span>
+                            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 1.25rem;">group</span>
+                        </div>
+                        <div style="margin: 0.5rem 0;">
+                            <div style="display: flex; align-items: baseline; gap: 0.375rem;">
+                                <span style="font-size: 2rem; font-weight: 900; color: var(--color-on-surface); line-height: 1;">@_selectedBus.PassengerCount</span>
+                                <span style="font-size: 1.125rem; font-weight: 700; color: var(--color-on-surface-variant);">/ @_selectedBus.Capacity</span>
+                            </div>
+                            <p style="font-size: 0.75rem; color: var(--color-secondary); font-weight: 700; margin: 0.25rem 0 0 0;">2 Pending Boardings at Next Stop</p>
+                        </div>
+                        <div class="clay-progress-track" style="margin-top: 0.5rem;">
+                            <div class="clay-progress-fill-secondary" style="width: @((_selectedBus.PassengerCount * 100) / _selectedBus.Capacity)%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Tile 3: Active Geofence Node -->
+                    <div class="clay-inset" style="padding: 1.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); letter-spacing: 0.05em;">Active Geofence Node</span>
+                            <span class="material-symbols-outlined" style="color: var(--color-secondary); font-size: 1.25rem;">location_on</span>
+                        </div>
+                        <div style="margin: 0.5rem 0;">
+                            <span style="font-size: 1rem; font-weight: 800; color: var(--color-on-surface); line-height: 1.2; display: block;">Stop 4: Oakridge & 5th Ave</span>
+                            <p style="font-size: 0.75rem; color: var(--color-on-surface-variant); margin: 0.25rem 0 0 0;">RFID Sensor Puck #G4-N online</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.375rem; color: var(--color-on-surface-variant); font-size: 0.75rem;">
+                            <span class="material-symbols-outlined" style="color: var(--color-secondary); font-size: 1rem;">check_circle</span>
+                            <span>3 Completed â€¢ 1 Remaining</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Waypoint Timeline String -->
+                <div class="clay-inset" style="padding: 1.25rem; margin-top: 1.25rem;">
+                    <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); letter-spacing: 0.05em; display: block; margin-bottom: 0.75rem;">
+                        Trip Stop Sequence â€¢ @_selectedBus.RouteName
+                    </span>
+                    <div style="display: flex; align-items: center; justify-content: space-between; overflow-x: auto; gap: 1rem; padding: 0.5rem 0;">
+                        <div style="display: flex; flex-direction: column; align-items: center; min-width: 110px; text-align: center;">
+                            <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-secondary); color: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(12,107,85,0.4);">
+                                <span class="material-symbols-outlined" style="font-size: 1rem;">check</span>
+                            </div>
+                            <span style="font-size: 0.75rem; font-weight: 700; margin-top: 0.375rem;">Pine Valley Rd</span>
+                            <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">07:28 AM â€¢ 8 On</span>
+                        </div>
+
+                        <div style="flex: 1; height: 2px; background: var(--color-secondary);"></div>
+
+                        <div style="display: flex; flex-direction: column; align-items: center; min-width: 110px; text-align: center;">
+                            <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-secondary); color: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(12,107,85,0.4);">
+                                <span class="material-symbols-outlined" style="font-size: 1rem;">check</span>
+                            </div>
+                            <span style="font-size: 0.75rem; font-weight: 700; margin-top: 0.375rem;">Maple Blossom Dr</span>
+                            <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">07:39 AM â€¢ 11 On</span>
+                        </div>
+
+                        <div style="flex: 1; height: 2px; background: var(--color-secondary);"></div>
+
+                        <div style="display: flex; flex-direction: column; align-items: center; min-width: 110px; text-align: center;">
+                            <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-secondary); color: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(12,107,85,0.4);">
+                                <span class="material-symbols-outlined" style="font-size: 1rem;">check</span>
+                            </div>
+                            <span style="font-size: 0.75rem; font-weight: 700; margin-top: 0.375rem;">Elm Crest Gate</span>
+                            <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">07:48 AM â€¢ 7 On</span>
+                        </div>
+
+                        <div style="flex: 1; height: 2px; background: var(--color-primary-container);"></div>
+
+                        <!-- Active Approaching Stop -->
+                        <div style="display: flex; flex-direction: column; align-items: center; min-width: 130px; text-align: center;">
+                            <div style="width: 2.5rem; height: 2.5rem; border-radius: 9999px; background: var(--color-primary-container); color: var(--color-on-primary); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 14px -2px rgba(155,131,246,0.5); border: 3px solid var(--color-primary-fixed);">
+                                <span class="material-symbols-outlined" style="font-size: 1.25rem;">directions_bus</span>
+                            </div>
+                            <span style="font-size: 0.75rem; font-weight: 800; color: var(--color-primary); margin-top: 0.375rem;">Oakridge & 5th</span>
+                            <span style="font-size: 0.6875rem; color: var(--color-secondary); font-weight: 700;">Boarding 2 Students</span>
+                        </div>
+
+                        <div style="flex: 1; height: 2px; background: var(--color-surface-container-highest);"></div>
+
+                        <div style="display: flex; flex-direction: column; align-items: center; min-width: 110px; text-align: center;">
+                            <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-surface-container); color: var(--color-on-surface-variant); display: flex; align-items: center; justify-content: center;">
+                                <span class="material-symbols-outlined" style="font-size: 1rem;">school</span>
+                            </div>
+                            <span style="font-size: 0.75rem; font-weight: 700; margin-top: 0.375rem;">West Turnstile</span>
+                            <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">ETA 08:02 AM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<BusLiveStatusItem> _buses = new();
+    private BusLiveStatusItem? _selectedBus;
+    private string _filter = "all";
+    private DotNetObjectReference<AdminFleetRadar>? _dotNetRef;
+    private bool _mapInitialized = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _buses = await ApiClient.GetFleetRadarAsync(AuthState.CurrentSession.SchoolId);
+        _selectedBus = _buses.FirstOrDefault(b => b.IsSelected) ?? _buses.FirstOrDefault();
+
+        await TrackingService.StartAsync();
+        TrackingService.OnBusLocationReceived += OnLiveBusLocation;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_mapInitialized)
+        {
+            _mapInitialized = true;
+            _dotNetRef = DotNetObjectReference.Create(this);
+
+            // Initialize Leaflet map centered at Oakridge district
+            await JSRuntime.InvokeVoidAsync("schoolTrackMap.initMap", "fleetRadarMap", 37.7780, -122.4200, 14, _dotNetRef);
+
+            // Draw Safety Perimeter Geofence Zone
+            await JSRuntime.InvokeVoidAsync("schoolTrackMap.drawGeofence", "school-perimeter", "Oakridge Elementary Safety Zone", 37.7810, -122.4140, 250, "#A1F3D7", "#0C6B55");
+
+            // Plot all buses
+            foreach (var bus in _buses)
+            {
+                await JSRuntime.InvokeVoidAsync("schoolTrackMap.updateBusMarker",
+                    bus.BusId, bus.Latitude, bus.Longitude, bus.BusNumber, bus.SpeedMph, bus.Status, bus.RouteName, bus.IsSelected);
+            }
+
+            // Draw route polyline for Bus #14
+            var routePoints = new[]
+            {
+                new[] { 37.7720, -122.4250 },
+                new[] { 37.7750, -122.4220 },
+                new[] { 37.7770, -122.4200 },
+                new[] { 37.7790, -122.4210 },
+                new[] { 37.7810, -122.4140 }
+            };
+            await JSRuntime.InvokeVoidAsync("schoolTrackMap.drawRoutePath", "route-westview-a", routePoints, "#9B83F6");
+        }
+    }
+
+    [JSInvokable]
+    public void OnBusMarkerClicked(string busIdStr)
+    {
+        if (Guid.TryParse(busIdStr, out var id))
+        {
+            var bus = _buses.FirstOrDefault(b => b.BusId == id);
+            if (bus != null)
+            {
+                foreach (var b in _buses) b.IsSelected = (b.BusId == id);
+                _selectedBus = bus;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void OnLiveBusLocation(LatestBusLocationDto dto)
+    {
+        InvokeAsync(async () =>
+        {
+            var bus = _buses.FirstOrDefault(b => b.BusId == dto.BusId);
+            if (bus != null)
+            {
+                bus.Latitude = (double)dto.Latitude;
+                bus.Longitude = (double)dto.Longitude;
+                bus.SpeedMph = (double)dto.SpeedKmh * 0.621371;
+
+                if (_mapInitialized)
+                {
+                    await JSRuntime.InvokeVoidAsync("schoolTrackMap.updateBusMarker",
+                        bus.BusId, bus.Latitude, bus.Longitude, bus.BusNumber, bus.SpeedMph, bus.Status, bus.RouteName, bus.IsSelected);
+                }
+                StateHasChanged();
+            }
+        });
+    }
+
+    private async Task CenterOnSelected()
+    {
+        if (_selectedBus != null)
+        {
+            await JSRuntime.InvokeVoidAsync("schoolTrackMap.centerOnBus", _selectedBus.BusId);
+        }
+    }
+
+    private async Task FitAllMarkers()
+    {
+        await JSRuntime.InvokeVoidAsync("schoolTrackMap.fitAll");
+    }
+
+    private void SetFilter(string filter)
+    {
+        _filter = filter;
+    }
+
+    private void TriggerRadio() { }
+    private void TriggerReroute() { }
+    private void TriggerCctv() { }
+
+    public void Dispose()
+    {
+        TrackingService.OnBusLocationReceived -= OnLiveBusLocation;
+        _dotNetRef?.Dispose();
+    }
+}
+

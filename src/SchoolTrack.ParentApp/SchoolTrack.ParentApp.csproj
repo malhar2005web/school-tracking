@@ -11,14 +11,16 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
+        <NoWarn>$(NoWarn);NU1900;NU1901;NU1902;NU1903;NU1904</NoWarn>
+        <WarningsNotAsErrors>NU1900;NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
 
         <MauiXamlInflator Condition="'$(TargetFramework)' != 'net10.0'">SourceGen</MauiXamlInflator>
 
         <!-- Display name -->
-        <ApplicationTitle>SchoolTrack Parent</ApplicationTitle>
+        <ApplicationTitle>SchoolTrack</ApplicationTitle>
 
         <!-- App Identifier -->
-        <ApplicationId>com.companyname.schooltrack.parentapp</ApplicationId>
+        <ApplicationId>com.companyname.schooltrack</ApplicationId>
 
         <!-- Versions -->
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>

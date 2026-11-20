@@ -1,0 +1,205 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject DriverAuthState AuthState
+@inject IDriverApiClient DriverApi
+@inject IDriverNotificationService NotificationService
+@inject DriverTrackingHubService TrackingHub
+@implements IDisposable
+
+<div class="driver-console-container" style="min-height:100vh; background:#fbf8ff; display:flex; flex-direction:column; position:relative;">
+    <!-- Top In-Cab HUD Bar -->
+    <header class="driver-hud-header" style="position:fixed; top:0; left:0; right:0; z-index:100; background:rgba(251,248,255,0.95); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border-bottom:1px solid rgba(121,117,132,0.15); box-shadow:0 4px 16px rgba(24,25,48,0.06); padding:0.5rem 1rem; padding-top:env(safe-area-inset-top, 8px);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+            <!-- Bus & Route Identifier -->
+            <div style="display:flex; align-items:center; gap:0.625rem; min-width:0; flex:1;" @onclick='() => Navigation.NavigateTo("/driver/navigation")'>
+                <div style="width:2.5rem; height:2.5rem; border-radius:0.75rem; background:#0c6b55; color:#ffffff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(12,107,85,0.35); flex-shrink:0;">
+                    <span class="material-symbols-outlined" style="font-size:24px;">directions_bus</span>
+                </div>
+                <div style="display:flex; flex-direction:column; min-width:0; overflow:hidden;">
+                    <div style="display:flex; align-items:center; gap:0.375rem;">
+                        <span style="font-weight:800; font-size:15px; color:#181930; letter-spacing:-0.02em; white-space:nowrap;">@(AuthState.CurrentSession?.BusNumber ?? "Bus #14")</span>
+                        <span class="clay-badge-mint" style="font-size:9px; padding:0.125rem 0.375rem; text-transform:uppercase; font-weight:800; white-space:nowrap;">
+                            DRIVER
+                        </span>
+                    </div>
+                    <span style="font-size:11px; color:#484552; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        Live Mobile Navigation
+                    </span>
+                </div>
+            </div>
+
+            <!-- Right Side Actions: Emergency SOS & Profile & Logout -->
+            <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
+                <!-- Big Red In-Cab Emergency SOS Button -->
+                <button class="clay-btn-sos" style="display:flex; align-items:center; gap:0.35rem; background:#ba1a1a; color:#ffffff; border:none; padding:0.45rem 0.75rem; border-radius:2rem; font-weight:800; font-size:11px; cursor:pointer; box-shadow:0 6px 16px rgba(186,26,26,0.35); text-transform:uppercase; letter-spacing:0.04em;" @onclick="OpenSosModal">
+                    <span class="material-symbols-outlined" style="font-size:16px;">sos</span>
+                    <span>SOS</span>
+                </button>
+
+                <!-- Logout / Switch Role Button -->
+                <button title="Log Out / Switch Role" style="width:2.25rem; height:2.25rem; border-radius:50%; background:#fee2e2; border:none; display:flex; align-items:center; justify-content:center; color:#ba1a1a; cursor:pointer; box-shadow:0 2px 6px rgba(186,26,26,0.15);" @onclick="Logout">
+                    <span class="material-symbols-outlined" style="font-size:18px;">logout</span>
+                </button>
+
+                <!-- Driver Profile Avatar -->
+                <button style="border:none; background:transparent; padding:0; cursor:pointer;" @onclick='() => Navigation.NavigateTo("/driver/safety")'>
+                    <img src="@(AuthState.CurrentSession?.AvatarUrl ?? "https://lh3.googleusercontent.com/aida-public/AB6AXuAFrPPwe8Q228TD2qqumI7mbdRj2huhzXJ4IIeNLkiVyNwREAD3fXB8WR9UWI-f8oqn-DfnM14NsLr_fA8gCMOJ7DyskjIurGpVIpCCrZMohsoTpDMxaSHZuKEm3D4xBsoHZz1e8tkLGYnm8lCsOnMbHDKIngoN98ofTTAb1SYpTPusgVlhuXGmx9FQ0fUtpb6TsaDZGIjALJusVxxi2cofTOGO4YO2J4TES6BjmVM")"
+                         alt="Driver Profile"
+                         style="width:2.25rem; height:2.25rem; border-radius:50%; object-fit:cover; border:2px solid #ffffff; box-shadow:0 4px 10px rgba(0,0,0,0.1);" />
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Floating In-Cab Real-Time Toast Container -->
+    @if (NotificationService.ActiveToasts.Count > 0)
+    {
+        <div class="floating-toast-container" style="position:fixed; top:4.25rem; left:1rem; right:1rem; z-index:200; display:flex; flex-direction:column; gap:0.5rem; pointer-events:none; max-width:32rem; margin:0 auto;">
+            @foreach (var toast in NotificationService.ActiveToasts)
+            {
+                <div class="clay-card floating-toast-pill" style="pointer-events:auto; display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-radius:1rem; background:rgba(255,255,255,0.96); backdrop-filter:blur(16px); box-shadow:0 12px 28px rgba(24,25,48,0.12); border-left:4px solid @(toast.Type == "Error" ? "#ba1a1a" : (toast.Type == "Success" ? "#0c6b55" : "#644bba"));">
+                    <div style="display:flex; align-items:center; gap:0.625rem; min-width:0;">
+                        <div style="width:2rem; height:2rem; border-radius:50%; background:@(toast.Type == "Error" ? "#ffdad6" : (toast.Type == "Success" ? "#a1f3d7" : "#e7deff")); color:@(toast.Type == "Error" ? "#ba1a1a" : (toast.Type == "Success" ? "#0c6b55" : "#644bba")); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <span class="material-symbols-outlined" style="font-size:18px;">
+                                @(toast.Type == "Error" ? "warning" : (toast.Type == "Success" ? "check_circle" : "info"))
+                            </span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; min-width:0;">
+                            <span style="font-size:12px; font-weight:800; color:#181930;">@toast.Title</span>
+                            <span style="font-size:11px; color:#484552; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@toast.Message</span>
+                        </div>
+                    </div>
+                    <button style="background:none; border:none; color:#797584; cursor:pointer;" @onclick="() => NotificationService.DismissToast(toast.Id)">
+                        <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+                    </button>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Main Body -->
+    <main style="flex:1; width:100%; min-height:100vh; padding-top:calc(4.75rem + env(safe-area-inset-top, 0px)); padding-bottom:6.5rem; background:#fbf8ff;">
+        @Body
+    </main>
+
+    <!-- In-Cab Tactile 4-Tab Bottom Navigation Bar -->
+    <nav class="driver-bottom-nav" style="position:fixed; bottom:0; left:0; right:0; z-index:100; padding:0.5rem 1rem; padding-bottom:env(safe-area-inset-bottom, 12px); pointer-events:none;">
+        <div class="clay-nav" style="pointer-events:auto; margin:0 auto; max-width:32rem; background:rgba(255,255,255,0.96); backdrop-filter:blur(18px); border-radius:3rem; padding:0.4rem; display:flex; align-items:center; justify-content:space-around; box-shadow:0 12px 32px rgba(24,25,48,0.12);">
+            <!-- 1. Route Navigation -->
+            <a class="driver-nav-tab @(IsActive("/driver/navigation") ? "active" : "")"
+               href="/driver/navigation"
+               style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.55rem 1.1rem; border-radius:2rem; font-size:11px; font-weight:800; text-decoration:none; min-width:68px; transition:all 0.2s; @(IsActive("/driver/navigation") ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 12px rgba(12,107,85,0.3);" : "color:#484552;")">
+                <span class="material-symbols-outlined" style="font-size:24px;">navigation</span>
+                <span>Route</span>
+            </a>
+
+            <!-- 2. Student Roster -->
+            <a class="driver-nav-tab @(IsActive("/driver/roster") ? "active" : "")"
+               href="/driver/roster"
+               style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.55rem 1.1rem; border-radius:2rem; font-size:11px; font-weight:800; text-decoration:none; min-width:68px; transition:all 0.2s; @(IsActive("/driver/roster") ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 12px rgba(12,107,85,0.3);" : "color:#484552;")">
+                <span class="material-symbols-outlined" style="font-size:24px;">badge</span>
+                <span>Roster</span>
+            </a>
+
+            <!-- 3. Broadcast Delay -->
+            <a class="driver-nav-tab @(IsActive("/driver/broadcast") ? "active" : "")"
+               href="/driver/broadcast"
+               style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.55rem 1.1rem; border-radius:2rem; font-size:11px; font-weight:800; text-decoration:none; min-width:68px; transition:all 0.2s; @(IsActive("/driver/broadcast") ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 12px rgba(12,107,85,0.3);" : "color:#484552;")">
+                <span class="material-symbols-outlined" style="font-size:24px;">campaign</span>
+                <span>Delay</span>
+            </a>
+
+            <!-- 4. Safety & Shift -->
+            <a class="driver-nav-tab @(IsActive("/driver/safety") ? "active" : "")"
+               href="/driver/safety"
+               style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.55rem 1.1rem; border-radius:2rem; font-size:11px; font-weight:800; text-decoration:none; min-width:68px; transition:all 0.2s; @(IsActive("/driver/safety") ? "background:#0c6b55; color:#ffffff; box-shadow:0 4px 12px rgba(12,107,85,0.3);" : "color:#484552;")">
+                <span class="material-symbols-outlined" style="font-size:24px;">health_and_safety</span>
+                <span>Safety</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Emergency SOS Confirmation Modal -->
+    @if (ShowSosModal)
+    {
+        <div class="sos-modal-overlay" style="position:fixed; inset:0; z-index:3000; background:rgba(24,25,48,0.75); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:1.25rem;">
+            <div class="clay-card" style="background:#ffffff; max-width:28rem; width:100%; border-radius:1.5rem; padding:1.75rem; text-align:center; box-shadow:0 24px 48px rgba(0,0,0,0.3); border:2px solid #ba1a1a;">
+                <div style="width:4.5rem; height:4.5rem; border-radius:50%; background:#ffdad6; color:#ba1a1a; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem auto;">
+                    <span class="material-symbols-outlined" style="font-size:40px;">warning</span>
+                </div>
+
+                <h3 style="font-size:20px; font-weight:900; color:#ba1a1a; margin:0 0 0.5rem 0;">
+                    BROADCAST EMERGENCY SOS?
+                </h3>
+                <p style="font-size:13px; color:#484552; line-height:1.4; margin:0 0 1.5rem 0;">
+                    This will instantly dispatch emergency beacons to central school security, dispatch control, and alert emergency contacts.
+                </p>
+
+                <div style="display:flex; gap:0.75rem;">
+                    <button class="clay-button-secondary"
+                            style="flex:1; padding:0.875rem; border-radius:1rem; border:none; background:#eeecff; color:#484552; font-weight:800; font-size:13px; cursor:pointer;"
+                            @onclick="() => ShowSosModal = false">
+                        Cancel
+                    </button>
+                    <button class="clay-button-solid"
+                            style="flex:1; padding:0.875rem; border-radius:1rem; border:none; background:#ba1a1a; color:#ffffff; font-weight:900; font-size:13px; cursor:pointer;"
+                            @onclick="ConfirmSos">
+                        CONFIRM SOS
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool ShowSosModal { get; set; }
+
+    private bool IsActive(string path)
+    {
+        var current = Navigation.ToBaseRelativePath(Navigation.Uri).ToLowerInvariant();
+        var target = path.TrimStart('/').ToLowerInvariant();
+        if (string.IsNullOrEmpty(current) && target.Contains("navigation")) return true;
+        return current.Contains(target);
+    }
+
+    protected override void OnInitialized()
+    {
+        AuthState.OnChange += HandleStateChanged;
+    }
+
+    private void HandleStateChanged() => InvokeAsync(StateHasChanged);
+
+    private void OpenSosModal()
+    {
+        ShowSosModal = true;
+    }
+
+    private async Task ConfirmSos()
+    {
+        ShowSosModal = false;
+        var req = new DriverSosAlertRequest(
+            BusId: AuthState.CurrentSession?.BusId ?? Guid.NewGuid(),
+            BusNumber: AuthState.CurrentSession?.BusNumber ?? "Bus #14",
+            TripId: AuthState.ActiveTripId ?? Guid.NewGuid(),
+            Latitude: 18.5204m,
+            Longitude: 73.8567m,
+            Reason: "Driver Panic Button - Immediate In-Cab SOS"
+        );
+        await DriverApi.TriggerEmergencySosAsync(req);
+        NotificationService.ShowToast("SOS Dispatched", "Central security alerted.", "Error");
+    }
+
+    private void Logout()
+    {
+        Preferences.Default.Remove("ST_RememberMe");
+        Preferences.Default.Remove("ST_SavedRole");
+        Navigation.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnChange -= HandleStateChanged;
+    }
+}
+
