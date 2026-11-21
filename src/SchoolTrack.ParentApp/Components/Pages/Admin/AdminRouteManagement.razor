@@ -45,23 +45,84 @@
     @if (_selectedRoute != null)
     {
         <div class="clay-card" style="padding: 1rem; background: #ffffff; border-radius: 1.25rem;">
+            
+            <!-- Stop Sequence Header & Actions -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.875rem; border-bottom: 1px solid rgba(24,25,48,0.06); padding-bottom: 0.75rem;">
                 <div>
                     <h2 style="font-size: 15px; font-weight: 800; color: #181930; margin: 0;">@_selectedRoute.Name</h2>
-                    <span style="font-size: 11px; color: #797584;">@_selectedRoute.Stops.Count geofenced waypoints for live telemetry</span>
+                    <span style="font-size: 11px; color: #797584;">
+                        @if (_isReorderMode)
+                        {
+                            <span style="color: #4338ca; font-weight: 700;">Tap arrows or drag to reorder • Tap (-) to delete</span>
+                        }
+                        else
+                        {
+                            <span>@_selectedRoute.Stops.Count geofenced waypoints (Long-press to reorder)</span>
+                        }
+                    </span>
                 </div>
-                <button class="clay-btn clay-btn-primary" style="background: #4338ca; padding: 0.4rem 0.75rem; font-size: 11px;" type="button" @onclick="OpenAddStopModal">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">add_location</span>
-                    <span>Add Stop</span>
-                </button>
+
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <!-- Reorder / Jiggle Mode Toggle Button -->
+                    <button class="clay-btn @(_isReorderMode ? "clay-btn-primary" : "clay-btn-surface")"
+                            style="padding: 0.4rem 0.65rem; font-size: 11px; @(_isReorderMode ? "background: #4338ca; color: #ffffff;" : "")"
+                            type="button"
+                            @onclick="ToggleReorderMode">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">@(_isReorderMode ? "check" : "swap_vert")</span>
+                        <span>@(_isReorderMode ? "Done" : "Reorder")</span>
+                    </button>
+
+                    <!-- Add Stop Button -->
+                    <button class="clay-btn clay-btn-primary" style="background: #4338ca; padding: 0.4rem 0.75rem; font-size: 11px;" type="button" @onclick="OpenAddStopModal">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">add_location</span>
+                        <span>Add Stop</span>
+                    </button>
+                </div>
             </div>
 
-            <!-- Stops Ordered Sequence -->
-            <div style="display: flex; flex-direction: column; gap: 0.625rem;">
+            <!-- iOS Wiggle / Jiggle Banner when Reorder Mode Active -->
+            @if (_isReorderMode)
+            {
+                <div style="display: flex; align-items: center; justify-content: space-between; background: #eeecff; padding: 0.5rem 0.75rem; border-radius: 0.875rem; margin-bottom: 0.75rem; border: 1px dashed #4338ca;">
+                    <div style="display: flex; align-items: center; gap: 0.35rem; color: #4338ca; font-size: 11px; font-weight: 800;">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">vibration</span>
+                        <span>REORDER & DELETE MODE (iOS WIGGLE)</span>
+                    </div>
+                    <button class="clay-btn clay-btn-primary" style="padding: 0.25rem 0.65rem; font-size: 11px; background: #4338ca;" @onclick="() => _isReorderMode = false">
+                        Done
+                    </button>
+                </div>
+            }
+
+            <!-- Stops Ordered Sequence List -->
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                 @foreach (var stop in _selectedRoute.Stops.OrderBy(s => s.SequenceOrder))
                 {
-                    <div class="clay-card" style="padding: 0.75rem 0.875rem; border-radius: 1rem; background: #fbf8ff; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(24,25,48,0.05);">
-                        <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0;">
+                    <div class="clay-card @(_isReorderMode ? "ios-jiggle" : "")"
+                         style="padding: 0.75rem 0.875rem; border-radius: 1rem; background: #fbf8ff; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(24,25,48,0.05); position: relative; cursor: @(_isReorderMode ? "grab" : "pointer"); touch-action: pan-y;"
+                         draggable="@_isReorderMode"
+                         @ondragstart="() => HandleDragStart(stop.Id)"
+                         @ondragover:preventDefault
+                         @ondrop="() => HandleDrop(stop.Id)"
+                         @onpointerdown="() => OnPointerDown(stop.Id)"
+                         @onpointerup="CancelLongPress"
+                         @onpointerleave="CancelLongPress"
+                         @onpointercancel="CancelLongPress">
+
+                        <!-- iOS Style Red Delete Badge (Appears during Reorder / Jiggle Mode) -->
+                        @if (_isReorderMode)
+                        {
+                            <button title="Delete Stop"
+                                    type="button"
+                                    style="position: absolute; top: -8px; left: -8px; width: 24px; height: 24px; border-radius: 50%; background: #ba1a1a; color: #ffffff; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(186,26,26,0.6); z-index: 20; padding: 0;"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => DeleteStop(stop.Id)">
+                                <span class="material-symbols-outlined" style="font-size: 15px; font-weight: 900;">remove</span>
+                            </button>
+                        }
+
+                        <!-- Left: Sequence Number & Stop Title -->
+                        <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0; flex: 1;">
                             <div style="width: 2rem; height: 2rem; border-radius: 50%; background: #4338ca; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(67,56,202,0.3);">
                                 @stop.SequenceOrder
                             </div>
@@ -73,9 +134,38 @@
                             </div>
                         </div>
 
-                        <span class="clay-badge-mint" style="font-size: 9px; padding: 1px 6px; white-space: nowrap;">
-                            @stop.GeofenceRadiusMeters m
-                        </span>
+                        <!-- Right Actions: Move Up / Down (during edit mode) OR Geofence Badge (normal mode) -->
+                        @if (_isReorderMode)
+                        {
+                            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: 0.5rem;" @onclick:stopPropagation="true">
+                                <!-- Move Up -->
+                                <button title="Move Up"
+                                        type="button"
+                                        disabled="@(stop.SequenceOrder == 1)"
+                                        style="width: 28px; height: 28px; border-radius: 50%; border: none; background: @(stop.SequenceOrder == 1 ? "#eeecff" : "#4338ca"); color: @(stop.SequenceOrder == 1 ? "#cac4d4" : "#ffffff"); display: flex; align-items: center; justify-content: center; cursor: @(stop.SequenceOrder == 1 ? "default" : "pointer"); box-shadow: 0 2px 5px rgba(67,56,202,0.25);"
+                                        @onclick="() => MoveStopUp(stop.Id)">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">keyboard_arrow_up</span>
+                                </button>
+                                
+                                <!-- Move Down -->
+                                <button title="Move Down"
+                                        type="button"
+                                        disabled="@(stop.SequenceOrder == _selectedRoute.Stops.Count)"
+                                        style="width: 28px; height: 28px; border-radius: 50%; border: none; background: @(stop.SequenceOrder == _selectedRoute.Stops.Count ? "#eeecff" : "#4338ca"); color: @(stop.SequenceOrder == _selectedRoute.Stops.Count ? "#cac4d4" : "#ffffff"); display: flex; align-items: center; justify-content: center; cursor: @(stop.SequenceOrder == _selectedRoute.Stops.Count ? "default" : "pointer"); box-shadow: 0 2px 5px rgba(67,56,202,0.25);"
+                                        @onclick="() => MoveStopDown(stop.Id)">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">keyboard_arrow_down</span>
+                                </button>
+
+                                <!-- Drag Indicator -->
+                                <span class="material-symbols-outlined" style="color: #797584; font-size: 20px; cursor: grab; margin-left: 2px;">drag_indicator</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="clay-badge-mint" style="font-size: 9px; padding: 1px 6px; white-space: nowrap;">
+                                @stop.GeofenceRadiusMeters m
+                            </span>
+                        }
                     </div>
                 }
             </div>
@@ -239,6 +329,11 @@
     private decimal _newStopLat = 18.4758m;
     private decimal _newStopLng = 73.8137m;
 
+    // iOS Jiggle / Reorder & Delete State
+    private bool _isReorderMode = false;
+    private System.Threading.CancellationTokenSource? _longPressCts;
+    private Guid? _draggedStopId;
+
     // Smart Google Maps Style Autocomplete
     private bool _isSearching = false;
     private System.Threading.CancellationTokenSource? _searchCts;
@@ -262,6 +357,141 @@
     private void SelectRoute(RouteDto route)
     {
         _selectedRoute = route;
+        _isReorderMode = false;
+    }
+
+    // Toggle Reorder / Jiggle Mode
+    private void ToggleReorderMode()
+    {
+        _isReorderMode = !_isReorderMode;
+    }
+
+    // Long Press Handler for iOS Jiggle Mode
+    private async Task OnPointerDown(Guid stopId)
+    {
+        if (_isReorderMode) return;
+
+        _longPressCts?.Cancel();
+        _longPressCts = new System.Threading.CancellationTokenSource();
+        var token = _longPressCts.Token;
+
+        try
+        {
+            // 750ms hold triggers iOS edit/jiggle mode
+            await Task.Delay(750, token);
+            if (!token.IsCancellationRequested)
+            {
+                _isReorderMode = true;
+                StateHasChanged();
+            }
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private void CancelLongPress()
+    {
+        _longPressCts?.Cancel();
+    }
+
+    // Move Stop Up
+    private void MoveStopUp(Guid stopId)
+    {
+        if (_selectedRoute == null) return;
+        var stops = _selectedRoute.Stops.OrderBy(s => s.SequenceOrder).ToList();
+        var index = stops.FindIndex(s => s.Id == stopId);
+        if (index > 0)
+        {
+            var temp = stops[index];
+            stops[index] = stops[index - 1];
+            stops[index - 1] = temp;
+            ReassignSequences(stops);
+        }
+    }
+
+    // Move Stop Down
+    private void MoveStopDown(Guid stopId)
+    {
+        if (_selectedRoute == null) return;
+        var stops = _selectedRoute.Stops.OrderBy(s => s.SequenceOrder).ToList();
+        var index = stops.FindIndex(s => s.Id == stopId);
+        if (index >= 0 && index < stops.Count - 1)
+        {
+            var temp = stops[index];
+            stops[index] = stops[index + 1];
+            stops[index + 1] = temp;
+            ReassignSequences(stops);
+        }
+    }
+
+    // Drag and Drop
+    private void HandleDragStart(Guid stopId)
+    {
+        _draggedStopId = stopId;
+    }
+
+    private void HandleDrop(Guid targetStopId)
+    {
+        if (_selectedRoute == null || _draggedStopId == null || _draggedStopId == targetStopId) return;
+
+        var stops = _selectedRoute.Stops.OrderBy(s => s.SequenceOrder).ToList();
+        var sourceIndex = stops.FindIndex(s => s.Id == _draggedStopId);
+        var targetIndex = stops.FindIndex(s => s.Id == targetStopId);
+
+        if (sourceIndex >= 0 && targetIndex >= 0)
+        {
+            var item = stops[sourceIndex];
+            stops.RemoveAt(sourceIndex);
+            stops.Insert(targetIndex, item);
+            ReassignSequences(stops);
+        }
+        _draggedStopId = null;
+    }
+
+    // Delete Stop with iOS Style Badge
+    private void DeleteStop(Guid stopId)
+    {
+        if (_selectedRoute == null) return;
+        var stops = _selectedRoute.Stops.Where(s => s.Id != stopId).OrderBy(s => s.SequenceOrder).ToList();
+        ReassignSequences(stops);
+    }
+
+    // Reassign ordered 1..N sequences & offsets
+    private void ReassignSequences(List<RouteStopDto> stops)
+    {
+        var updatedStops = new List<RouteStopDto>();
+        for (int i = 0; i < stops.Count; i++)
+        {
+            var s = stops[i];
+            var newSeq = i + 1;
+            updatedStops.Add(new RouteStopDto(
+                s.Id,
+                s.RouteId,
+                s.StopName,
+                newSeq,
+                s.Latitude,
+                s.Longitude,
+                5 * newSeq,
+                s.GeofenceRadiusMeters
+            ));
+        }
+
+        _selectedRoute = new RouteDto(
+            _selectedRoute!.Id,
+            _selectedRoute.SchoolId,
+            _selectedRoute.Name,
+            _selectedRoute.Code,
+            _selectedRoute.DirectionType,
+            _selectedRoute.IsActive,
+            updatedStops
+        );
+
+        var idx = _routes.FindIndex(r => r.Id == _selectedRoute.Id);
+        if (idx >= 0)
+        {
+            _routes[idx] = _selectedRoute;
+        }
+
+        StateHasChanged();
     }
 
     private void OpenAddStopModal()
