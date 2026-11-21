@@ -1,133 +1,118 @@
-﻿@page "/admin/routes"
+@page "/admin/routes"
 @layout Layout.AdminLayout
 @inject IApiClient ApiClient
 @inject AdminAuthStateProvider AuthState
 
-<PageTitle>Route Management â€” SchoolTrack</PageTitle>
+<PageTitle>Route Management — SchoolTrack</PageTitle>
 
-<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+<div style="display: flex; flex-direction: column; gap: 1rem; user-select: none;">
     <!-- Title & Action Bar -->
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
         <div>
-            <div style="display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); margin-bottom: 0.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #797584; margin-bottom: 0.25rem;">
                 <span>Transit Corridor Planning</span>
-                <span class="material-symbols-outlined" style="font-size: 0.875rem;">chevron_right</span>
-                <span style="color: var(--color-primary);">Route & Geofence Engine</span>
+                <span class="material-symbols-outlined" style="font-size: 14px;">chevron_right</span>
+                <span style="color: #4338ca;">Geofence Engine</span>
             </div>
-            <h1 style="font-size: 20px; line-height: 1.2; font-weight: 800; color: var(--color-on-surface); margin: 0; letter-spacing: -0.02em;">District Route Directory</h1>
-            <p style="font-size: 0.875rem; color: var(--color-on-surface-variant); margin: 0.25rem 0 0 0;">Manage morning and afternoon bus stops, waypoint sequences, and safety geofence radii</p>
+            <h1 style="font-size: 20px; line-height: 1.2; font-weight: 800; color: #181930; margin: 0; letter-spacing: -0.02em;">District Route Directory</h1>
+            <p style="font-size: 12px; color: #484552; margin: 2px 0 0 0;">Manage morning & afternoon bus stops, sequential waypoints and safety radii</p>
         </div>
 
-        <button class="clay-btn clay-btn-primary" type="button" @onclick="() => _showCreateRouteModal = true">
-            <span class="material-symbols-outlined" style="font-size: 1.125rem;">add_circle</span>
-            <span>+ Create New Corridor Route</span>
+        <button class="clay-btn clay-btn-primary" style="background: #4338ca; padding: 0.5rem 0.85rem; font-size: 12px;" type="button" @onclick="() => _showCreateRouteModal = true">
+            <span class="material-symbols-outlined" style="font-size: 18px;">add_circle</span>
+            <span>+ Create Corridor</span>
         </button>
     </div>
 
-    <!-- Routes Grid & Stop Details -->
-    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem; align-items: flex-start;">
-        <!-- Left: Route List -->
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-            @foreach (var route in _routes)
-            {
-                <div class="clay-card @(_selectedRoute?.Id == route.Id ? "ring-2 ring-primary" : "")" style="padding: 1.25rem; background: #ffffff; cursor: pointer; border: @(_selectedRoute?.Id == route.Id ? "2px solid var(--color-primary)" : "none");" @onclick="() => SelectRoute(route)">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <h3 style="font-size: 1.125rem; font-weight: 800; color: var(--color-on-surface); margin: 0;">@route.Name</h3>
-                                <span class="clay-badge clay-badge-neutral">@route.Code</span>
-                            </div>
-                            <span style="font-size: 0.75rem; color: var(--color-on-surface-variant); margin-top: 0.25rem; display: block;">Direction: <strong>@route.DirectionType</strong></span>
-                        </div>
-                        <span class="clay-badge clay-badge-secondary">Active Corridor</span>
-                    </div>
-
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--color-surface-container-high);">
-                        <div style="display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; color: var(--color-on-surface-variant);">
-                            <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--color-primary);">pin_drop</span>
-                            <span>@route.Stops.Count Ordered Stops</span>
-                        </div>
-                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-primary);">Select to Inspect &rarr;</span>
-                    </div>
-                </div>
-            }
-        </div>
-
-        <!-- Right: Ordered Stops & Geofence Sequence for Selected Route -->
-        @if (_selectedRoute != null)
+    <!-- Routes Horizontal Strip (Mobile Tap Selector) -->
+    <div style="display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.25rem; -webkit-overflow-scrolling: touch;">
+        @foreach (var route in _routes)
         {
-            <div class="clay-card" style="padding: 1.75rem; background: #ffffff;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-surface-container-high); padding-bottom: 1rem;">
-                    <div>
-                        <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--color-on-surface); margin: 0;">Stop Sequence: @_selectedRoute.Name</h2>
-                        <span style="font-size: 0.75rem; color: var(--color-on-surface-variant);">Sequential geofenced waypoints for live telemetry tracking</span>
-                    </div>
-                    <button class="clay-btn clay-btn-surface clay-btn-sm" type="button" @onclick="() => _showAddStopModal = true">
-                        <span class="material-symbols-outlined" style="font-size: 1rem;">add_location</span>
-                        <span>Add Stop</span>
-                    </button>
+            <div class="clay-card"
+                 style="padding: 0.75rem 1rem; background: #ffffff; cursor: pointer; min-width: 180px; flex-shrink: 0; border: @(_selectedRoute?.Id == route.Id ? "2px solid #4338ca" : "1px solid rgba(24,25,48,0.06)"); border-radius: 1rem;"
+                 @onclick="() => SelectRoute(route)">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                    <span class="clay-badge-mint" style="font-size: 9px; padding: 1px 5px;">@route.Code</span>
+                    <span style="font-size: 10px; font-weight: 700; color: #4338ca;">@route.DirectionType</span>
                 </div>
-
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    @foreach (var stop in _selectedRoute.Stops.OrderBy(s => s.SequenceOrder))
-                    {
-                        <div class="clay-inset" style="padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 1rem;">
-                                <div style="width: 2.25rem; height: 2.25rem; border-radius: 9999px; background: var(--color-primary-container); color: var(--color-on-primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.875rem;">
-                                    @stop.SequenceOrder
-                                </div>
-                                <div>
-                                    <h4 style="font-size: 0.9375rem; font-weight: 700; color: var(--color-on-surface); margin: 0;">@stop.StopName</h4>
-                                    <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">
-                                        Lat: @stop.Latitude.ToString("F4"), Lng: @stop.Longitude.ToString("F4") â€¢ +@stop.ScheduledOffsetMinutes mins offset
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <span class="clay-badge clay-badge-secondary">
-                                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">radio_button_checked</span>
-                                    <span>@stop.GeofenceRadiusMeters m Radius</span>
-                                </span>
-                            </div>
-                        </div>
-                    }
-                </div>
+                <h3 style="font-size: 13px; font-weight: 800; color: #181930; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@route.Name</h3>
+                <div style="font-size: 11px; color: #797584; margin-top: 2px;">@route.Stops.Count Ordered Stops</div>
             </div>
         }
     </div>
+
+    <!-- Selected Route Stop Sequence -->
+    @if (_selectedRoute != null)
+    {
+        <div class="clay-card" style="padding: 1rem; background: #ffffff; border-radius: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.875rem; border-bottom: 1px solid rgba(24,25,48,0.06); padding-bottom: 0.75rem;">
+                <div>
+                    <h2 style="font-size: 15px; font-weight: 800; color: #181930; margin: 0;">@_selectedRoute.Name</h2>
+                    <span style="font-size: 11px; color: #797584;">@_selectedRoute.Stops.Count geofenced waypoints for live telemetry</span>
+                </div>
+                <button class="clay-btn clay-btn-primary" style="background: #4338ca; padding: 0.4rem 0.75rem; font-size: 11px;" type="button" @onclick="OpenAddStopModal">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">add_location</span>
+                    <span>Add Stop</span>
+                </button>
+            </div>
+
+            <!-- Stops Ordered Sequence -->
+            <div style="display: flex; flex-direction: column; gap: 0.625rem;">
+                @foreach (var stop in _selectedRoute.Stops.OrderBy(s => s.SequenceOrder))
+                {
+                    <div class="clay-card" style="padding: 0.75rem 0.875rem; border-radius: 1rem; background: #fbf8ff; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(24,25,48,0.05);">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0;">
+                            <div style="width: 2rem; height: 2rem; border-radius: 50%; background: #4338ca; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(67,56,202,0.3);">
+                                @stop.SequenceOrder
+                            </div>
+                            <div style="min-width: 0;">
+                                <h4 style="font-size: 13px; font-weight: 800; color: #181930; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@stop.StopName</h4>
+                                <span style="font-size: 11px; color: #797584;">
+                                    @stop.Latitude.ToString("F4"), @stop.Longitude.ToString("F4") • +@stop.ScheduledOffsetMinutes m
+                                </span>
+                            </div>
+                        </div>
+
+                        <span class="clay-badge-mint" style="font-size: 9px; padding: 1px 6px; white-space: nowrap;">
+                            @stop.GeofenceRadiusMeters m
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
 </div>
 
 @if (_showCreateRouteModal)
 {
     <!-- Create Route Modal -->
-    <div style="position: fixed; inset: 0; background: rgba(24, 25, 48, 0.45); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center;">
-        <div class="clay-card" style="width: 100%; max-width: 32rem; padding: 2rem; background: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Create New Route Corridor</h3>
+    <div style="position: fixed; inset: 0; background: rgba(24, 25, 48, 0.55); backdrop-filter: blur(6px); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 1.25rem;">
+        <div class="clay-card" style="width: 100%; max-width: 24rem; padding: 1.5rem; background: #ffffff; border-radius: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: #181930;">Create Route Corridor</h3>
                 <button type="button" style="background: none; border: none; cursor: pointer;" @onclick="() => _showCreateRouteModal = false">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; flex-direction: column; gap: 0.875rem;">
                 <div>
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Route Name</label>
-                    <input class="clay-input" placeholder="e.g. Route South Express E" @bind="_newRouteName" />
+                    <label style="display: block; font-size: 11px; font-weight: 700; color: #484552; margin-bottom: 0.25rem;">Route Name</label>
+                    <input class="clay-input" style="height: 2.75rem;" placeholder="e.g. Route South Express E" @bind="_newRouteName" />
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Route Code</label>
-                    <input class="clay-input" placeholder="e.g. S-E" @bind="_newRouteCode" />
+                    <label style="display: block; font-size: 11px; font-weight: 700; color: #484552; margin-bottom: 0.25rem;">Route Code</label>
+                    <input class="clay-input" style="height: 2.75rem;" placeholder="e.g. S-E" @bind="_newRouteCode" />
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Direction</label>
-                    <select class="clay-input clay-select" @bind="_newRouteDirection">
+                    <label style="display: block; font-size: 11px; font-weight: 700; color: #484552; margin-bottom: 0.25rem;">Direction</label>
+                    <select class="clay-input clay-select" style="height: 2.75rem;" @bind="_newRouteDirection">
                         <option value="Inbound">Inbound (Home to School)</option>
                         <option value="Outbound">Outbound (School to Home)</option>
                     </select>
                 </div>
-                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
-                    <button class="clay-btn clay-btn-surface" type="button" @onclick="() => _showCreateRouteModal = false">Cancel</button>
-                    <button class="clay-btn clay-btn-primary" type="button" @onclick="CreateRoute">Create Route</button>
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+                    <button class="clay-btn clay-btn-surface" style="padding: 0.5rem 1rem; font-size: 12px;" type="button" @onclick="() => _showCreateRouteModal = false">Cancel</button>
+                    <button class="clay-btn clay-btn-primary" style="padding: 0.5rem 1rem; font-size: 12px; background: #4338ca;" type="button" @onclick="CreateRoute">Create Route</button>
                 </div>
             </div>
         </div>
@@ -136,33 +121,105 @@
 
 @if (_showAddStopModal)
 {
-    <!-- Add Stop Modal -->
-    <div style="position: fixed; inset: 0; background: rgba(24, 25, 48, 0.45); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center;">
-        <div class="clay-card" style="width: 100%; max-width: 32rem; padding: 2rem; background: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Add Stop to @_selectedRoute?.Name</h3>
-                <button type="button" style="background: none; border: none; cursor: pointer;" @onclick="() => _showAddStopModal = false">
+    <!-- Add Stop Modal with Google Maps Style Smart Autocomplete -->
+    <div style="position: fixed; inset: 0; background: rgba(24, 25, 48, 0.65); backdrop-filter: blur(8px); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 1.25rem;">
+        <div class="clay-card" style="width: 100%; max-width: 25rem; padding: 1.5rem; background: #ffffff; border-radius: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            
+            <!-- Modal Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: #181930;">Add Stop to @_selectedRoute?.Name</h3>
+                    <p style="font-size: 11px; color: #797584; margin: 2px 0 0 0;">Type place or landmark for smart suggestions</p>
+                </div>
+                <button type="button" style="background: none; border: none; cursor: pointer; color: #797584;" @onclick="() => _showAddStopModal = false">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div>
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Stop Name</label>
-                    <input class="clay-input" placeholder="e.g. Oakridge High Gate" @bind="_newStopName" />
+
+            <div style="display: flex; flex-direction: column; gap: 0.875rem;">
+                
+                <!-- Stop Name with Google Maps Style Live Suggestions Dropdown -->
+                <div style="position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                        <label style="font-size: 11px; font-weight: 700; color: #484552;">Stop Name / Landmark</label>
+                        @if (_selectedRoute?.Stops != null && _selectedRoute.Stops.Any())
+                        {
+                            <span style="font-size: 10px; font-weight: 700; color: #0c6b55;">📍 Proximity Biased</span>
+                        }
+                    </div>
+
+                    <!-- Search Input Box -->
+                    <div class="clay-inset" style="display: flex; align-items: center; height: 3rem; padding: 0 0.75rem; border-radius: 0.875rem;">
+                        <span class="material-symbols-outlined" style="font-size: 18px; color: #4338ca; margin-right: 0.5rem;">search</span>
+                        <input style="width: 100%; background: transparent; border: none; outline: none; font-size: 14px; font-weight: 600; color: #181930;"
+                               placeholder="e.g. Sun city, Anand Nagar..."
+                               value="@_newStopName"
+                               @oninput="OnStopNameInput" />
+                        
+                        @if (_isSearching)
+                        {
+                            <span class="material-symbols-outlined" style="animation: spin 1s infinite linear; font-size: 18px; color: #4338ca;">refresh</span>
+                        }
+                        else if (!string.IsNullOrEmpty(_newStopName))
+                        {
+                            <button type="button" style="border: none; background: none; color: #797584; cursor: pointer; padding: 0;" @onclick="ClearStopSearch">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+                            </button>
+                        }
+                    </div>
+
+                    <!-- Google Maps Style Suggestions Floating Overlay -->
+                    @if (_suggestions.Count > 0)
+                    {
+                        <div style="position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #ffffff; border-radius: 1rem; box-shadow: 0 14px 36px rgba(24,25,48,0.22); border: 1px solid #eeecff; z-index: 500; max-height: 240px; overflow-y: auto; padding: 0.35rem;">
+                            @foreach (var s in _suggestions)
+                            {
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 0.75rem; border-radius: 0.75rem; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid #f8f6fc;"
+                                     @onclick="() => SelectSuggestion(s)">
+                                    <div style="display: flex; align-items: center; gap: 0.625rem; min-width: 0; flex: 1;">
+                                        <div style="width: 2rem; height: 2rem; border-radius: 50%; background: #f0edff; color: #4338ca; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <span class="material-symbols-outlined" style="font-size: 17px;">location_on</span>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; min-width: 0;">
+                                            <span style="font-size: 13px; font-weight: 700; color: #181930; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@s.Title</span>
+                                            <span style="font-size: 11px; color: #797584; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@s.Subtitle</span>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0; margin-left: 0.5rem;">
+                                        @if (!string.IsNullOrEmpty(s.DistanceText))
+                                        {
+                                            <span style="font-size: 10px; font-weight: 700; color: #4338ca; background: #eeecff; padding: 2px 6px; border-radius: 6px;">@s.DistanceText</span>
+                                        }
+                                        <span class="material-symbols-outlined" style="font-size: 16px; color: #797584; transform: rotate(-45deg);">arrow_forward</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+
+                <!-- Latitude & Longitude (Auto-filled by Selection) -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem;">
                     <div>
-                        <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Latitude</label>
-                        <input class="clay-input" type="number" step="0.0001" @bind="_newStopLat" />
+                        <label style="display: block; font-size: 11px; font-weight: 700; color: #484552; margin-bottom: 0.25rem;">Latitude</label>
+                        <div class="clay-inset" style="display: flex; align-items: center; height: 2.75rem; padding: 0 0.625rem; border-radius: 0.75rem;">
+                            <input style="width: 100%; background: transparent; border: none; outline: none; font-size: 13px; font-weight: 700; color: #181930;"
+                                   type="number" step="0.0001" @bind="_newStopLat" />
+                        </div>
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.375rem;">Longitude</label>
-                        <input class="clay-input" type="number" step="0.0001" @bind="_newStopLng" />
+                        <label style="display: block; font-size: 11px; font-weight: 700; color: #484552; margin-bottom: 0.25rem;">Longitude</label>
+                        <div class="clay-inset" style="display: flex; align-items: center; height: 2.75rem; padding: 0 0.625rem; border-radius: 0.75rem;">
+                            <input style="width: 100%; background: transparent; border: none; outline: none; font-size: 13px; font-weight: 700; color: #181930;"
+                                   type="number" step="0.0001" @bind="_newStopLng" />
+                        </div>
                     </div>
                 </div>
-                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
-                    <button class="clay-btn clay-btn-surface" type="button" @onclick="() => _showAddStopModal = false">Cancel</button>
-                    <button class="clay-btn clay-btn-primary" type="button" @onclick="AddStopToRoute">Add Stop</button>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.35rem;">
+                    <button class="clay-btn clay-btn-surface" style="padding: 0.5rem 1rem; font-size: 12px;" type="button" @onclick="() => _showAddStopModal = false">Cancel</button>
+                    <button class="clay-btn clay-btn-primary" style="padding: 0.5rem 1rem; font-size: 12px; background: #4338ca;" type="button" @onclick="AddStopToRoute">Add Stop</button>
                 </div>
             </div>
         </div>
@@ -177,21 +234,23 @@
     private string _newRouteName = string.Empty;
     private string _newRouteCode = string.Empty;
     private string _newRouteDirection = "Inbound";
+    
     private string _newStopName = string.Empty;
-    private decimal _newStopLat = 37.7800m;
-    private decimal _newStopLng = -122.4200m;
+    private decimal _newStopLat = 18.4758m;
+    private decimal _newStopLng = 73.8137m;
 
-    private void AddStopToRoute()
+    // Smart Google Maps Style Autocomplete
+    private bool _isSearching = false;
+    private System.Threading.CancellationTokenSource? _searchCts;
+    private List<LocationSuggestionItem> _suggestions = new();
+
+    public class LocationSuggestionItem
     {
-        if (_selectedRoute != null && !string.IsNullOrWhiteSpace(_newStopName))
-        {
-            var stops = _selectedRoute.Stops.ToList();
-            var nextSeq = stops.Count + 1;
-            stops.Add(new RouteStopDto(Guid.NewGuid(), _selectedRoute.Id, _newStopName, nextSeq, _newStopLat, _newStopLng, 5 * nextSeq, 50));
-            _selectedRoute = new RouteDto(_selectedRoute.Id, _selectedRoute.SchoolId, _selectedRoute.Name, _selectedRoute.Code, _selectedRoute.DirectionType, _selectedRoute.IsActive, stops);
-            _showAddStopModal = false;
-            _newStopName = string.Empty;
-        }
+        public string Title { get; set; } = string.Empty;
+        public string Subtitle { get; set; } = string.Empty;
+        public decimal Latitude { get; set; }
+        public decimal Longitude { get; set; }
+        public string DistanceText { get; set; } = string.Empty;
     }
 
     protected override async Task OnInitializedAsync()
@@ -203,6 +262,215 @@
     private void SelectRoute(RouteDto route)
     {
         _selectedRoute = route;
+    }
+
+    private void OpenAddStopModal()
+    {
+        _newStopName = string.Empty;
+        _suggestions.Clear();
+
+        // Proximity anchor: if route has existing stops, anchor to last stop
+        if (_selectedRoute?.Stops != null && _selectedRoute.Stops.Any())
+        {
+            var last = _selectedRoute.Stops.Last();
+            _newStopLat = last.Latitude;
+            _newStopLng = last.Longitude;
+        }
+        else
+        {
+            _newStopLat = 18.4758m;
+            _newStopLng = 73.8137m;
+        }
+
+        _showAddStopModal = true;
+    }
+
+    private void ClearStopSearch()
+    {
+        _newStopName = string.Empty;
+        _suggestions.Clear();
+    }
+
+    private async Task OnStopNameInput(ChangeEventArgs e)
+    {
+        _newStopName = e.Value?.ToString() ?? string.Empty;
+        if (_newStopName.Trim().Length < 2)
+        {
+            _suggestions.Clear();
+            return;
+        }
+
+        _searchCts?.Cancel();
+        _searchCts = new System.Threading.CancellationTokenSource();
+        var token = _searchCts.Token;
+
+        try
+        {
+            await Task.Delay(250, token); // Debounce
+            _isSearching = true;
+            StateHasChanged();
+
+            // Smart Proximity Biasing:
+            // If existing route has stops, bias towards the route's stops
+            double anchorLat = 18.4758;
+            double anchorLng = 73.8137;
+
+            if (_selectedRoute?.Stops != null && _selectedRoute.Stops.Any())
+            {
+                var refStop = _selectedRoute.Stops.Last();
+                anchorLat = (double)refStop.Latitude;
+                anchorLng = (double)refStop.Longitude;
+            }
+
+            _suggestions = await FetchSmartSuggestionsAsync(_newStopName.Trim(), anchorLat, anchorLng, token);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching suggestions: {ex.Message}");
+        }
+        finally
+        {
+            _isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<List<LocationSuggestionItem>> FetchSmartSuggestionsAsync(string query, double anchorLat, double anchorLng, System.Threading.CancellationToken token)
+    {
+        var list = new List<LocationSuggestionItem>();
+
+        // 1. Query live OpenStreetMap / Photon with smart proximity biasing
+        try
+        {
+            using var client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(3);
+            client.DefaultRequestHeaders.Add("User-Agent", "SchoolTrackApp/2.4");
+
+            var url = $"https://photon.komoot.io/api/?q={Uri.EscapeDataString(query)}&lat={anchorLat}&lon={anchorLng}&limit=6";
+            var response = await client.GetAsync(url, token);
+            if (response.IsSuccessStatusCode)
+            {
+                using var stream = await response.Content.ReadAsStreamAsync(token);
+                using var doc = await System.Text.Json.JsonDocument.ParseAsync(stream, cancellationToken: token);
+                if (doc.RootElement.TryGetProperty("features", out var features))
+                {
+                    foreach (var feat in features.EnumerateArray())
+                    {
+                        if (feat.TryGetProperty("properties", out var props) &&
+                            feat.TryGetProperty("geometry", out var geom) &&
+                            geom.TryGetProperty("coordinates", out var coords))
+                        {
+                            var lng = coords[0].GetDecimal();
+                            var lat = coords[1].GetDecimal();
+
+                            var name = props.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+                            if (string.IsNullOrWhiteSpace(name)) continue;
+
+                            var street = props.TryGetProperty("street", out var str) ? str.GetString() ?? "" : "";
+                            var district = props.TryGetProperty("district", out var dis) ? dis.GetString() ?? "" : "";
+                            var city = props.TryGetProperty("city", out var c) ? c.GetString() ?? "" : "";
+                            var state = props.TryGetProperty("state", out var st) ? st.GetString() ?? "" : "";
+
+                            var subtitleParts = new List<string>();
+                            if (!string.IsNullOrEmpty(street) && street != name) subtitleParts.Add(street);
+                            if (!string.IsNullOrEmpty(district) && district != name) subtitleParts.Add(district);
+                            if (!string.IsNullOrEmpty(city)) subtitleParts.Add(city);
+                            if (!string.IsNullOrEmpty(state)) subtitleParts.Add(state);
+
+                            var subtitle = string.Join(", ", subtitleParts);
+                            if (string.IsNullOrEmpty(subtitle)) subtitle = "Transit Stop";
+
+                            var distStr = CalculateDistanceText(anchorLat, anchorLng, (double)lat, (double)lng);
+
+                            list.Add(new LocationSuggestionItem
+                            {
+                                Title = name,
+                                Subtitle = subtitle,
+                                Latitude = lat,
+                                Longitude = lng,
+                                DistanceText = distStr
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+
+        // 2. If online search didn't return or offline fallback is needed, match with local transit stops
+        if (list.Count == 0)
+        {
+            var localMatches = GetLocalTransitMatches(query, anchorLat, anchorLng);
+            list.AddRange(localMatches);
+        }
+
+        return list;
+    }
+
+    private List<LocationSuggestionItem> GetLocalTransitMatches(string query, double anchorLat, double anchorLng)
+    {
+        var localDb = new List<(string Name, string Subtitle, decimal Lat, decimal Lng)>
+        {
+            ("Sun City, Anand Nagar", "Pune, Maharashtra", 18.4758m, 73.8137m),
+            ("Sun City Ambegaon", "P. ROAD, Bhumkar Nagar, Pune", 18.4550m, 73.8340m),
+            ("Sun City Road", "Sun City, Anand Nagar, Pune", 18.4760m, 73.8150m),
+            ("SUN CITY", "Sun City, Anand Nagar, Pune, Maharashtra", 18.4750m, 73.8130m),
+            ("Sun city - Karvenagar bridge", "Nimbaj Nagar, Anand Nagar, Pune", 18.4820m, 73.8190m),
+            ("Karve Road Bus Stop", "Erandwane, Pune, Maharashtra", 18.5020m, 73.8290m),
+            ("Sinhagad College Gate", "Vadgaon Budruk, Pune", 18.4645m, 73.8358m),
+            ("Kothrud Stand", "Kothrud, Pune, Maharashtra", 18.5074m, 73.8077m),
+            ("Swargate Bus Station", "Swargate, Pune, Maharashtra", 18.5018m, 73.8636m),
+            ("Bavdhan Transit Point", "NDA Road, Bavdhan, Pune", 18.5140m, 73.7710m)
+        };
+
+        var q = query.ToLowerInvariant();
+        var matches = localDb.Where(l => l.Name.ToLowerInvariant().Contains(q) || l.Subtitle.ToLowerInvariant().Contains(q)).ToList();
+
+        return matches.Select(m => new LocationSuggestionItem
+        {
+            Title = m.Name,
+            Subtitle = m.Subtitle,
+            Latitude = m.Lat,
+            Longitude = m.Lng,
+            DistanceText = CalculateDistanceText(anchorLat, anchorLng, (double)m.Lat, (double)m.Lng)
+        }).ToList();
+    }
+
+    private string CalculateDistanceText(double lat1, double lon1, double lat2, double lon2)
+    {
+        var R = 6371000.0; // meters
+        var dLat = (lat2 - lat1) * Math.PI / 180.0;
+        var dLon = (lon2 - lon1) * Math.PI / 180.0;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        var d = R * c;
+        if (d < 1000) return $"{Math.Max(50, Math.Round(d))} m";
+        return $"{Math.Round(d / 1000.0, 1)} km";
+    }
+
+    private void SelectSuggestion(LocationSuggestionItem suggestion)
+    {
+        _newStopName = suggestion.Title;
+        _newStopLat = suggestion.Latitude;
+        _newStopLng = suggestion.Longitude;
+        _suggestions.Clear();
+    }
+
+    private void AddStopToRoute()
+    {
+        if (_selectedRoute != null && !string.IsNullOrWhiteSpace(_newStopName))
+        {
+            var stops = _selectedRoute.Stops.ToList();
+            var nextSeq = stops.Count + 1;
+            stops.Add(new RouteStopDto(Guid.NewGuid(), _selectedRoute.Id, _newStopName, nextSeq, _newStopLat, _newStopLng, 5 * nextSeq, 50));
+            _selectedRoute = new RouteDto(_selectedRoute.Id, _selectedRoute.SchoolId, _selectedRoute.Name, _selectedRoute.Code, _selectedRoute.DirectionType, _selectedRoute.IsActive, stops);
+            _showAddStopModal = false;
+            _newStopName = string.Empty;
+            _suggestions.Clear();
+        }
     }
 
     private void CreateRoute()
@@ -218,5 +486,3 @@
         }
     }
 }
-
-

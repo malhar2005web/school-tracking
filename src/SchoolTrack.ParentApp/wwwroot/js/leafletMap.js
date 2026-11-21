@@ -25,10 +25,10 @@ window.schoolTrackMap = {
       attributionControl: false
     }).setView([centerLat, centerLng], zoom);
 
-    // Add high-clarity CartoDB Positron / OSM tiles suitable for light clay UI
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // Add standard free OpenStreetMap tiles (No API key needed, zero watermark)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      subdomains: 'abcd',
+      attribution: '© OpenStreetMap contributors'
     }).addTo(this.mapInstance);
 
     // Add custom zoom control at bottom right
