@@ -20,7 +20,6 @@
         
         <div>
             <h1 style="font-size:20px; font-weight:800; color:#181930; margin:0; line-height:1.2;">Oakridge Fleet Radar</h1>
-            <p style="font-size:12px; color:#484552; margin:2px 0 0 0;">24 district transit corridors synchronized</p>
         </div>
 
         <!-- Quick Action Mobile Pills -->
@@ -40,70 +39,53 @@
         </div>
     </div>
 
-    <!-- 2x2 Bento Mobile KPI Cards -->
+    <!-- 2x2 Bento Mobile KPI Cards (Clean & Uncluttered) -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.625rem;">
         <!-- Card 1: Active Fleet -->
         <div class="clay-card" style="padding:0.875rem; background:#ffffff; border-radius:1rem;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Active Fleet</span>
+                <span style="font-size:11px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Active Fleet</span>
                 <span class="material-symbols-outlined" style="font-size:18px; color:#4338ca;">directions_bus</span>
             </div>
-            <div style="display:flex; align-items:baseline; gap:0.25rem; margin:0.35rem 0 0.5rem 0;">
-                <span style="font-size:22px; font-weight:900; color:#181930; line-height:1;">@_summary.ActiveFleetCount</span>
-                <span style="font-size:11px; color:#797584; font-weight:700;">/ @_summary.TotalFleetCount</span>
+            <div style="display:flex; align-items:baseline; gap:0.25rem; margin-top:0.5rem;">
+                <span style="font-size:24px; font-weight:900; color:#181930; line-height:1;">@_summary.ActiveFleetCount</span>
+                <span style="font-size:12px; color:#797584; font-weight:700;">/ @_summary.TotalFleetCount</span>
             </div>
-            <div class="clay-progress-track" style="height:4px; margin-bottom:0.35rem;">
-                <div class="clay-progress-fill-primary" style="width:90%;"></div>
-            </div>
-            <div style="font-size:10px; font-weight:700; color:#0c6b55;">90% On-Time</div>
         </div>
 
         <!-- Card 2: Students Boarded -->
         <div class="clay-card" style="padding:0.875rem; background:#ffffff; border-radius:1rem;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Boarded</span>
+                <span style="font-size:11px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Boarded</span>
                 <span class="material-symbols-outlined" style="font-size:18px; color:#0c6b55;">how_to_reg</span>
             </div>
-            <div style="display:flex; align-items:baseline; gap:0.25rem; margin:0.35rem 0 0.5rem 0;">
-                <span style="font-size:22px; font-weight:900; color:#181930; line-height:1;">@_summary.StudentsBoardedCount</span>
-                <span style="font-size:11px; color:#797584; font-weight:700;">/ @_summary.TotalStudentsCount</span>
+            <div style="display:flex; align-items:baseline; gap:0.25rem; margin-top:0.5rem;">
+                <span style="font-size:24px; font-weight:900; color:#181930; line-height:1;">@_summary.StudentsBoardedCount</span>
+                <span style="font-size:12px; color:#797584; font-weight:700;">/ @_summary.TotalStudentsCount</span>
             </div>
-            <div class="clay-progress-track" style="height:4px; margin-bottom:0.35rem;">
-                <div class="clay-progress-fill-secondary" style="width:94%;"></div>
-            </div>
-            <div style="font-size:10px; font-weight:700; color:#0c6b55;">94.1% RFID Synced</div>
         </div>
 
         <!-- Card 3: Gateways Online -->
         <div class="clay-card" style="padding:0.875rem; background:#ffffff; border-radius:1rem;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Gateways</span>
+                <span style="font-size:11px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Gateways</span>
                 <span class="material-symbols-outlined" style="font-size:18px; color:#765b00;">router</span>
             </div>
-            <div style="display:flex; align-items:baseline; gap:0.25rem; margin:0.35rem 0 0.5rem 0;">
-                <span style="font-size:22px; font-weight:900; color:#181930; line-height:1;">@_summary.GatewaysOnlineCount</span>
-                <span style="font-size:11px; color:#797584; font-weight:700;">/ @_summary.TotalGatewaysCount</span>
+            <div style="display:flex; align-items:baseline; gap:0.25rem; margin-top:0.5rem;">
+                <span style="font-size:24px; font-weight:900; color:#181930; line-height:1;">@_summary.GatewaysOnlineCount</span>
+                <span style="font-size:12px; color:#797584; font-weight:700;">/ @_summary.TotalGatewaysCount</span>
             </div>
-            <div class="clay-progress-track" style="height:4px; margin-bottom:0.35rem;">
-                <div class="clay-progress-fill-tertiary" style="width:100%;"></div>
-            </div>
-            <div style="font-size:10px; font-weight:700; color:#0c6b55;">100% Strong RSSI</div>
         </div>
 
         <!-- Card 4: Active Alerts -->
         <div class="clay-card" style="padding:0.875rem; background:#ffffff; border-radius:1rem;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Road Alerts</span>
+                <span style="font-size:11px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Road Alerts</span>
                 <span class="material-symbols-outlined" style="font-size:18px; color:#ba1a1a;">warning</span>
             </div>
-            <div style="display:flex; align-items:baseline; gap:0.25rem; margin:0.35rem 0 0.5rem 0;">
-                <span style="font-size:22px; font-weight:900; color:#ba1a1a; line-height:1;">@_summary.ActiveAlertsCount</span>
-                <span style="font-size:11px; color:#797584; font-weight:700;">Minor delay</span>
+            <div style="display:flex; align-items:baseline; gap:0.25rem; margin-top:0.5rem;">
+                <span style="font-size:24px; font-weight:900; color:@(_summary.ActiveAlertsCount > 0 ? "#ba1a1a" : "#181930"); line-height:1;">@_summary.ActiveAlertsCount</span>
             </div>
-            <div class="clay-progress-track" style="height:4px; margin-bottom:0.35rem;">
-                <div style="height:100%; width:30%; background:#ba1a1a; border-radius:9999px;"></div>
-            </div>
-            <div style="font-size:10px; font-weight:700; color:#ba1a1a;">Route #08 Maple Ave</div>
         </div>
     </div>
 
@@ -149,18 +131,18 @@
                     </div>
 
                     <!-- Occupancy Bar & Next Stop -->
-                    <div style="margin-top:0.35rem; padding-top:0.35rem; border-top:1px solid rgba(24,25,48,0.06); display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
-                        <div style="flex:1;">
-                            <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:700; color:#484552; margin-bottom:2px;">
-                                <span>Occupancy</span>
-                                <span>@bus.PassengerCount / @bus.Capacity</span>
+                    <div style="margin-top:0.4rem; padding-top:0.4rem; border-top:1px solid rgba(24,25,48,0.06); display:flex; flex-direction:column; gap:0.35rem;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+                            <div style="display:flex; align-items:center; gap:0.35rem; font-size:10px; font-weight:700; color:#484552;">
+                                <span>Occupancy:</span>
+                                <span style="color:#181930; font-weight:800;">@bus.PassengerCount / @bus.Capacity</span>
                             </div>
-                            <div class="clay-progress-track" style="height:4px;">
-                                <div class="clay-progress-fill-secondary" style="width:@((bus.PassengerCount * 100) / bus.Capacity)%;"></div>
+                            <div style="background:#eeecff; padding:2px 6px; border-radius:6px; font-size:10px; font-weight:700; color:#4338ca; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; max-width:62%;">
+                                ETA: @bus.NextStopEtaMinutes m • @bus.NextStopName
                             </div>
                         </div>
-                        <div style="background:#eeecff; padding:2px 6px; border-radius:6px; font-size:10px; font-weight:700; color:#4338ca; white-space:nowrap;">
-                            ETA: @bus.NextStopEtaMinutes m • @bus.NextStopName
+                        <div class="clay-progress-track" style="height:4px;">
+                            <div class="clay-progress-fill-secondary" style="width:@((bus.PassengerCount * 100) / bus.Capacity)%;"></div>
                         </div>
                     </div>
                 </div>

@@ -87,11 +87,16 @@
             <div style="margin-bottom:0.875rem;">
                 <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.35rem; margin-left:0.25rem;">Mobile Phone Number</label>
                 <div class="clay-inset" style="display:flex; align-items:center; height:3rem; padding:0 0.75rem;">
-                    <div style="display:flex; align-items:center; gap:0.35rem; padding-right:0.5rem; margin-right:0.5rem; border-right:1px solid #cac4d4;">
-                        <span style="font-size:1rem;">🇺🇸</span>
-                        <span style="font-size:12px; font-weight:700; color:#181930;">+1</span>
-                    </div>
-                    <input style="width:100%; background:transparent; border:none; outline:none; font-size:14px; font-weight:600; color:#181930;" type="tel" @bind="_parentPhone" placeholder="(555) 019-2834" />
+                    <!-- Clickable Country Code Pill (Tap to Select / Scroll to India) -->
+                    <button type="button"
+                            @onclick="() => _showCountryModal = true"
+                            style="display:flex; align-items:center; gap:0.35rem; padding:0.25rem 0.5rem 0.25rem 0; margin-right:0.5rem; border-right:1px solid #cac4d4; background:none; border-top:none; border-bottom:none; border-left:none; cursor:pointer;"
+                            title="Select Country Code">
+                        <span style="font-size:1.15rem; line-height:1;">@_selectedCountry.Flag</span>
+                        <span style="font-size:13px; font-weight:700; color:#181930;">@_selectedCountry.DialCode</span>
+                        <span class="material-symbols-outlined" style="font-size:16px; color:#797584; margin-left:-2px;">arrow_drop_down</span>
+                    </button>
+                    <input style="width:100%; background:transparent; border:none; outline:none; font-size:14px; font-weight:600; color:#181930;" type="tel" @bind="_parentPhone" placeholder="@_phonePlaceholder" />
                 </div>
             </div>
 
@@ -269,6 +274,73 @@
     </div>
 </div>
 
+<!-- Scrollable & Searchable Country Code Selection Modal -->
+@if (_showCountryModal)
+{
+    <div style="position:fixed; inset:0; background:rgba(24,25,48,0.55); backdrop-filter:blur(6px); z-index:9999; display:flex; align-items:flex-end; justify-content:center; padding:0;" @onclick="() => _showCountryModal = false">
+        <div class="clay-card" style="width:100%; max-width:460px; max-height:80vh; background:#ffffff; border-top-left-radius:1.75rem; border-top-right-radius:1.75rem; border-bottom-left-radius:0; border-bottom-right-radius:0; padding:1.25rem; display:flex; flex-direction:column; box-shadow:0 -8px 32px rgba(24,25,48,0.2);" @onclick:stopPropagation="true">
+            
+            <!-- Modal Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; padding-bottom:0.5rem; border-bottom:1px solid rgba(24,25,48,0.08);">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#eeecff; color:#644bba; display:flex; align-items:center; justify-content:center;">
+                        <span class="material-symbols-outlined" style="font-size:18px;">public</span>
+                    </div>
+                    <div>
+                        <h3 style="font-size:15px; font-weight:800; color:#181930; margin:0;">Select Country Code</h3>
+                        <p style="font-size:11px; color:#797584; margin:0;">Scroll or search to select (e.g. India, +91)</p>
+                    </div>
+                </div>
+                <button type="button" style="background:#eeecff; border:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;" @onclick="() => _showCountryModal = false">
+                    <span class="material-symbols-outlined" style="font-size:18px; color:#181930;">close</span>
+                </button>
+            </div>
+
+            <!-- Search Input -->
+            <div class="clay-inset" style="display:flex; align-items:center; height:2.75rem; padding:0 0.75rem; margin-bottom:0.75rem;">
+                <span class="material-symbols-outlined" style="font-size:18px; color:#797584; margin-right:0.5rem;">search</span>
+                <input style="width:100%; background:transparent; border:none; outline:none; font-size:13px; font-weight:600; color:#181930;"
+                       type="text"
+                       placeholder="Search country or code (e.g. India, +91)..."
+                       @bind="_countrySearchQuery"
+                       @bind:event="oninput" />
+                @if (!string.IsNullOrWhiteSpace(_countrySearchQuery))
+                {
+                    <button type="button" style="background:none; border:none; cursor:pointer; color:#797584;" @onclick='() => _countrySearchQuery = ""'>
+                        <span class="material-symbols-outlined" style="font-size:16px;">clear</span>
+                    </button>
+                }
+            </div>
+
+            <!-- Scrollable Country List -->
+            <div style="flex:1; overflow-y:auto; max-height:55vh; display:flex; flex-direction:column; gap:0.35rem; padding-right:2px;">
+                @foreach (var c in FilteredCountries)
+                {
+                    var isSelected = _selectedCountry.Code == c.Code;
+                    <button type="button"
+                            style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.85rem; border-radius:0.875rem; border:none; cursor:pointer; text-align:left; transition:all 0.15s; @(isSelected ? "background:#eeecff; border:1.5px solid #644bba;" : "background:#fbf8ff; border:1px solid rgba(24,25,48,0.05);")"
+                            @onclick="() => SelectCountry(c)">
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <span style="font-size:1.4rem;">@c.Flag</span>
+                            <div>
+                                <div style="font-size:13px; font-weight:700; color:#181930;">@c.Name</div>
+                                <div style="font-size:11px; color:#797584;">@c.Code</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <span style="font-size:13px; font-weight:800; color:#4338ca;">@c.DialCode</span>
+                            @if (isSelected)
+                            {
+                                <span class="material-symbols-outlined" style="font-size:18px; color:#644bba;">check_circle</span>
+                            }
+                        </div>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private string _selectedRole = "Parent";
     private bool _rememberMe = true;
@@ -277,8 +349,108 @@
     private bool _showAdminPassword = false;
     private string _speechMessage = "Select your role to begin!";
 
+    // Country Code Selection
+    public record CountryCodeItem(string Name, string Code, string DialCode, string Flag);
+
+    private bool _showCountryModal = false;
+    private string _countrySearchQuery = "";
+    private CountryCodeItem _selectedCountry = new("India", "IN", "+91", "🇮🇳");
+    private string _phonePlaceholder = "98220 12345";
+
+    private readonly List<CountryCodeItem> _allCountries = new()
+    {
+        new("India", "IN", "+91", "🇮🇳"),
+        new("United States", "US", "+1", "🇺🇸"),
+        new("United Kingdom", "GB", "+44", "🇬🇧"),
+        new("Canada", "CA", "+1", "🇨🇦"),
+        new("Australia", "AU", "+61", "🇦🇺"),
+        new("United Arab Emirates", "AE", "+971", "🇦🇪"),
+        new("Saudi Arabia", "SA", "+966", "🇸🇦"),
+        new("Singapore", "SG", "+65", "🇸🇬"),
+        new("Germany", "DE", "+49", "🇩🇪"),
+        new("France", "FR", "+33", "🇫🇷"),
+        new("Japan", "JP", "+81", "🇯🇵"),
+        new("South Korea", "KR", "+82", "🇰🇷"),
+        new("China", "CN", "+86", "🇨🇳"),
+        new("Brazil", "BR", "+55", "🇧🇷"),
+        new("South Africa", "ZA", "+27", "🇿🇦"),
+        new("New Zealand", "NZ", "+64", "🇳🇿"),
+        new("Russia", "RU", "+7", "🇷🇺"),
+        new("Mexico", "MX", "+52", "🇲🇽"),
+        new("Spain", "ES", "+34", "🇪🇸"),
+        new("Italy", "IT", "+39", "🇮🇹"),
+        new("Netherlands", "NL", "+31", "🇳🇱"),
+        new("Sweden", "SE", "+46", "🇸🇪"),
+        new("Switzerland", "CH", "+41", "🇨🇭"),
+        new("Ireland", "IE", "+353", "🇮🇪"),
+        new("Malaysia", "MY", "+60", "🇲🇾"),
+        new("Indonesia", "ID", "+62", "🇮🇩"),
+        new("Philippines", "PH", "+63", "🇵🇭"),
+        new("Bangladesh", "BD", "+880", "🇧🇩"),
+        new("Pakistan", "PK", "+92", "🇵🇰"),
+        new("Sri Lanka", "LK", "+94", "🇱🇰"),
+        new("Nepal", "NP", "+977", "🇳🇵"),
+        new("Qatar", "QA", "+974", "🇶🇦"),
+        new("Kuwait", "KW", "+965", "🇰🇼"),
+        new("Oman", "OM", "+968", "🇴🇲"),
+        new("Bahrain", "BH", "+973", "🇧🇭"),
+        new("Nigeria", "NG", "+234", "🇳🇬"),
+        new("Kenya", "KE", "+254", "🇰🇪"),
+        new("Egypt", "EG", "+20", "🇪🇬"),
+        new("Turkey", "TR", "+90", "🇹🇷"),
+        new("Thailand", "TH", "+66", "🇹🇭"),
+        new("Vietnam", "VN", "+84", "🇻🇳"),
+        new("Poland", "PL", "+48", "🇵🇱"),
+        new("Norway", "NO", "+47", "🇳🇴"),
+        new("Denmark", "DK", "+45", "🇩🇰"),
+        new("Finland", "FI", "+358", "🇫🇮"),
+        new("Belgium", "BE", "+32", "🇧🇪"),
+        new("Austria", "AT", "+43", "🇦🇹"),
+        new("Portugal", "PT", "+351", "🇵🇹"),
+        new("Greece", "GR", "+30", "🇬🇷")
+    };
+
+    private IEnumerable<CountryCodeItem> FilteredCountries
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_countrySearchQuery))
+                return _allCountries;
+
+            var q = _countrySearchQuery.Trim().ToLowerInvariant();
+            return _allCountries.Where(c =>
+                c.Name.ToLowerInvariant().Contains(q) ||
+                c.DialCode.Contains(q) ||
+                c.Code.ToLowerInvariant().Contains(q)
+            );
+        }
+    }
+
+    private void SelectCountry(CountryCodeItem country)
+    {
+        _selectedCountry = country;
+        _showCountryModal = false;
+        _countrySearchQuery = "";
+
+        if (country.Code == "IN")
+        {
+            _phonePlaceholder = "98220 12345";
+            if (_parentPhone == "(555) 019-2834") _parentPhone = "98220 12345";
+        }
+        else if (country.Code == "US" || country.Code == "CA")
+        {
+            _phonePlaceholder = "(555) 019-2834";
+            if (_parentPhone == "98220 12345") _parentPhone = "(555) 019-2834";
+        }
+        else
+        {
+            _phonePlaceholder = "Phone number";
+        }
+        StateHasChanged();
+    }
+
     // Parent inputs
-    private string _parentPhone = "(555) 019-2834";
+    private string _parentPhone = "98220 12345";
     private string _parentOtp = "8421";
 
     // Driver inputs
