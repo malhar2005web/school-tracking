@@ -171,6 +171,30 @@ public class ParentAuthState
         NotifyStateChanged();
     }
 
+    public void UpdateChildPickupStop(string newStopName, string newEtaTime)
+    {
+        if (_activeChild != null)
+        {
+            if (_currentShift.Equals("Morning", StringComparison.OrdinalIgnoreCase))
+            {
+                _activeChild = _activeChild with
+                {
+                    MorningPickupStopName = newStopName,
+                    MorningPickupTime = newEtaTime
+                };
+            }
+            else
+            {
+                _activeChild = _activeChild with
+                {
+                    AfternoonDropOffStopName = newStopName,
+                    AfternoonDropOffTime = newEtaTime
+                };
+            }
+            NotifyStateChanged();
+        }
+    }
+
     public void UpdateActiveChildStatus(string inOutStatus, bool isOnBus)
     {
         if (_activeChild != null)

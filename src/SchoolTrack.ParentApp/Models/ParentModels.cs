@@ -95,9 +95,11 @@ public sealed record ParentNotificationModel(
     string Title,
     string Message,
     DateTimeOffset Timestamp,
-    string Type, // Boarding, Delay, RouteAlert, SOS, General
+    string Type, // Boarding, Delay, RouteAlert, SOS, General, ProximityPreArrival
     bool IsRead,
-    string ChildName);
+    string ChildName,
+    string? ActionLabel = null,
+    string? ActionTarget = null);
 
 public sealed record AbsenceReportRequest(
     Guid StudentId,

@@ -51,16 +51,23 @@
         <div class="floating-toast-container">
             @foreach (var toast in NotificationService.ActiveToasts)
             {
-                <div class="floating-toast-pill">
-                    <div style="display:flex; align-items:center; gap:0.75rem; min-width:0;">
-                        <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                            <span class="material-symbols-outlined" style="font-size:18px;">contactless</span>
+                var isProximity = toast.Type == "ProximityPreArrival";
+                <div class="floating-toast-pill" style="@(isProximity ? "border: 1.5px solid #644bba; background: #ffffff; box-shadow: 0 10px 28px rgba(100,75,186,0.22);" : "")">
+                    <div style="display:flex; align-items:center; gap:0.75rem; min-width:0; flex:1;">
+                        <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:@(isProximity ? "#eeecff" : "#a1f3d7"); color:@(isProximity ? "#644bba" : "#0c6b55"); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <span class="material-symbols-outlined" style="font-size:18px;">@(isProximity ? "near_me" : "contactless")</span>
                         </div>
-                        <div style="display:flex; flex-direction:column; min-width:0;">
-                            <span style="font-size:12px; font-weight:700; color:#181930;">@toast.Title</span>
+                        <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
+                            <span style="font-size:12px; font-weight:800; color:#181930;">@toast.Title</span>
                             <span style="font-size:11px; color:#484552; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@toast.Message</span>
                         </div>
                     </div>
+                    @if (!string.IsNullOrEmpty(toast.ActionLabel))
+                    {
+                        <button class="clay-btn clay-btn-primary" style="padding:0.25rem 0.6rem; font-size:10px; font-weight:800; background:#644bba; margin-right:0.25rem; white-space:nowrap;" @onclick='() => Navigation.NavigateTo(toast.ActionTarget ?? "/parent/dashboard")'>
+                            @toast.ActionLabel
+                        </button>
+                    }
                     <button style="background:none; border:none; color:#797584; cursor:pointer;" @onclick="() => NotificationService.DismissToast(toast.Id)">
                         <span class="material-symbols-outlined" style="font-size:18px;">close</span>
                     </button>

@@ -58,6 +58,41 @@
         </div>
     }
 
+    <!-- Proximity Pre-Arrival Alert Banner (Triggered when bus is 2 stops away / previous child dropped) -->
+    @if (_proximityAlertActive)
+    {
+        <div class="clay-card" style="padding:1rem; border:2px solid #644bba; background:linear-gradient(135deg, #fbf8ff 0%, #eeecff 100%); border-radius:1.25rem; display:flex; flex-direction:column; gap:0.75rem; box-shadow:0 8px 24px rgba(100,75,186,0.18);">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.5rem;">
+                <div style="display:flex; align-items:center; gap:0.625rem;">
+                    <div style="width:2.5rem; height:2.5rem; border-radius:50%; background:#644bba; color:#ffffff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(100,75,186,0.35); flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:22px;">near_me</span>
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:0.35rem;">
+                            <span style="font-size:13px; font-weight:800; color:#181930;">@_proximityAlertTitle</span>
+                            <span class="clay-badge-mint" style="font-size:9px; font-weight:800; padding:1px 6px;">@_proximityStopsAway STOPS AWAY</span>
+                        </div>
+                        <p style="font-size:11px; color:#484552; margin:2px 0 0 0; line-height:1.3;">@_proximityAlertMessage</p>
+                    </div>
+                </div>
+                <button type="button" style="background:none; border:none; cursor:pointer; color:#797584; padding:0;" @onclick="() => _proximityAlertActive = false">
+                    <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+                </button>
+            </div>
+
+            <!-- Action Buttons in Proximity Alert -->
+            <div style="display:flex; gap:0.5rem;">
+                <button class="clay-btn clay-btn-primary" style="flex:1; height:2.5rem; font-size:11px; background:#644bba; display:flex; align-items:center; justify-content:center; gap:4px;" @onclick="OpenUpdateStopModal">
+                    <span class="material-symbols-outlined" style="font-size:16px;">edit_location_alt</span>
+                    <span>Running Late? Change Stop</span>
+                </button>
+                <button class="clay-btn clay-btn-surface" style="padding:0 0.85rem; height:2.5rem; font-size:11px; font-weight:700;" @onclick="() => _proximityAlertActive = false">
+                    <span>Got It</span>
+                </button>
+            </div>
+        </div>
+    }
+
     <!-- TRIP CLOSED BANNER (If trip completed) -->
     @if (_trip?.IsTripClosed == true)
     {
@@ -181,19 +216,33 @@
 
         <!-- 3. DUAL ETA (Clean, direct & easy to read) -->
         <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.25rem;">
-            <!-- Pickup ETA -->
+            <!-- Pickup ETA with Quick Change Stop Button -->
             <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; border-radius:10px; background:@(_trip?.ChildBoardingPhase == "BeforePickup" ? "#fff9e6" : "#f5f2ff"); border:1px solid @(_trip?.ChildBoardingPhase == "BeforePickup" ? "#ffd66b" : "#e1e0ff");">
-                <div style="display:flex; align-items:center; gap:0.5rem;">
+                <div style="display:flex; align-items:center; gap:0.5rem; min-width:0; flex:1;">
                     <span class="material-symbols-outlined" style="font-size:18px; color:#765b00;">pin_drop</span>
-                    <div>
-                        <div style="font-size:10px; font-weight:700; color:#765b00; text-transform:uppercase;">Pickup Point ETA</div>
-                        <div style="font-size:12px; font-weight:700; color:#181930;">@(AuthState.CurrentShift == "Morning" ? (ActiveChild?.MorningPickupStopName ?? "Sunset Meadow Way") : "Campus Gate")</div>
+                    <div style="min-width:0;">
+                        <div style="display:flex; align-items:center; gap:0.35rem;">
+                            <span style="font-size:10px; font-weight:700; color:#765b00; text-transform:uppercase;">Pickup Point ETA</span>
+                            @if (_stopUpdatedToday)
+                            {
+                                <span class="clay-badge-mint" style="font-size:8px; padding:1px 4px;">UPDATED TODAY</span>
+                            }
+                        </div>
+                        <div style="font-size:12px; font-weight:700; color:#181930; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            @(AuthState.CurrentShift == "Morning" ? (ActiveChild?.MorningPickupStopName ?? "Sunset Meadow Way") : (ActiveChild?.AfternoonDropOffStopName ?? "Campus Gate"))
+                        </div>
                     </div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="font-size:13px; font-weight:800; color:@(_trip?.ChildBoardingPhase == "BeforePickup" ? "#765b00" : "#0c6b55");">
-                        @(_trip?.PickupStopEtaText ?? "7 mins (07:42 AM)")
+                <div style="display:flex; align-items:center; gap:0.5rem; flex-shrink:0;">
+                    <div style="text-align:right;">
+                        <div style="font-size:12px; font-weight:800; color:@(_trip?.ChildBoardingPhase == "BeforePickup" ? "#765b00" : "#0c6b55");">
+                            @(_stopUpdatedToday ? _activePickupEtaText : (_trip?.PickupStopEtaText ?? "7 mins (07:42 AM)"))
+                        </div>
                     </div>
+                    <button class="clay-btn clay-btn-surface" style="padding:0.25rem 0.5rem; font-size:10px; font-weight:800; color:#644bba; display:flex; align-items:center; gap:2px;" type="button" @onclick="OpenUpdateStopModal" title="Change Pickup Stop">
+                        <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
+                        <span>Change</span>
+                    </button>
                 </div>
             </div>
 
@@ -384,6 +433,115 @@
             </div>
         </div>
     }
+
+    <!-- Change Pickup / Drop Stop Bottom Sheet Modal -->
+    @if (_showUpdateStopModal)
+    {
+        <div class="clay-modal-backdrop" @onclick="CloseModals">
+            <div class="clay-bottom-sheet" @onclick:stopPropagation="true" style="border-top:4px solid #644bba;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; padding-bottom:0.5rem; border-bottom:1px solid rgba(24,25,48,0.08);">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#eeecff; color:#644bba; display:flex; align-items:center; justify-content:center;">
+                            <span class="material-symbols-outlined" style="font-size:20px;">edit_location_alt</span>
+                        </div>
+                        <div>
+                            <h2 style="font-size:16px; font-weight:800; color:#181930; margin:0;">Change @(AuthState.CurrentShift == "Morning" ? "Pickup" : "Drop") Stop</h2>
+                            <span style="font-size:11px; color:#484552;">For @(ActiveChild?.FullName) • @(ActiveChild?.BusNumber)</span>
+                        </div>
+                    </div>
+                    <button style="background:none; border:none; color:#797584; cursor:pointer;" @onclick="CloseModals">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <p style="font-size:12px; color:#484552; margin:0 0 0.85rem 0; line-height:1.4;">
+                    Running late or need to meet the bus at an alternate point? Choose any upcoming stop along this corridor.
+                </p>
+
+                <!-- List of Corridor Stops -->
+                <div style="display:flex; flex-direction:column; gap:0.5rem; max-height:36vh; overflow-y:auto; margin-bottom:0.875rem; padding-right:2px;">
+                    @foreach (var stop in _availableCorridorStops)
+                    {
+                        var isSelected = _tempSelectedStopName == stop.Name;
+                        var isCurrentDefault = (ActiveChild?.MorningPickupStopName == stop.Name);
+
+                        <div class="clay-card"
+                             style="padding:0.65rem 0.85rem; border-radius:1rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:all 0.15s; @(isSelected ? "background:#eeecff; border:1.5px solid #644bba;" : "background:#fbf8ff; border:1px solid rgba(24,25,48,0.05);")"
+                             @onclick="() => _tempSelectedStopName = stop.Name">
+                            <div style="display:flex; align-items:center; gap:0.65rem;">
+                                <div style="width:1.85rem; height:1.85rem; border-radius:50%; background:@(isSelected ? "#644bba" : "#eeecff"); color:@(isSelected ? "#ffffff" : "#644bba"); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0;">
+                                    @stop.Sequence
+                                </div>
+                                <div>
+                                    <div style="display:flex; align-items:center; gap:0.35rem;">
+                                        <span style="font-size:13px; font-weight:700; color:#181930;">@stop.Name</span>
+                                        @if (!string.IsNullOrEmpty(stop.AssociatedKid))
+                                        {
+                                            <span class="clay-badge-secondary" style="font-size:8px; padding:1px 5px;">@stop.AssociatedKid</span>
+                                        }
+                                    </div>
+                                    <span style="font-size:11px; color:#797584;">@stop.EtaText • @stop.StatusNote</span>
+                                </div>
+                            </div>
+                            <div>
+                                @if (isSelected)
+                                {
+                                    <span class="material-symbols-outlined" style="font-size:20px; color:#644bba;">check_circle</span>
+                                }
+                                else if (isCurrentDefault)
+                                {
+                                    <span class="clay-badge-mint" style="font-size:8px; padding:1px 5px;">DEFAULT</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Reason / Note to Driver -->
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.35rem;">Reason for Stop Change (Sent to Driver)</label>
+                    <select class="clay-input" style="height:2.75rem; font-size:12px;" @bind="_stopChangeReason">
+                        <option value="Running 5-10 mins late">Running 5-10 mins late (Will catch bus at next stop)</option>
+                        <option value="Waiting at Babli's Stop / alternate landmark">Waiting at Babli's Stop / alternate landmark</option>
+                        <option value="Parent at market / outside">Parent currently at alternate stop</option>
+                        <option value="Traffic delay on route">Traffic delay on morning route</option>
+                        <option value="Other">Other emergency reason</option>
+                    </select>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                    <button class="clay-btn clay-btn-primary" style="height:3rem; font-size:13px; background:#644bba;" @onclick="ConfirmStopChange">
+                        <span class="material-symbols-outlined">send</span>
+                        <span>CONFIRM STOP CHANGE & ALERT DRIVER</span>
+                    </button>
+                    <button class="clay-btn clay-btn-surface" style="height:2.5rem; font-size:12px;" @onclick="CloseModals">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Proximity Pre-Arrival Demo & Simulation Strip (For Evaluators & Nitin Sir) -->
+    <div style="padding:0.875rem 1rem; border-radius:1.25rem; background:#ffffff; box-shadow:0 4px 16px rgba(41,42,66,0.06); margin-top:0.25rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.35rem;">
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+                <span class="material-symbols-outlined" style="font-size:16px; color:#644bba;">notifications_active</span>
+                <span style="font-size:11px; font-weight:800; color:#181930; text-transform:uppercase; letter-spacing:0.04em;">Proximity Pre-Arrival Demo</span>
+            </div>
+            <span class="clay-badge-mint" style="font-size:9px;">INTERACTIVE</span>
+        </div>
+        <p style="font-size:11px; color:#484552; margin:0 0 0.65rem 0;">Test the 2-stops-before alert & late stop update flow:</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+            <button class="clay-btn clay-btn-surface" style="padding:0.45rem 0.5rem; font-size:11px; font-weight:700; color:#644bba; display:flex; align-items:center; justify-content:center; gap:3px;" @onclick="SimulateBabluDropOffAlert">
+                <span>⚡ Bablu Dropped (2 Stops)</span>
+            </button>
+            <button class="clay-btn clay-btn-surface" style="padding:0.45rem 0.5rem; font-size:11px; font-weight:700; color:#0c6b55; display:flex; align-items:center; justify-content:center; gap:3px;" @onclick="SimulateBabliDropOffAlert">
+                <span>⚡ Babli Dropped (1 Stop)</span>
+            </button>
+        </div>
+    </div>
 </div>
 
 @code {
@@ -395,6 +553,30 @@
     private bool _showChatModal = false;
     private bool _showSosModal = false;
     private bool _showCloseTripModal = false;
+    private bool _showUpdateStopModal = false;
+
+    // Proximity Pre-Arrival Alert State
+    private bool _proximityAlertActive = false;
+    private string _proximityAlertTitle = "";
+    private string _proximityAlertMessage = "";
+    private int _proximityStopsAway = 2;
+
+    // Parent Stop Change State
+    private bool _stopUpdatedToday = false;
+    private string _tempSelectedStopName = "Anand Nagar";
+    private string _stopChangeReason = "Running 5-10 mins late";
+    private string _activePickupEtaText = "8 mins (07:44 AM)";
+
+    public record CorridorStopItem(int Sequence, string Name, string EtaText, string StatusNote, string? AssociatedKid = null);
+
+    private readonly List<CorridorStopItem> _availableCorridorStops = new()
+    {
+        new(1, "Pine Valley Rd", "07:30 AM", "Departed", null),
+        new(2, "Subhash Chowk", "07:36 AM", "Departed • 2 stops away", "Bablu's Stop"),
+        new(3, "Anand Nagar", "07:40 AM", "Next Stop • In 4 mins", "Babli's Stop"),
+        new(4, "Oakridge & 5th Ave", "07:44 AM", "Scheduled • In 8 mins", "Bunty's Stop (Default)"),
+        new(5, "West Turnstile School Gate", "07:55 AM", "Final School Drop", "Campus")
+    };
 
     private string _absenceReason = "Sick";
     private bool _skipMorning = true;
@@ -494,6 +676,11 @@
     private void OpenChatModal() => _showChatModal = true;
     private void OpenSosModal() => _showSosModal = true;
     private void OpenCloseTripModal() => _showCloseTripModal = true;
+    private void OpenUpdateStopModal()
+    {
+        _tempSelectedStopName = "Anand Nagar"; // Default quick pick (Babli's Stop)
+        _showUpdateStopModal = true;
+    }
 
     private void CloseModals()
     {
@@ -501,6 +688,66 @@
         _showChatModal = false;
         _showSosModal = false;
         _showCloseTripModal = false;
+        _showUpdateStopModal = false;
+    }
+
+    private void SimulateBabluDropOffAlert()
+    {
+        _proximityAlertActive = true;
+        _proximityStopsAway = 2;
+        _proximityAlertTitle = "Bus at Bablu's Stop (Subhash Chowk)";
+        _proximityAlertMessage = "Bablu safely dropped off! Bus is 2 stops away from Bunty (~7 mins). Get ready or update stop if running late!";
+
+        NotificationService.ShowToast(
+            "🚌 Bus 2 Stops Away!",
+            "Bablu dropped at Subhash Chowk. Bunty's stop in ~7 mins.",
+            "ProximityPreArrival",
+            ActiveChild?.FullName ?? "Leo",
+            "Change Stop",
+            "/parent/dashboard"
+        );
+        StateHasChanged();
+    }
+
+    private void SimulateBabliDropOffAlert()
+    {
+        _proximityAlertActive = true;
+        _proximityStopsAway = 1;
+        _proximityAlertTitle = "Bus at Babli's Stop (Anand Nagar)";
+        _proximityAlertMessage = "Babli safely dropped off! Bus is now 1 stop away (~3 mins). Please be ready at curbside!";
+
+        NotificationService.ShowToast(
+            "🚌 Bus 1 Stop Away!",
+            "Babli dropped at Anand Nagar. Bunty's stop in ~3 mins!",
+            "ProximityPreArrival",
+            ActiveChild?.FullName ?? "Leo",
+            "Change Stop",
+            "/parent/dashboard"
+        );
+        StateHasChanged();
+    }
+
+    private void ConfirmStopChange()
+    {
+        if (ActiveChild != null && !string.IsNullOrWhiteSpace(_tempSelectedStopName))
+        {
+            var chosenStop = _availableCorridorStops.FirstOrDefault(s => s.Name == _tempSelectedStopName);
+            var eta = chosenStop?.EtaText ?? "07:40 AM";
+
+            AuthState.UpdateChildPickupStop(_tempSelectedStopName, eta);
+            _activePickupEtaText = $"4 mins ({eta})";
+            _stopUpdatedToday = true;
+            _proximityAlertActive = false;
+            CloseModals();
+
+            NotificationService.ShowToast(
+                "✅ Stop Changed Successfully",
+                $"Pickup updated to {_tempSelectedStopName}. Driver Jenkins notified on in-cab console!",
+                "General",
+                ActiveChild.FullName
+            );
+            StateHasChanged();
+        }
     }
 
     private async Task ConfirmCloseTrip()

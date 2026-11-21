@@ -6,7 +6,7 @@ public interface IParentNotificationService
 {
     event Action<ParentNotificationModel>? OnNotificationReceived;
     IReadOnlyList<ParentNotificationModel> ActiveToasts { get; }
-    void ShowToast(string title, string message, string type = "Boarding", string childName = "Leo Martinez");
+    void ShowToast(string title, string message, string type = "Boarding", string childName = "Leo Martinez", string? actionLabel = null, string? actionTarget = null);
     void DismissToast(Guid id);
 }
 
@@ -18,7 +18,7 @@ public class ParentNotificationService : IParentNotificationService
 
     public IReadOnlyList<ParentNotificationModel> ActiveToasts => _activeToasts.AsReadOnly();
 
-    public void ShowToast(string title, string message, string type = "Boarding", string childName = "Leo Martinez")
+    public void ShowToast(string title, string message, string type = "Boarding", string childName = "Leo Martinez", string? actionLabel = null, string? actionTarget = null)
     {
         var toast = new ParentNotificationModel(
             Id: Guid.NewGuid(),
@@ -27,15 +27,17 @@ public class ParentNotificationService : IParentNotificationService
             Timestamp: DateTimeOffset.UtcNow,
             Type: type,
             IsRead: false,
-            ChildName: childName
+            ChildName: childName,
+            ActionLabel: actionLabel,
+            ActionTarget: actionTarget
         );
 
         _activeToasts.Insert(0, toast);
 
-        // Auto-dismiss after 6 seconds
+        // Auto-dismiss after 7 seconds
         _ = Task.Run(async () =>
         {
-            await Task.Delay(6000);
+            await Task.Delay(7000);
             DismissToast(toast.Id);
         });
 
