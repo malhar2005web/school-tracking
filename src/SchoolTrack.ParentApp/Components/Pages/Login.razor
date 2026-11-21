@@ -61,7 +61,7 @@
             <span>Driver</span>
         </button>
         <button type="button"
-                style="flex:1; border:none; padding:0.6rem 0.5rem; border-radius:0.75rem; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s; @(_selectedRole == "Admin" ? "background:#181930; color:#ffffff; box-shadow:0 4px 10px rgba(24,25,48,0.35);" : "background:transparent; color:#484552;")"
+                style="flex:1; border:none; padding:0.6rem 0.5rem; border-radius:0.75rem; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s; @(_selectedRole == "Admin" ? "background:#4338ca; color:#ffffff; box-shadow:0 4px 12px rgba(67,56,202,0.35);" : "background:transparent; color:#484552;")"
                 @onclick='() => SetRole("Admin")'>
             <span class="material-symbols-outlined" style="font-size:17px;">admin_panel_settings</span>
             <span>Admin</span>
@@ -134,31 +134,59 @@
         }
         else
         {
-            <!-- Admin Form -->
+            <!-- Admin Form - Beautifully Optimised for Mobile Application Style Interface -->
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-                <div>
-                    <h2 style="font-size:17px; font-weight:800; color:#181930; margin:0;">District Admin Portal</h2>
-                    <p style="font-size:12px; color:#484552; margin:0;">Route builder, fleet radar & analytics</p>
+                <div style="display:flex; align-items:center; gap:0.625rem;">
+                    <div style="width:2.5rem; height:2.5rem; border-radius:0.75rem; background:#4338ca; color:#ffffff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(67,56,202,0.35); flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:22px;">admin_panel_settings</span>
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:0.35rem;">
+                            <h2 style="font-size:16px; font-weight:800; color:#181930; margin:0;">District Admin Portal</h2>
+                            <span class="clay-badge-mint" style="font-size:9px; font-weight:800; padding:1px 6px;">DISPATCH</span>
+                        </div>
+                        <p style="font-size:11px; color:#484552; margin:0;">Oakridge Academy District #4</p>
+                    </div>
                 </div>
-                <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#eeecff; color:#181930; display:flex; align-items:center; justify-content:center;">
-                    <span class="material-symbols-outlined" style="font-size:18px;">domain</span>
+                <div style="width:2rem; height:2rem; border-radius:50%; background:#eeecff; color:#4338ca; display:flex; align-items:center; justify-content:center;">
+                    <span class="material-symbols-outlined" style="font-size:16px;">verified_user</span>
                 </div>
             </div>
 
+            <!-- Email / Staff Account -->
             <div style="margin-bottom:0.875rem;">
-                <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.35rem; margin-left:0.25rem;">Staff Email Address</label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; margin-left:0.25rem;">
+                    <label style="font-size:11px; font-weight:700; color:#484552;">Staff Email / Admin ID</label>
+                    <button type="button" style="border:none; background:none; color:#4338ca; font-size:11px; font-weight:700; cursor:pointer;" @onclick='() => _adminEmail = "admin@oakridge.edu"'>Fill Demo</button>
+                </div>
                 <div class="clay-inset" style="display:flex; align-items:center; height:3rem; padding:0 0.75rem;">
-                    <span class="material-symbols-outlined" style="font-size:18px; color:#644bba; margin-right:0.5rem;">mail</span>
+                    <span class="material-symbols-outlined" style="font-size:18px; color:#4338ca; margin-right:0.5rem;">badge</span>
                     <input style="width:100%; background:transparent; border:none; outline:none; font-size:14px; font-weight:600; color:#181930;" type="email" @bind="_adminEmail" placeholder="admin@oakridge.edu" />
                 </div>
             </div>
 
+            <!-- Master Password with Eye Toggle -->
             <div style="margin-bottom:0.875rem;">
-                <label style="display:block; font-size:11px; font-weight:700; color:#484552; margin-bottom:0.35rem; margin-left:0.25rem;">Password</label>
-                <div class="clay-inset" style="display:flex; align-items:center; height:3rem; padding:0 0.75rem;">
-                    <span class="material-symbols-outlined" style="font-size:18px; color:#644bba; margin-right:0.5rem;">key</span>
-                    <input style="width:100%; background:transparent; border:none; outline:none; font-size:14px; font-weight:600; color:#181930;" type="password" @bind="_adminPassword" placeholder="••••••••" />
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; margin-left:0.25rem;">
+                    <label style="font-size:11px; font-weight:700; color:#484552;">Password / Master Key</label>
+                    <button type="button" style="border:none; background:none; color:#4338ca; font-size:11px; font-weight:700; cursor:pointer;" @onclick='() => _adminPassword = "Admin#2026!"'>Default</button>
                 </div>
+                <div class="clay-inset" style="display:flex; align-items:center; height:3rem; padding:0 0.75rem;">
+                    <span class="material-symbols-outlined" style="font-size:18px; color:#4338ca; margin-right:0.5rem;">key</span>
+                    <input style="width:100%; background:transparent; border:none; outline:none; font-size:14px; font-weight:600; color:#181930;" type="@(_showAdminPassword ? "text" : "password")" @bind="_adminPassword" placeholder="••••••••" />
+                    <button type="button" style="border:none; background:none; color:#797584; cursor:pointer; padding:0 4px; display:flex; align-items:center;" @onclick="() => _showAdminPassword = !_showAdminPassword">
+                        <span class="material-symbols-outlined" style="font-size:18px;">@(_showAdminPassword ? "visibility_off" : "visibility")</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Live Telemetry Status Strip -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem; padding:0.5rem 0.75rem; border-radius:0.75rem; background:#eeecff; font-size:11px; color:#484552;">
+                <span style="display:flex; align-items:center; gap:0.35rem;">
+                    <span style="width:7px; height:7px; border-radius:50%; background:#0c6b55; display:inline-block;"></span>
+                    <span>District Fleet Gateway</span>
+                </span>
+                <span style="font-weight:700; color:#4338ca;">24 Corridors Live</span>
             </div>
         }
 
@@ -174,7 +202,7 @@
         </div>
 
         <!-- Role Sign-In Button -->
-        <button class="clay-btn @GetRoleButtonClass()" style="width:100%; height:3.25rem; font-size:15px; margin-top:0.25rem;" @onclick="HandleRoleLogin">
+        <button class="clay-btn @GetRoleButtonClass()" style="width:100%; height:3.25rem; font-size:15px; margin-top:0.25rem; @(_selectedRole == "Admin" ? "background:#4338ca; box-shadow:0 6px 16px rgba(67,56,202,0.35);" : "")" @onclick="HandleRoleLogin">
             @if (_isLoading)
             {
                 <span class="material-symbols-outlined" style="animation:spin 1s infinite linear;">refresh</span>
@@ -227,7 +255,7 @@
             <!-- Demo Admin -->
             <button type="button" class="clay-card" style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.85rem; border-radius:1rem; border:none; cursor:pointer; text-align:left; background:#fbf8ff; width:100%; transition:transform 0.1s;" @onclick='() => DemoLoginAs("Admin")'>
                 <div style="display:flex; align-items:center; gap:0.6rem;">
-                    <div style="width:2rem; height:2rem; border-radius:50%; background:#eeecff; color:#181930; display:flex; align-items:center; justify-content:center;">
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#eeecff; color:#4338ca; display:flex; align-items:center; justify-content:center;">
                         <span class="material-symbols-outlined" style="font-size:16px;">admin_panel_settings</span>
                     </div>
                     <div>
@@ -246,6 +274,7 @@
     private bool _rememberMe = true;
     private bool _isLoading = false;
     private bool _cheering = false;
+    private bool _showAdminPassword = false;
     private string _speechMessage = "Select your role to begin!";
 
     // Parent inputs
@@ -276,7 +305,7 @@
         _selectedRole = role;
         if (role == "Parent") _speechMessage = "Welcome, Parent! 🌟";
         else if (role == "Driver") _speechMessage = "Driver Console ready! 🚌";
-        else if (role == "Admin") _speechMessage = "Admin Portal online! 🏫";
+        else if (role == "Admin") _speechMessage = "Admin Dispatch online! 🏫";
     }
 
     private void ToggleRememberMe()
@@ -306,7 +335,7 @@
     {
         "Parent" => "Enter Parent Guardian App",
         "Driver" => "Launch Driver Console",
-        "Admin" => "Access Admin Portal",
+        "Admin" => "Launch Admin Control Portal",
         _ => "Sign In"
     };
 

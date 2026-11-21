@@ -1,4 +1,4 @@
-﻿@page "/admin"
+@page "/admin"
 @page "/admin/dashboard"
 @layout Layout.AdminLayout
 @inject IApiClient ApiClient
@@ -6,327 +6,244 @@
 @inject LiveFleetTrackingService TrackingService
 @inject NavigationManager Navigation
 
-<PageTitle>Dashboard â€” Oakridge Fleet Live Radar</PageTitle>
-
-<div style="display: flex; flex-direction: column; gap: 1.5rem;">
-    <!-- Top Telemetry & Control Bar -->
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-            <div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                    <span class="clay-badge clay-badge-secondary" style="font-size: 0.6875rem; text-transform: uppercase;">
-                        Live Radar Stream v2.4
-                    </span>
-                    <span style="display: inline-flex; align-items: center; gap: 0.375rem; color: var(--color-secondary); font-size: 0.75rem; font-weight: 700;">
-                        <span style="width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--color-secondary); display: inline-block;" class="pulse-dot"></span>
-                        Sub-second Telemetry Active
-                    </span>
-                </div>
-                <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-on-surface); margin: 0; letter-spacing: -0.02em;">Oakridge Fleet Live Radar</h1>
-                <p style="font-size: 0.875rem; color: var(--color-on-surface-variant); margin: 0.25rem 0 0 0;">Morning Route Phase 2 â€¢ Active geofencing monitoring 24 school transit corridors</p>
+<div style="display:flex; flex-direction:column; gap:1rem; width:100%; user-select:none;">
+    
+    <!-- Top Mobile Ambience & Title Strip -->
+    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.65rem; border-radius:9999px; background:#eeecff; font-size:11px; font-weight:700; color:#4338ca;">
+                <span style="width:7px; height:7px; border-radius:50%; background:#0c6b55; display:inline-block; animation:pulse 2s infinite;"></span>
+                <span>SUB-SECOND TELEMETRY</span>
             </div>
+            <span class="clay-badge-mint" style="font-size:10px;">Phase 2 Active</span>
+        </div>
+        
+        <div>
+            <h1 style="font-size:20px; font-weight:800; color:#181930; margin:0; line-height:1.2;">Oakridge Fleet Radar</h1>
+            <p style="font-size:12px; color:#484552; margin:2px 0 0 0;">24 district transit corridors synchronized</p>
+        </div>
 
-            <!-- Quick Action Pucks -->
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <button class="clay-btn clay-btn-surface" type="button" @onclick='() => Navigation.NavigateTo("/admin/fleet-radar")'>
-                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 1.125rem;">map</span>
-                    <span>Interactive Radar Map</span>
-                </button>
-                <button class="clay-btn clay-btn-surface" type="button" @onclick="RefreshData">
-                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 1.125rem;">refresh</span>
-                    <span>Force Gateway Sync</span>
-                </button>
-                <button class="clay-btn clay-btn-primary" type="button" @onclick="() => _showBroadcastModal = true">
-                    <span class="material-symbols-outlined" style="font-size: 1.125rem;">campaign</span>
-                    <span>District Broadcaster</span>
-                </button>
-            </div>
+        <!-- Quick Action Mobile Pills -->
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem; margin-top:0.25rem;">
+            <button class="clay-btn clay-btn-surface" style="padding:0.5rem 0.25rem; font-size:11px; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:3px;" type="button" @onclick='() => Navigation.NavigateTo("/admin/fleet-radar")'>
+                <span class="material-symbols-outlined" style="color:#4338ca; font-size:18px;">map</span>
+                <span>Map Radar</span>
+            </button>
+            <button class="clay-btn clay-btn-surface" style="padding:0.5rem 0.25rem; font-size:11px; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:3px;" type="button" @onclick="RefreshData">
+                <span class="material-symbols-outlined" style="color:#0c6b55; font-size:18px;">sync</span>
+                <span>Sync Mesh</span>
+            </button>
+            <button class="clay-btn clay-btn-primary" style="padding:0.5rem 0.25rem; font-size:11px; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:3px; background:#4338ca;" type="button" @onclick="() => _showBroadcastModal = true">
+                <span class="material-symbols-outlined" style="font-size:18px;">campaign</span>
+                <span>Broadcast</span>
+            </button>
         </div>
     </div>
 
-    <!-- KPI Bento Clay Cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
+    <!-- 2x2 Bento Mobile KPI Cards -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.625rem;">
         <!-- Card 1: Active Fleet -->
-        <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); letter-spacing: 0.05em;">Active Fleet on Route</span>
-                    <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.5rem;">
-                        <span style="font-size: 2rem; font-weight: 800; color: var(--color-on-surface); line-height: 1;">@_summary.ActiveFleetCount</span>
-                        <span style="font-size: 1rem; color: var(--color-on-surface-variant); font-weight: 600;">/ @_summary.TotalFleetCount</span>
-                    </div>
-                </div>
-                <div style="width: 2.75rem; height: 2.75rem; border-radius: 9999px; background: var(--color-primary-container); color: var(--color-on-primary); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 3px 2px rgba(255,255,255,0.6), 0 6px 14px -2px rgba(155,131,246,0.4);">
-                    <span class="material-symbols-outlined" style="font-size: 1.5rem;">directions_bus</span>
-                </div>
+        <div class="clay-card" style="padding:0.875rem; background:#ffffff; border-radius:1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Active Fleet</span>
+                <span class="material-symbols-outlined" style="font-size:18px; color:#4338ca;">directions_bus</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                <span class="clay-badge clay-badge-secondary">
-                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">check_circle</span>
-                    <span>90% On-Time</span>
-                </span>
-                <span style="font-size: 0.75rem; color: var(--color-on-surface-variant); font-weight: 600;">2 Maint. Idle</span>
+            <div style="display:flex; align-items:baseline; gap:0.25rem; margin:0.35rem 0 0.5rem 0;">
+                <span style="font-size:22px; font-weight:900; color:#181930; line-height:1;">@_summary.ActiveFleetCount</span>
+                <span style="font-size:11px; color:#797584; font-weight:700;">/ @_summary.TotalFleetCount</span>
             </div>
-            <div class="clay-progress-track" style="margin-top: 0.75rem;">
-                <div class="clay-progress-fill-primary" style="width: 90%;"></div>
+            <div class="clay-progress-track" style="height:4px; margin-bottom:0.35rem;">
+                <div class="clay-progress-fill-primary" style="width:90%;"></div>
             </div>
+            <div style="font-size:10px; font-weight:700; color:#0c6b55;">90% On-Time</div>
         </div>
 
         <!-- Card 2: Students Boarded -->
-        <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); letter-spacing: 0.05em;">Students Boarded</span>
-                    <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.5rem;">
-                        <span style="font-size: 2rem; font-weight: 800; color: var(--color-on-surface); line-height: 1;">@_summary.StudentsBoardedCount</span>
-                        <span style="font-size: 1rem; color: var(--color-on-surface-variant); font-weight: 600;">/ @_summary.TotalStudentsCount</span>
-                    </div>
-                </div>
-                <div style="width: 2.75rem; height: 2.75rem; border-radius: 9999px; background: var(--color-secondary-fixed); color: var(--color-on-secondary-container); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 3px 2px rgba(255,255,255,0.6), 0 6px 14px -2px rgba(161,243,215,0.6);">
-                    <span class="material-symbols-outlined" style="font-size: 1.5rem;">contactless</span>
-                </div>
+        <div class="clay-card" style="padding:0.875rem; background:#ffffff; border-radius:1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Boarded</span>
+                <span class="material-symbols-outlined" style="font-size:18px; color:#0c6b55;">how_to_reg</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                <span class="clay-badge clay-badge-secondary">
-                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">sync</span>
-                    <span>94.1% RFID Synced</span>
-                </span>
-                <span style="font-size: 0.75rem; color: var(--color-on-surface-variant); font-weight: 600;">26 In-Transit</span>
+            <div style="display:flex; align-items:baseline; gap:0.25rem; margin:0.35rem 0 0.5rem 0;">
+                <span style="font-size:22px; font-weight:900; color:#181930; line-height:1;">@_summary.StudentsBoardedCount</span>
+                <span style="font-size:11px; color:#797584; font-weight:700;">/ @_summary.TotalStudentsCount</span>
             </div>
-            <div class="clay-progress-track" style="margin-top: 0.75rem;">
-                <div class="clay-progress-fill-secondary" style="width: 94%;"></div>
+            <div class="clay-progress-track" style="height:4px; margin-bottom:0.35rem;">
+                <div class="clay-progress-fill-secondary" style="width:94%;"></div>
             </div>
+            <div style="font-size:10px; font-weight:700; color:#0c6b55;">94.1% RFID Synced</div>
         </div>
 
-        <!-- Card 3: Gateway Mesh Signal -->
-        <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); letter-spacing: 0.05em;">Gateway Mesh Signal</span>
-                    <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.5rem;">
-                        <span style="font-size: 2rem; font-weight: 800; color: var(--color-on-surface); line-height: 1;">@_summary.GatewaysOnlineCount</span>
-                        <span style="font-size: 1rem; color: var(--color-on-surface-variant); font-weight: 600;">/ @_summary.TotalGatewaysCount</span>
-                    </div>
-                </div>
-                <div style="width: 2.75rem; height: 2.75rem; border-radius: 9999px; background: var(--color-tertiary-fixed); color: var(--color-on-tertiary-fixed); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 3px 2px rgba(255,255,255,0.6), 0 6px 14px -2px rgba(255,223,147,0.6);">
-                    <span class="material-symbols-outlined" style="font-size: 1.5rem;">router</span>
-                </div>
+        <!-- Card 3: Gateways Online -->
+        <div class="clay-card" style="padding:0.875rem; background:#ffffff; border-radius:1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Gateways</span>
+                <span class="material-symbols-outlined" style="font-size:18px; color:#765b00;">router</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                <span class="clay-badge clay-badge-neutral">
-                    <span style="width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--color-secondary); display: inline-block;"></span>
-                    <span>100% Strong RSSI</span>
-                </span>
-                <span style="font-size: 0.75rem; color: var(--color-on-surface-variant); font-weight: 600;">0 Latency Drops</span>
+            <div style="display:flex; align-items:baseline; gap:0.25rem; margin:0.35rem 0 0.5rem 0;">
+                <span style="font-size:22px; font-weight:900; color:#181930; line-height:1;">@_summary.GatewaysOnlineCount</span>
+                <span style="font-size:11px; color:#797584; font-weight:700;">/ @_summary.TotalGatewaysCount</span>
             </div>
-            <div class="clay-progress-track" style="margin-top: 0.75rem;">
-                <div class="clay-progress-fill-tertiary" style="width: 100%;"></div>
+            <div class="clay-progress-track" style="height:4px; margin-bottom:0.35rem;">
+                <div class="clay-progress-fill-tertiary" style="width:100%;"></div>
             </div>
+            <div style="font-size:10px; font-weight:700; color:#0c6b55;">100% Strong RSSI</div>
         </div>
 
-        <!-- Card 4: Active Road Alerts -->
-        <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); letter-spacing: 0.05em;">Active Road Alerts</span>
-                    <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.5rem;">
-                        <span style="font-size: 2rem; font-weight: 800; color: var(--color-tertiary); line-height: 1;">@_summary.ActiveAlertsCount</span>
-                        <span style="font-size: 1rem; color: var(--color-on-surface-variant); font-weight: 600;">Congestion</span>
-                    </div>
-                </div>
-                <div style="width: 2.75rem; height: 2.75rem; border-radius: 9999px; background: var(--color-error-container); color: var(--color-on-error-container); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 3px 2px rgba(255,255,255,0.6), 0 6px 14px -2px rgba(255,218,214,0.6);">
-                    <span class="material-symbols-outlined" style="font-size: 1.5rem;">warning</span>
-                </div>
+        <!-- Card 4: Active Alerts -->
+        <div class="clay-card" style="padding:0.875rem; background:#ffffff; border-radius:1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:#797584; letter-spacing:0.04em;">Road Alerts</span>
+                <span class="material-symbols-outlined" style="font-size:18px; color:#ba1a1a;">warning</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                <span class="clay-badge clay-badge-error">
-                    <span>Route #08 Maple Ave</span>
-                </span>
-                <span class="clay-badge clay-badge-secondary">0 SOS</span>
+            <div style="display:flex; align-items:baseline; gap:0.25rem; margin:0.35rem 0 0.5rem 0;">
+                <span style="font-size:22px; font-weight:900; color:#ba1a1a; line-height:1;">@_summary.ActiveAlertsCount</span>
+                <span style="font-size:11px; color:#797584; font-weight:700;">Minor delay</span>
             </div>
-            <div class="clay-progress-track" style="margin-top: 0.75rem;">
-                <div class="clay-progress-fill-tertiary" style="width: 35%;"></div>
+            <div class="clay-progress-track" style="height:4px; margin-bottom:0.35rem;">
+                <div style="height:100%; width:30%; background:#ba1a1a; border-radius:9999px;"></div>
             </div>
+            <div style="font-size:10px; font-weight:700; color:#ba1a1a;">Route #08 Maple Ave</div>
         </div>
     </div>
 
-    <!-- Main Grid: Active Fleet Table & Live RFID Tap Stream -->
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: flex-start;">
-        <!-- Left: Active Fleet Monitoring Table -->
-        <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 1.5rem;">directions_bus</span>
-                    <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--color-on-surface); margin: 0;">Active Fleet Telemetry</h2>
-                </div>
-                <button class="clay-btn clay-btn-surface clay-btn-sm" type="button" @onclick='() => Navigation.NavigateTo("/admin/fleet-radar")'>
-                    <span>View Map Radar</span>
-                    <span class="material-symbols-outlined" style="font-size: 1rem;">arrow_forward</span>
-                </button>
+    <!-- Active Fleet Telemetry Mobile Cards -->
+    <div class="clay-card" style="padding:1rem; background:#ffffff; border-radius:1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+                <span class="material-symbols-outlined" style="color:#4338ca; font-size:18px;">directions_bus</span>
+                <h2 style="font-size:15px; font-weight:800; color:#181930; margin:0;">Active Fleet Telemetry</h2>
             </div>
-
-            <div class="clay-table-container">
-                <table class="clay-table">
-                    <thead>
-                        <tr>
-                            <th>Bus / Route</th>
-                            <th>Driver</th>
-                            <th>Speed / GPS</th>
-                            <th>Status</th>
-                            <th>Cabin Manifest</th>
-                            <th>Next Stop ETA</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var bus in _summary.ActiveBuses)
-                        {
-                            <tr>
-                                <td>
-                                    <div style="display: flex; flex-direction: column;">
-                                        <span style="font-weight: 700; color: var(--color-on-surface);">@bus.BusNumber</span>
-                                        <span style="font-size: 0.75rem; color: var(--color-on-surface-variant);">@bus.RouteName</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span style="font-weight: 600;">@bus.DriverName</span>
-                                </td>
-                                <td>
-                                    <div style="display: flex; align-items: center; gap: 0.375rem;">
-                                        <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--color-primary);">speed</span>
-                                        <span style="font-weight: 700;">@Math.Round(bus.SpeedMph) mph</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    @if (bus.Status == "OnSchedule")
-                                    {
-                                        <span class="clay-badge clay-badge-secondary">On-Time</span>
-                                    }
-                                    else if (bus.Status == "Delayed")
-                                    {
-                                        <span class="clay-badge clay-badge-error">+7m Delay</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="clay-badge clay-badge-primary">@bus.Status</span>
-                                    }
-                                </td>
-                                <td>
-                                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                        <span style="font-size: 0.75rem; font-weight: 700;">@bus.PassengerCount / @bus.Capacity</span>
-                                        <div class="clay-progress-track" style="height: 0.375rem;">
-                                            <div class="clay-progress-fill-secondary" style="width: @((bus.PassengerCount * 100) / bus.Capacity)%;"></div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style="display: flex; flex-direction: column;">
-                                        <span style="font-weight: 700; color: var(--color-tertiary);">@bus.NextStopEtaMinutes mins</span>
-                                        <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">@bus.NextStopName</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+            <button class="clay-btn clay-btn-surface" style="padding:0.25rem 0.5rem; font-size:10px; font-weight:800;" type="button" @onclick='() => Navigation.NavigateTo("/admin/fleet-radar")'>
+                Radar Map →
+            </button>
         </div>
 
-        <!-- Right: Live RFID Tap Stream & Dispatch Controller -->
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <!-- Live RFID Tap Stream -->
-            <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="width: 0.625rem; height: 0.625rem; border-radius: 9999px; background: var(--color-secondary); display: inline-block;" class="pulse-dot"></span>
-                        <h2 style="font-size: 1.125rem; font-weight: 800; color: var(--color-on-surface); margin: 0;">RFID Live Stream</h2>
-                    </div>
-                    <span class="clay-badge clay-badge-neutral" style="font-size: 0.6875rem;">Instant Scan Log</span>
-                </div>
-                <p style="font-size: 0.75rem; color: var(--color-on-surface-variant); margin-bottom: 1rem;">Real-time gateway verifications synced from on-bus near-field sensors.</p>
-
-                <!-- Tap List -->
-                <div style="display: flex; flex-direction: column; gap: 0.625rem; max-height: 380px; overflow-y: auto;">
-                    @foreach (var tap in _summary.RecentTaps)
-                    {
-                        <div class="clay-inset" style="padding: 0.75rem 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
-                            <div style="width: 2.25rem; height: 2.25rem; border-radius: 9999px; background: var(--color-secondary-container); color: var(--color-on-secondary-container); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                <span class="material-symbols-outlined" style="font-size: 1.125rem;">how_to_reg</span>
+        <div style="display:flex; flex-direction:column; gap:0.625rem;">
+            @foreach (var bus in _summary.ActiveBuses)
+            {
+                <div class="clay-card" style="padding:0.75rem; border-radius:1rem; background:#fbf8ff; border:1px solid rgba(24,25,48,0.06);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.35rem;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:0.35rem;">
+                                <span style="font-size:14px; font-weight:800; color:#181930;">@bus.BusNumber</span>
+                                @if (bus.Status == "OnSchedule")
+                                {
+                                    <span class="clay-badge-mint" style="font-size:9px; padding:1px 5px;">ON-TIME</span>
+                                }
+                                else if (bus.Status == "Delayed")
+                                {
+                                    <span class="clay-badge-error" style="font-size:9px; padding:1px 5px;">DELAYED</span>
+                                }
+                                else
+                                {
+                                    <span class="clay-badge-secondary" style="font-size:9px; padding:1px 5px;">@bus.Status</span>
+                                }
                             </div>
-                            <div style="display: flex; flex-direction: column; min-width: 0; flex: 1;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-size: 0.8125rem; font-weight: 700; color: var(--color-on-surface);">@tap.StudentName</span>
-                                    <span style="font-size: 0.6875rem; color: var(--color-on-surface-variant);">@tap.Timestamp.ToString("hh:mm:ss tt")</span>
-                                </div>
-                                <span style="font-size: 0.75rem; color: var(--color-on-surface-variant);">Pass #@tap.CardSerialNumber â€¢ @tap.Grade</span>
-                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.375rem;">
-                                    <span class="clay-badge clay-badge-secondary" style="font-size: 0.625rem; padding: 0.125rem 0.5rem;">
-                                        @tap.EventType @tap.BusNumber
-                                    </span>
-                                    <span style="font-size: 0.6875rem; color: var(--color-secondary); font-weight: 700;">â€¢ Verified</span>
-                                </div>
+                            <span style="font-size:11px; color:#484552;">@bus.RouteName</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:13px; font-weight:800; color:#4338ca;">@Math.Round(bus.SpeedMph) mph</span>
+                            <div style="font-size:10px; color:#797584;">@bus.DriverName</div>
+                        </div>
+                    </div>
+
+                    <!-- Occupancy Bar & Next Stop -->
+                    <div style="margin-top:0.35rem; padding-top:0.35rem; border-top:1px solid rgba(24,25,48,0.06); display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:700; color:#484552; margin-bottom:2px;">
+                                <span>Occupancy</span>
+                                <span>@bus.PassengerCount / @bus.Capacity</span>
+                            </div>
+                            <div class="clay-progress-track" style="height:4px;">
+                                <div class="clay-progress-fill-secondary" style="width:@((bus.PassengerCount * 100) / bus.Capacity)%;"></div>
                             </div>
                         </div>
-                    }
+                        <div style="background:#eeecff; padding:2px 6px; border-radius:6px; font-size:10px; font-weight:700; color:#4338ca; white-space:nowrap;">
+                            ETA: @bus.NextStopEtaMinutes m • @bus.NextStopName
+                        </div>
+                    </div>
                 </div>
+            }
+        </div>
+    </div>
 
-                <button class="clay-btn clay-btn-surface" style="width: 100%; margin-top: 1rem;" type="button" @onclick='() => Navigation.NavigateTo("/admin/students")'>
-                    <span>Open Full Audit Ledger (412 Scans)</span>
-                </button>
+    <!-- RFID Live Stream Section -->
+    <div class="clay-card" style="padding:1rem; background:#ffffff; border-radius:1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+                <span style="width:7px; height:7px; border-radius:50%; background:#0c6b55; display:inline-block;" class="pulse-dot"></span>
+                <h2 style="font-size:15px; font-weight:800; color:#181930; margin:0;">RFID Smart Tap Feed</h2>
             </div>
+            <span class="clay-badge-secondary" style="font-size:9px;">Live Gateway</span>
+        </div>
 
-            <!-- Active Radio Dispatch Box -->
-            <div class="clay-card" style="padding: 1.5rem; background: #ffffff;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 1.375rem;">contact_phone</span>
-                        <h2 style="font-size: 1.125rem; font-weight: 800; color: var(--color-on-surface); margin: 0;">Active Dispatch</h2>
+        <div style="display:flex; flex-direction:column; gap:0.5rem; max-height:260px; overflow-y:auto;">
+            @foreach (var tap in _summary.RecentTaps.Take(6))
+            {
+                <div class="clay-inset" style="padding:0.625rem 0.75rem; display:flex; align-items:center; gap:0.625rem;">
+                    <div style="width:2rem; height:2rem; border-radius:50%; background:#e8f8f3; color:#0c6b55; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:16px;">contactless</span>
                     </div>
-                    <span style="width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--color-secondary); display: inline-block;"></span>
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:12px; font-weight:800; color:#181930; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@tap.StudentName</span>
+                            <span style="font-size:10px; color:#797584;">@tap.Timestamp.ToString("hh:mm tt")</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.35rem; margin-top:1px;">
+                            <span class="clay-badge-mint" style="font-size:9px; padding:1px 4px;">@tap.EventType</span>
+                            <span style="font-size:10px; color:#484552;">@tap.BusNumber • @tap.Grade</span>
+                        </div>
+                    </div>
                 </div>
+            }
+        </div>
 
-                <div class="clay-inset" style="padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                    <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-primary-container); color: var(--color-on-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem;">
-                        RJ
-                    </div>
-                    <div style="display: flex; flex-direction: column;">
-                        <span style="font-size: 0.8125rem; font-weight: 700; color: var(--color-on-surface);">Robert Jenkins â€¢ Bus #14</span>
-                        <span style="font-size: 0.6875rem; color: var(--color-secondary); font-weight: 600;">Radio Channel 4 (Active)</span>
-                    </div>
-                </div>
+        <button class="clay-btn clay-btn-surface" style="width:100%; height:2.5rem; font-size:12px; font-weight:700; margin-top:0.75rem;" type="button" @onclick='() => Navigation.NavigateTo("/admin/students")'>
+            View Full Student Roster (412 Registered) →
+        </button>
+    </div>
 
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <input class="clay-input" placeholder="Type radio text / voice alert..." @bind="_broadcastText" style="height: 2.75rem;" />
-                    <button class="clay-btn clay-btn-primary" type="button" @onclick="SendQuickRadioPush">
-                        <span class="material-symbols-outlined" style="font-size: 1.125rem;">send</span>
-                        <span>Send Radio Alert</span>
-                    </button>
-                </div>
+    <!-- Mobile District Radio Dispatch Strip -->
+    <div class="clay-card" style="padding:1rem; background:#ffffff; border-radius:1.25rem;">
+        <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.5rem;">
+            <span class="material-symbols-outlined" style="color:#4338ca; font-size:18px;">podcasts</span>
+            <h3 style="font-size:14px; font-weight:800; color:#181930; margin:0;">Quick Radio Dispatch</h3>
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+            <div class="clay-inset" style="flex:1; height:2.75rem; display:flex; align-items:center; padding:0 0.75rem;">
+                <input style="width:100%; background:transparent; border:none; outline:none; font-size:13px; color:#181930;" placeholder="Broadcast radio text to all buses..." @bind="_broadcastText" />
             </div>
+            <button class="clay-btn clay-btn-primary" style="height:2.75rem; padding:0 1rem; background:#4338ca;" type="button" @onclick="SendQuickRadioPush">
+                <span class="material-symbols-outlined" style="font-size:18px;">send</span>
+            </button>
         </div>
     </div>
 </div>
 
 @if (_showBroadcastModal)
 {
-    <!-- District Broadcaster Modal -->
-    <div style="position: fixed; inset: 0; background: rgba(24, 25, 48, 0.45); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center;">
-        <div class="clay-card" style="width: 100%; max-width: 36rem; padding: 2rem; background: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 1.75rem;">campaign</span>
-                    <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">District Transit Broadcaster</h3>
+    <!-- Mobile District Broadcaster Modal -->
+    <div style="position:fixed; inset:0; background:rgba(24,25,48,0.55); backdrop-filter:blur(6px); z-index:3000; display:flex; align-items:center; justify-content:center; padding:1.25rem;">
+        <div class="clay-card" style="width:100%; max-width:24rem; padding:1.25rem; background:#ffffff; border-radius:1.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span class="material-symbols-outlined" style="color:#4338ca; font-size:22px;">campaign</span>
+                    <h3 style="font-size:16px; font-weight:800; margin:0; color:#181930;">District Broadcaster</h3>
                 </div>
-                <button type="button" style="background: none; border: none; cursor: pointer;" @onclick="() => _showBroadcastModal = false">
+                <button type="button" style="background:none; border:none; cursor:pointer;" @onclick="() => _showBroadcastModal = false">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <p style="font-size: 0.875rem; color: var(--color-on-surface-variant); margin-bottom: 1rem;">
-                Push an instant broadcast notification to all drivers, parents, and administrative monitors.
+            <p style="font-size:12px; color:#484552; margin:0 0 0.75rem 0;">
+                Push priority broadcast notification to all drivers, parents, and security monitors.
             </p>
-            <textarea class="clay-input" style="height: 6rem; border-radius: 1rem; padding: 0.75rem 1rem; resize: none; margin-bottom: 1rem;" placeholder="Weather advisory or route delay notice..." @bind="_broadcastModalMessage"></textarea>
-            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                <button class="clay-btn clay-btn-surface" type="button" @onclick="() => _showBroadcastModal = false">Cancel</button>
-                <button class="clay-btn clay-btn-primary" type="button" @onclick="SendDistrictBroadcast">Broadcast Now</button>
+            <div class="clay-inset" style="padding:0.75rem; margin-bottom:1rem; border-radius:1rem;">
+                <textarea style="width:100%; height:4.5rem; background:transparent; border:none; outline:none; font-size:13px; resize:none; color:#181930;" placeholder="Weather advisory or traffic delay notification..." @bind="_broadcastModalMessage"></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
+                <button class="clay-btn clay-btn-surface" style="padding:0.5rem 1rem; font-size:12px;" type="button" @onclick="() => _showBroadcastModal = false">Cancel</button>
+                <button class="clay-btn clay-btn-primary" style="padding:0.5rem 1rem; font-size:12px; background:#4338ca;" type="button" @onclick="SendDistrictBroadcast">Send Broadcast</button>
             </div>
         </div>
     </div>
@@ -343,9 +260,13 @@
         await LoadDashboard();
 
         // Connect to SignalR real-time stream
-        await TrackingService.StartAsync();
-        TrackingService.OnBoardingNotificationReceived += HandleBoardingNotification;
-        TrackingService.OnBusLocationReceived += HandleBusLocation;
+        try
+        {
+            await TrackingService.StartAsync();
+            TrackingService.OnBoardingNotificationReceived += HandleBoardingNotification;
+            TrackingService.OnBusLocationReceived += HandleBusLocation;
+        }
+        catch { }
     }
 
     private async Task LoadDashboard()
@@ -410,4 +331,3 @@
         _broadcastModalMessage = string.Empty;
     }
 }
-

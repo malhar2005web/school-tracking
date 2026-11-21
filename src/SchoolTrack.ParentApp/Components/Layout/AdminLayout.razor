@@ -2,93 +2,177 @@
 @inject AdminAuthStateProvider AuthState
 @inject NavigationManager Navigation
 
-<div style="min-height:100vh; background:#fbf8ff; display:flex; flex-direction:column;">
-    <!-- Top Fixed Admin Header -->
-    <header class="clay-header" style="position:fixed; top:0; left:0; right:0; z-index:50; background:rgba(255,255,255,0.96); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 4px 16px rgba(24,25,48,0.06); padding:0.5rem 1rem; padding-top:env(safe-area-inset-top, 0px);">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
-            <!-- Brand & District Title -->
-            <div style="display:flex; align-items:center; gap:0.5rem; min-width:0; flex:1;" @onclick='() => Navigation.NavigateTo("/admin/dashboard")'>
-                <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#644bba; color:#ffffff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(100,75,186,0.35); flex-shrink:0;">
-                    <span class="material-symbols-outlined" style="font-size:20px;">admin_panel_settings</span>
+<div style="min-height:100vh; background:#fbf8ff; display:flex; flex-direction:column; position:relative; user-select:none;">
+    <!-- Top Mobile Header Bar -->
+    <header class="clay-header" style="position:fixed; top:0; left:0; right:0; z-index:50; background:rgba(251,248,255,0.96); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 2px 12px rgba(24,25,48,0.06); padding-top:env(safe-area-inset-top, 0px);">
+        <div style="height:3.75rem; padding:0 1rem; display:flex; align-items:center; justify-content:space-between; max-width:440px; margin:0 auto;">
+            <!-- Brand & Page Title -->
+            <div style="display:flex; align-items:center; gap:0.625rem; cursor:pointer;" @onclick='() => Navigation.NavigateTo("/admin/dashboard")'>
+                <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#4338ca; color:#ffffff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(67,56,202,0.35); flex-shrink:0;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">admin_panel_settings</span>
                 </div>
-                <div style="display:flex; flex-direction:column; min-width:0; overflow:hidden;">
+                <div style="display:flex; flex-direction:column; min-width:0;">
                     <div style="display:flex; align-items:center; gap:0.35rem;">
-                        <span style="font-weight:800; font-size:14px; color:#181930; letter-spacing:-0.02em; white-space:nowrap;">SchoolTrack</span>
+                        <span style="font-size:11px; font-weight:800; color:#4338ca; text-transform:uppercase; letter-spacing:0.05em; line-height:1;">SchoolTrack</span>
                         <span class="clay-badge-mint" style="font-size:9px; font-weight:800; padding:1px 5px;">ADMIN</span>
                     </div>
-                    <span style="font-size:10px; color:#484552; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                        @AuthState.CurrentSession.SchoolName
-                    </span>
+                    <h1 style="font-size:15px; font-weight:800; color:#181930; margin:0; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        @PageTitle
+                    </h1>
                 </div>
             </div>
 
-            <!-- Actions: SOS & Logout -->
+            <!-- Right Actions: Emergency SOS & Logout / Switch Role -->
             <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
                 <button class="clay-btn-danger" style="padding:0.35rem 0.65rem; border-radius:2rem; font-size:10px; font-weight:800; display:flex; align-items:center; gap:0.25rem; border:none; cursor:pointer;" @onclick="TriggerEmergencyModal">
                     <span class="material-symbols-outlined" style="font-size:14px;">emergency</span>
                     <span>SOS</span>
                 </button>
 
-                <!-- Logout / Switch Role Button -->
                 <button title="Log Out / Switch Role" style="width:2.25rem; height:2.25rem; border-radius:50%; background:#fee2e2; border:none; display:flex; align-items:center; justify-content:center; color:#ba1a1a; cursor:pointer; box-shadow:0 2px 6px rgba(186,26,26,0.15);" @onclick="Logout">
                     <span class="material-symbols-outlined" style="font-size:18px;">logout</span>
                 </button>
             </div>
         </div>
-
-        <!-- Horizontal Scrollable Admin Tabs -->
-        <div style="display:flex; gap:0.35rem; overflow-x:auto; padding-top:0.5rem; padding-bottom:0.25rem; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
-            <a href="/admin/dashboard" style="text-decoration:none; white-space:nowrap; padding:0.35rem 0.75rem; border-radius:2rem; font-size:11px; font-weight:800; display:flex; align-items:center; gap:0.3rem; transition:all 0.2s; @(IsActive("/admin/dashboard") ? "background:#644bba; color:#ffffff; box-shadow:0 2px 6px rgba(100,75,186,0.3);" : "background:#eeecff; color:#484552;")">
-                <span class="material-symbols-outlined" style="font-size:14px;">dashboard</span>
-                <span>Dashboard</span>
-            </a>
-            <a href="/admin/fleet-radar" style="text-decoration:none; white-space:nowrap; padding:0.35rem 0.75rem; border-radius:2rem; font-size:11px; font-weight:800; display:flex; align-items:center; gap:0.3rem; transition:all 0.2s; @(IsActive("/admin/fleet-radar") ? "background:#644bba; color:#ffffff; box-shadow:0 2px 6px rgba(100,75,186,0.3);" : "background:#eeecff; color:#484552;")">
-                <span class="material-symbols-outlined" style="font-size:14px;">radar</span>
-                <span>Fleet Radar</span>
-            </a>
-            <a href="/admin/routes" style="text-decoration:none; white-space:nowrap; padding:0.35rem 0.75rem; border-radius:2rem; font-size:11px; font-weight:800; display:flex; align-items:center; gap:0.3rem; transition:all 0.2s; @(IsActive("/admin/routes") ? "background:#644bba; color:#ffffff; box-shadow:0 2px 6px rgba(100,75,186,0.3);" : "background:#eeecff; color:#484552;")">
-                <span class="material-symbols-outlined" style="font-size:14px;">alt_route</span>
-                <span>Routes</span>
-            </a>
-            <a href="/admin/students" style="text-decoration:none; white-space:nowrap; padding:0.35rem 0.75rem; border-radius:2rem; font-size:11px; font-weight:800; display:flex; align-items:center; gap:0.3rem; transition:all 0.2s; @(IsActive("/admin/students") ? "background:#644bba; color:#ffffff; box-shadow:0 2px 6px rgba(100,75,186,0.3);" : "background:#eeecff; color:#484552;")">
-                <span class="material-symbols-outlined" style="font-size:14px;">group</span>
-                <span>Students</span>
-            </a>
-            <a href="/admin/trips" style="text-decoration:none; white-space:nowrap; padding:0.35rem 0.75rem; border-radius:2rem; font-size:11px; font-weight:800; display:flex; align-items:center; gap:0.3rem; transition:all 0.2s; @(IsActive("/admin/trips") ? "background:#644bba; color:#ffffff; box-shadow:0 2px 6px rgba(100,75,186,0.3);" : "background:#eeecff; color:#484552;")">
-                <span class="material-symbols-outlined" style="font-size:14px;">commute</span>
-                <span>Trips</span>
-            </a>
-            <a href="/admin/reports" style="text-decoration:none; white-space:nowrap; padding:0.35rem 0.75rem; border-radius:2rem; font-size:11px; font-weight:800; display:flex; align-items:center; gap:0.3rem; transition:all 0.2s; @(IsActive("/admin/reports") ? "background:#644bba; color:#ffffff; box-shadow:0 2px 6px rgba(100,75,186,0.3);" : "background:#eeecff; color:#484552;")">
-                <span class="material-symbols-outlined" style="font-size:14px;">analytics</span>
-                <span>Reports</span>
-            </a>
-            <a href="/admin/settings" style="text-decoration:none; white-space:nowrap; padding:0.35rem 0.75rem; border-radius:2rem; font-size:11px; font-weight:800; display:flex; align-items:center; gap:0.3rem; transition:all 0.2s; @(IsActive("/admin/settings") ? "background:#644bba; color:#ffffff; box-shadow:0 2px 6px rgba(100,75,186,0.3);" : "background:#eeecff; color:#484552;")">
-                <span class="material-symbols-outlined" style="font-size:14px;">settings</span>
-                <span>Settings</span>
-            </a>
-        </div>
     </header>
 
-    <!-- Main Admin Body -->
-    <main style="flex:1; width:100%; min-height:100vh; padding-top:calc(6.25rem + env(safe-area-inset-top, 0px)); padding-bottom:2rem; padding-left:1rem; padding-right:1rem; background:#fbf8ff; max-width:1200px; margin:0 auto; box-sizing:border-box;">
+    <!-- Main Mobile Body Container -->
+    <main style="flex:1; width:100%; min-height:100vh; padding-top:calc(4.5rem + env(safe-area-inset-top, 0px)); padding-bottom:6.5rem; padding-left:1rem; padding-right:1rem; max-width:440px; margin:0 auto; box-sizing:border-box;">
         @Body
     </main>
 
-    <!-- SOS Modal -->
+    <!-- Mobile Clay Floating Bottom Navigation Bar -->
+    <div style="position:fixed; bottom:0; left:0; right:0; z-index:50; padding:0 1rem; padding-bottom:env(safe-area-inset-bottom, 12px); pointer-events:none; margin-bottom:0.75rem;">
+        <nav class="clay-nav" style="pointer-events:auto; margin:0 auto; max-width:28rem; background:rgba(255,255,255,0.96); backdrop-filter:blur(16px); border-radius:3rem; padding:0.375rem; display:flex; align-items:center; justify-content:space-around; box-shadow:0 12px 32px rgba(24,25,48,0.12);">
+            
+            <!-- 1. Dashboard -->
+            <a style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.5rem 0.85rem; border-radius:2rem; font-size:11px; font-weight:700; text-decoration:none; min-width:58px; transition:all 0.2s; @(IsActive("/admin/dashboard") ? "background:#4338ca; color:#ffffff; box-shadow:0 4px 10px rgba(67,56,202,0.35);" : "color:#484552;")" href="/admin/dashboard">
+                <span class="material-symbols-outlined" style="font-size:22px;">dashboard</span>
+                <span>Overview</span>
+            </a>
+
+            <!-- 2. Fleet Radar -->
+            <a style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.5rem 0.85rem; border-radius:2rem; font-size:11px; font-weight:700; text-decoration:none; min-width:58px; transition:all 0.2s; @(IsActive("/admin/fleet-radar") ? "background:#4338ca; color:#ffffff; box-shadow:0 4px 10px rgba(67,56,202,0.35);" : "color:#484552;")" href="/admin/fleet-radar">
+                <span class="material-symbols-outlined" style="font-size:22px;">radar</span>
+                <span>Radar</span>
+            </a>
+
+            <!-- 3. Routes -->
+            <a style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.5rem 0.85rem; border-radius:2rem; font-size:11px; font-weight:700; text-decoration:none; min-width:58px; transition:all 0.2s; @(IsActive("/admin/routes") ? "background:#4338ca; color:#ffffff; box-shadow:0 4px 10px rgba(67,56,202,0.35);" : "color:#484552;")" href="/admin/routes">
+                <span class="material-symbols-outlined" style="font-size:22px;">alt_route</span>
+                <span>Routes</span>
+            </a>
+
+            <!-- 4. Students -->
+            <a style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.5rem 0.85rem; border-radius:2rem; font-size:11px; font-weight:700; text-decoration:none; min-width:58px; transition:all 0.2s; @(IsActive("/admin/students") ? "background:#4338ca; color:#ffffff; box-shadow:0 4px 10px rgba(67,56,202,0.35);" : "color:#484552;")" href="/admin/students">
+                <span class="material-symbols-outlined" style="font-size:22px;">group</span>
+                <span>Students</span>
+            </a>
+
+            <!-- 5. More Sheet Trigger -->
+            <button type="button"
+                    style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0.5rem 0.85rem; border-radius:2rem; font-size:11px; font-weight:700; border:none; background:transparent; cursor:pointer; min-width:58px; transition:all 0.2s; @(_showMoreSheet ? "background:#eeecff; color:#4338ca;" : "color:#484552;")"
+                    @onclick="() => _showMoreSheet = !_showMoreSheet">
+                <span class="material-symbols-outlined" style="font-size:22px;">more_horiz</span>
+                <span>More</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Slide-Up "More Admin Modules" Bottom Sheet -->
+    @if (_showMoreSheet)
+    {
+        <div style="position:fixed; inset:0; background:rgba(24,25,48,0.45); backdrop-filter:blur(4px); z-index:200; display:flex; align-items:flex-end; justify-content:center;" @onclick="() => _showMoreSheet = false">
+            <div class="clay-card" style="width:100%; max-width:440px; background:#ffffff; border-radius:1.75rem 1.75rem 0 0; padding:1.25rem 1.25rem 2.5rem 1.25rem; box-shadow:0 -10px 30px rgba(0,0,0,0.15);" @onclick:stopPropagation="true">
+                
+                <div style="width:2.5rem; height:4px; border-radius:2px; background:#cac4d4; margin:0 auto 1rem auto;"></div>
+                
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                    <div>
+                        <h3 style="font-size:16px; font-weight:800; color:#181930; margin:0;">District Admin Hub</h3>
+                        <p style="font-size:11px; color:#484552; margin:0;">Additional operations & compliance modules</p>
+                    </div>
+                    <button style="border:none; background:none; color:#797584; cursor:pointer;" @onclick="() => _showMoreSheet = false">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:0.625rem;">
+                    <!-- Trips Operations -->
+                    <button type="button" class="clay-card" style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-radius:1rem; border:none; cursor:pointer; background:#fbf8ff; width:100%; text-align:left;" @onclick='() => NavigateAndClose("/admin/trips")'>
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#eeecff; color:#4338ca; display:flex; align-items:center; justify-content:center;">
+                                <span class="material-symbols-outlined" style="font-size:18px;">commute</span>
+                            </div>
+                            <div>
+                                <div style="font-size:13px; font-weight:700; color:#181930;">Daily Trip Operations</div>
+                                <div style="font-size:11px; color:#484552;">Morning / afternoon transit dispatch</div>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined" style="color:#797584; font-size:18px;">arrow_forward</span>
+                    </button>
+
+                    <!-- Reports & Compliance -->
+                    <button type="button" class="clay-card" style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-radius:1rem; border:none; cursor:pointer; background:#fbf8ff; width:100%; text-align:left;" @onclick='() => NavigateAndClose("/admin/reports")'>
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#a1f3d7; color:#0c6b55; display:flex; align-items:center; justify-content:center;">
+                                <span class="material-symbols-outlined" style="font-size:18px;">analytics</span>
+                            </div>
+                            <div>
+                                <div style="font-size:13px; font-weight:700; color:#181930;">Safety & Compliance Reports</div>
+                                <div style="font-size:11px; color:#484552;">DOT compliance, on-time & RFID logs</div>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined" style="color:#797584; font-size:18px;">arrow_forward</span>
+                    </button>
+
+                    <!-- School Settings -->
+                    <button type="button" class="clay-card" style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-radius:1rem; border:none; cursor:pointer; background:#fbf8ff; width:100%; text-align:left;" @onclick='() => NavigateAndClose("/admin/settings")'>
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#ffd66b; color:#765b00; display:flex; align-items:center; justify-content:center;">
+                                <span class="material-symbols-outlined" style="font-size:18px;">settings</span>
+                            </div>
+                            <div>
+                                <div style="font-size:13px; font-weight:700; color:#181930;">District & System Settings</div>
+                                <div style="font-size:11px; color:#484552;">Speed thresholds & geofences</div>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined" style="color:#797584; font-size:18px;">arrow_forward</span>
+                    </button>
+
+                    <!-- SOS Emergency Option -->
+                    <button type="button" class="clay-card" style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-radius:1rem; border:none; cursor:pointer; background:#fff1f0; width:100%; text-align:left;" @onclick='() => { _showMoreSheet = false; TriggerEmergencyModal(); }'>
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div style="width:2.25rem; height:2.25rem; border-radius:50%; background:#ffdad6; color:#ba1a1a; display:flex; align-items:center; justify-content:center;">
+                                <span class="material-symbols-outlined" style="font-size:18px;">warning</span>
+                            </div>
+                            <div>
+                                <div style="font-size:13px; font-weight:700; color:#ba1a1a;">District Emergency Dispatch</div>
+                                <div style="font-size:11px; color:#93000a;">Instant safety broadcast to all buses</div>
+                            </div>
+                        </div>
+                        <span class="clay-badge clay-badge-error" style="font-size:10px;">SOS</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- SOS Confirmation Modal -->
     @if (_showEmergencyDialog)
     {
-        <div style="position:fixed; inset:0; background:rgba(24,25,48,0.55); backdrop-filter:blur(6px); z-index:3000; display:flex; align-items:center; justify-content:center; padding:1.25rem;">
-            <div class="clay-card" style="width:100%; max-width:28rem; padding:1.5rem; background:#ffffff; border-radius:1.5rem; border:2px solid #ba1a1a;">
-                <div style="display:flex; align-items:center; gap:0.75rem; color:#ba1a1a; margin-bottom:0.75rem;">
-                    <span class="material-symbols-outlined" style="font-size:2rem;">warning</span>
-                    <h3 style="font-size:1.25rem; font-weight:800; margin:0;">District Emergency Broadcast</h3>
+        <div style="position:fixed; inset:0; background:rgba(24,25,48,0.65); backdrop-filter:blur(6px); z-index:3000; display:flex; align-items:center; justify-content:center; padding:1.25rem;">
+            <div class="clay-card" style="width:100%; max-width:28rem; padding:1.5rem; background:#ffffff; border-radius:1.5rem; border:2px solid #ba1a1a; text-align:center;">
+                <div style="width:3.5rem; height:3.5rem; border-radius:50%; background:#ffdad6; color:#ba1a1a; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem auto;">
+                    <span class="material-symbols-outlined" style="font-size:28px;">warning</span>
                 </div>
-                <p style="color:#484552; font-size:0.875rem; line-height:1.4; margin-bottom:1.25rem;">
-                    Initiating an Emergency SOS will immediately dispatch safety alerts to all on-route drivers, trigger dispatch channels, and flag affected routes.
+                <h3 style="font-size:18px; font-weight:800; color:#ba1a1a; margin:0 0 0.5rem 0;">District Emergency Broadcast</h3>
+                <p style="color:#484552; font-size:12px; line-height:1.4; margin-bottom:1.25rem;">
+                    Initiating an Emergency SOS will immediately dispatch safety alerts to all active drivers, notify central dispatch, and flag active routes.
                 </p>
-                <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
-                    <button class="clay-btn clay-btn-surface" type="button" @onclick="() => _showEmergencyDialog = false">Dismiss</button>
-                    <button class="clay-btn clay-btn-danger" type="button" @onclick="() => _showEmergencyDialog = false">Confirm & Dispatch SOS</button>
+                <div style="display:flex; gap:0.75rem;">
+                    <button class="clay-btn clay-btn-surface" style="flex:1;" type="button" @onclick="() => _showEmergencyDialog = false">Dismiss</button>
+                    <button class="clay-btn clay-btn-danger" style="flex:1;" type="button" @onclick="() => _showEmergencyDialog = false">Confirm SOS</button>
                 </div>
             </div>
         </div>
@@ -97,6 +181,22 @@
 
 @code {
     private bool _showEmergencyDialog = false;
+    private bool _showMoreSheet = false;
+
+    private string PageTitle
+    {
+        get
+        {
+            var uri = Navigation.Uri.ToLowerInvariant();
+            if (uri.Contains("/fleet-radar")) return "District Radar";
+            if (uri.Contains("/routes")) return "Route Manager";
+            if (uri.Contains("/students")) return "Student Roster";
+            if (uri.Contains("/trips")) return "Trip Operations";
+            if (uri.Contains("/reports")) return "Compliance Reports";
+            if (uri.Contains("/settings")) return "District Settings";
+            return "District Overview";
+        }
+    }
 
     private bool IsActive(string path)
     {
@@ -111,6 +211,12 @@
         _showEmergencyDialog = true;
     }
 
+    private void NavigateAndClose(string url)
+    {
+        _showMoreSheet = false;
+        Navigation.NavigateTo(url);
+    }
+
     private void Logout()
     {
         Preferences.Default.Remove("ST_RememberMe");
@@ -118,4 +224,3 @@
         Navigation.NavigateTo("/");
     }
 }
-
